@@ -42,13 +42,8 @@
 #include "cli/settings.hpp"
 #include "sqlsel/mode.hpp"
 
-#if __has_include("cli/path_resolver.hpp") && __has_include("cli/cmd_setpath.hpp")
-  #include "cli/path_resolver.hpp"
-  #include "cli/cmd_setpath.hpp"
-  #define HAVE_SCRIPT_PATHS 1
-#else
-  #define HAVE_SCRIPT_PATHS 0
-#endif
+#include "common/path_resolver.hpp"
+#include "common/path_state.hpp"
 
 using dli::registry;
 
@@ -232,28 +227,18 @@ std::filesystem::path shell_resolve_script_path(const std::string& token)
     fs::path p(token);
     if (!p.has_extension()) p.replace_extension(".dts");
 
-    auto try_existing = [](const fs::path& c) -> fs::path {
-        try {
-            if (fs::exists(c) && fs::is_regular_file(c)) return normalize_script_path(c);
-        } catch (...) {}
-        return {};
-    };
-
     if (p.is_absolute()) return normalize_script_path(p);
 
+    // A subscript belongs to its caller's directory. Missing siblings must not
+    // silently select a same-named program from another directory.
     if (shell_script_active()) {
-        if (auto c = try_existing(shell_script_current_dir() / p); !c.empty()) return c;
         return normalize_script_path(shell_script_current_dir() / p);
     }
 
-#if HAVE_SCRIPT_PATHS
-    try {
-        const fs::path scriptsRoot = dottalk::paths::get_slot(dottalk::paths::Slot::SCRIPTS);
-        if (auto c = try_existing(scriptsRoot / p); !c.empty()) return c;
-    } catch (...) {}
-#endif
-
-    return normalize_script_path(fs::current_path() / p);
+    // One location even when it does not exist: bare names use SCRIPTS;
+    // qualified relative paths use DATA. Never search cwd or tests.
+    return normalize_script_path(dottalk::paths::resolve_in_slot(
+        dottalk::paths::get_slot(dottalk::paths::Slot::SCRIPTS), p.string()));
 }
 
 bool shell_script_push(const std::filesystem::path& scriptFile, bool as_subscript, std::string* err)

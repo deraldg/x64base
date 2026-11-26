@@ -16,6 +16,8 @@
 #include <sstream>
 #include <string>
 
+#include "cli/ask.hpp"
+#include "cli/prompt_policy.hpp"
 #include "cli/table_state.hpp"
 #include "xbase.hpp"
 
@@ -24,7 +26,9 @@ extern void cmd_COMMIT(xbase::DbArea& A, std::istringstream& in);
 
 namespace dottalk { namespace dirty {
 
-static bool g_suppress_prompts = false;
+// The suppression flag moved to cli::prompt on 2026-09-25 -- it answers a
+// process-wide question and is not this file's property. See
+// include/cli/prompt_policy.hpp.
 
 extern "C" xbase::XBaseEngine* shell_engine();
 
@@ -38,27 +42,27 @@ static inline std::string to_upper_copy(std::string s) {
     return s;
 }
 
-static inline bool parse_yes_default_no() {
-    std::string answer;
-    if (!std::getline(std::cin, answer)) return false;
-
-    auto is_space = [](unsigned char ch) { return std::isspace(ch) != 0; };
-    while (!answer.empty() && is_space((unsigned char)answer.front())) answer.erase(answer.begin());
-    while (!answer.empty() && is_space((unsigned char)answer.back()))  answer.pop_back();
-
-    for (std::size_t i = 0; i < answer.size(); ++i) {
-        answer[i] = (char)std::tolower((unsigned char)answer[i]);
-    }
-
-    if (answer.empty()) return false; // default No
-    return (answer == "y" || answer == "yes");
-}
-
+// ONE RENDERER, ONE PARSER (owner ruling (3), 2026-09-25). This used to be
+// `parse_yes_default_no()` -- trim, lowercase, accept only "y" or "yes" --
+// which disagreed with the two copies in cmd_rebuild.cpp and cmd_reindex.cpp:
+// `yellow` consented there and not here, a leading space consented here and not
+// there. Both are gone; cli::ask owns the keystrokes now.
+//
+// THE PRINTED TEXT IS UNCHANGED. cli::ask derives " (y/N) " from a two-option
+// YES/NO ask whose bare-Enter answer is NO, which is byte-for-byte what this
+// function printed.
 static inline bool prompt_commit_yn(const std::string& scopeLabel) {
-    std::cout << "TABLE: uncommitted changes detected (" << scopeLabel << "). "
-              << "COMMIT changes? (y/N) ";
-    std::cout.flush();
-    return parse_yes_default_no();
+    cli::ask::Ask a;
+    a.prompt = "TABLE: uncommitted changes detected (" + scopeLabel + "). COMMIT changes?";
+    a.options = { {"YES", 'Y', "yes"}, {"NO", 'N', "no"} };
+    a.on_empty = "NO";
+    // NO, not PROCEED: the four-token ask of ruling (2) is a later step. What
+    // changes here is that an unattended caller RESOLVES rather than reading --
+    // `--script` is stdin redirection, so the old getline ate the next line of
+    // the script as its answer. Cancelling deterministically is both safer and
+    // what EOF already did.
+    a.when_unattended = "NO";
+    return cli::ask::ask(a).token == "YES";
 }
 
 static bool commit_area0(int area0) {
@@ -73,10 +77,14 @@ static bool commit_area0(int area0) {
         xbase::DbArea& A = eng->area(area0);
         std::istringstream empty;
 
-        const bool prev = g_suppress_prompts;
-        g_suppress_prompts = true;
-        ::cmd_COMMIT(A, empty);   // <-- global call
-        g_suppress_prompts = prev;
+        // RAII, not save/restore: the manual version restored on the NEXT LINE,
+        // so a throwing cmd_COMMIT skipped it and left suppression on for the
+        // life of the process -- silently, because the catch below reports only
+        // "COMMIT failed (exception)".
+        {
+            cli::prompt::SuppressScope guard;
+            ::cmd_COMMIT(A, empty);   // <-- global call
+        }
 
         if (dottalk::table::is_enabled(area0) && dottalk::table::is_dirty(area0)) {
             std::cout << "COMMIT failed (area still dirty).\n";
@@ -121,18 +129,18 @@ static bool is_quit_like(const std::string& opLabel) {
 }
 
 bool maybe_prompt_area(const int area0, const std::string& opLabel) {
-    if (g_suppress_prompts) return true;
+    if (cli::prompt::suppressed()) return true;
     if (!dottalk::table::is_enabled(area0) || !dottalk::table::is_dirty(area0)) return true;
 
     if (!prompt_commit_yn(std::string("area ") + std::to_string(area0))) return false;
 
     const bool ok = commit_area0(area0);
-    if (ok && is_quit_like(opLabel)) g_suppress_prompts = true;
+    if (ok && is_quit_like(opLabel)) cli::prompt::set_suppressed(true);
     return ok;
 }
 
 bool maybe_prompt_area(xbase::DbArea& areaRef, const char* opLabel) {
-    if (g_suppress_prompts) return true;
+    if (cli::prompt::suppressed()) return true;
 
     const std::string label = opLabel ? std::string(opLabel) : std::string();
     const int idx = area_index_from_ref(areaRef);
@@ -143,7 +151,7 @@ bool maybe_prompt_area(xbase::DbArea& areaRef, const char* opLabel) {
         if (dottalk::table::is_enabled(i) && dottalk::table::is_dirty(i)) {
             if (!prompt_commit_yn("unknown area (index unavailable)")) return false;
             const bool ok = commit_all_dirty();
-            if (ok && is_quit_like(label)) g_suppress_prompts = true;
+            if (ok && is_quit_like(label)) cli::prompt::set_suppressed(true);
             return ok;
         }
     }
@@ -153,7 +161,7 @@ bool maybe_prompt_area(xbase::DbArea& areaRef, const char* opLabel) {
 bool maybe_prompt_all(xbase::XBaseEngine& eng, const std::string& opLabel) {
     (void)eng;
 
-    if (g_suppress_prompts) return true;
+    if (cli::prompt::suppressed()) return true;
 
     int dirtyCount = 0;
     for (int i = 0; i < xbase::MAX_AREA; ++i) {
@@ -164,12 +172,44 @@ bool maybe_prompt_all(xbase::XBaseEngine& eng, const std::string& opLabel) {
     if (!prompt_commit_yn(std::string("all areas (") + std::to_string(dirtyCount) + " dirty)")) return false;
 
     const bool ok = commit_all_dirty();
-    if (ok && is_quit_like(opLabel)) g_suppress_prompts = true;
+    if (ok && is_quit_like(opLabel)) cli::prompt::set_suppressed(true);
     return ok;
 }
 
 bool maybe_prompt_all(xbase::XBaseEngine& eng, const char* opLabel) {
     return maybe_prompt_all(eng, opLabel ? std::string(opLabel) : std::string());
+}
+
+
+// S4 (OI-041): ONE copy of the commit-before-index gate, was two.
+//
+// BEHAVIOUR IS DELIBERATELY UNCHANGED, including one thing that is arguably a
+// defect: cmd_COMMIT is called here WITHOUT a cli::prompt::SuppressScope, so a
+// COMMIT that prompts would prompt again underneath this one. commit_area0()
+// above DOES guard it. Collapsing a duplicate is not the change that should
+// decide that question -- it is named in OI-041, unproven, not claimed fixed.
+CleanOrCommit ensure_clean_or_commit(xbase::DbArea& A, int area0, const char* verb)
+{
+    if (area0 < 0) return CleanOrCommit::AlreadyClean;
+    if (!dottalk::table::is_enabled(area0)) return CleanOrCommit::AlreadyClean;
+    if (!dottalk::table::is_dirty(area0)) return CleanOrCommit::AlreadyClean;
+
+    // The printed text is unchanged: the two copies built this with an
+    // ostringstream and asked through prompt_yes_no(default_no = true), which
+    // is a two-option YES/NO ask answering NO to a bare Enter -- " (y/N) ".
+    cli::ask::Ask a;
+    a.prompt = std::string(verb ? verb : "") +
+               ": TABLE has uncommitted changes. Commit now and continue?";
+    a.options = { {"YES", 'Y', "yes"}, {"NO", 'N', "no"} };
+    a.on_empty = "NO";
+    a.when_unattended = "NO";
+    if (cli::ask::ask(a).token != "YES") return CleanOrCommit::DeclinedByUser;
+
+    std::istringstream empty;
+    ::cmd_COMMIT(A, empty);
+
+    if (dottalk::table::is_dirty(area0)) return CleanOrCommit::StillDirtyAfterCommit;
+    return CleanOrCommit::Committed;
 }
 
 }} // namespace dottalk::dirty

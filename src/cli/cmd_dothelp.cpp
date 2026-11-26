@@ -75,7 +75,7 @@ bool is_dothelp_usage_request(const std::string& raw) {
     if (t.rfind("DOTHELP ", 0) == 0) {
         t = to_upper(dothelp_trim(t.substr(8)));
     }
-    return t == "USAGE" || t == "HELP" || t == "?";
+    return t == "USAGE" || t == "?";
 }
 
 void print_dothelp_usage() {

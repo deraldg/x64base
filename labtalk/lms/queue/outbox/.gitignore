@@ -1,4 +1,0 @@
-# Keep the reserved outbox directory, but never commit queued LMS data.
-*.json
-*.tmp
-!.gitignore

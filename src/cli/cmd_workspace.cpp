@@ -119,6 +119,14 @@
 //   A posture is NOT byte-stable and is not meant to be (owner ruling,
 //   2026-08-24): WSID carries a per-save stamp because a posture records an
 //   INSTANCE. Byte-identity belongs to MINIDB, which carries table bytes.
+//   EVERY SAVE NOW RECORDS PAYLOAD_SHA, the SHA-256 of the payload as written
+//   (owner, 2026-10-13). Read it with WORKSPACE CATALOG. It is the identity of
+//   those bytes, so two MINIDB rows with one SHA hold one container -- and two
+//   POSTURE rows will usually differ even for an unchanged desk, because the
+//   per-save WSID stamp above is part of the bytes. That is the ruling above
+//   showing through, not a defect: a posture records an instance, a container
+//   records content. Rows saved before 2026-10-13 are blank and are NOT
+//   backfilled -- blank means the identity was never recorded.
 //   WORKSPACE LOAD <file>
 //   WORKSPACE LOAD <name> MEMO
 //   WORKSPACE LOAD <name> MEMO RAM
@@ -161,7 +169,7 @@
 //   called DEFAULT and you did not create it. An area joins whichever workspace
 //   is CURRENT when the area is OPENED, so the model is SWITCH-then-open, never
 //   open-then-assign.
-//   WORKSPACE NEW <name> creates one. Names must be unique: a name is the
+//   WORKSPACE NEW <name> creates and enters one. Names must be unique: a name is the
 //   handle a person uses, and two of them is an ambiguity, not a convenience.
 //   UNDER <parent> nests the new workspace under an existing one. Both the
 //   parent token and SWITCH's target accept a NAME or a numeric HANDLE.
@@ -174,6 +182,9 @@
 //   nothing half-born.
 //   WORKSPACE SWITCH <name-or-handle> changes which workspace is current, and
 //   therefore which one the NEXT opened area joins.
+//   Owner flow ruling 2026-09-18: SWITCH selects the destination's lowest open
+//   engine area. Empty NEW/SWITCH selects an unused area with no table open;
+//   if every area is occupied, entry is refused before changing state.
 //   SWITCH ALSO RESTORES THE WORKSPACE'S PATH ENVIRONMENT (R131, implemented
 //   2026-08-29). This sentence is new because the two above were the WHOLE
 //   truth until then and are now only half of it. A workspace OWNS its DBF,
@@ -577,6 +588,7 @@
 #include <vector>
 
 #include "xbase.hpp"
+#include "cli/append_fence.hpp"
 #include "xbase_64.hpp"
 #include "memo/memo_auto.hpp"   // cli_memo::memo_auto_on_use / memo_auto_on_close
 #include "dottalk/minidb.hpp"       // AIF-120: the MINIDB 1 container scanner
@@ -596,6 +608,7 @@
 #include "cli/dirty_prompt.hpp"
 #include "cli/order_state.hpp"
 #include "cli/path_resolver.hpp"
+#include "cli/workspace_definition.hpp"
 #include "cli/cmd_setpath.hpp"
 #include "relations_boot.hpp"
 #include "tuple_builder.hpp"
@@ -605,6 +618,8 @@
 // this file still documents it; nothing here calls it today.
 #include "xbase/workspace_naming.hpp"
 #include "workarea_util.hpp"
+#include "cli/workspace_image_event.hpp"
+#include "security/token_crypto.hpp"   // sha256_hex -- payload identity
 
 #define HAVE_PATHS 1
 
@@ -633,6 +648,15 @@
 
 namespace fs = std::filesystem;
 using std::string;
+
+namespace cli {
+static WorkspaceImageObserver workspace_image_observer;
+WorkspaceImageObserver set_workspace_image_observer(WorkspaceImageObserver observer) {
+    auto previous = std::move(workspace_image_observer);
+    workspace_image_observer = std::move(observer);
+    return previous;
+}
+}
 
 static std::string& last_loaded_workspace_file() {
     static std::string path;
@@ -838,6 +862,23 @@ static int first_closed_area_index() {
     return -1;
 }
 
+// Entering a workspace moves both navigation cursors (owner ruling 2026-09-18).
+// SELECT remains independent. An empty workspace selects an unused area without
+// claiming or opening it; the next directory OPEN can start there normally.
+static int workspace_entry_area(std::uint64_t handle) {
+    auto* eng = shell_engine();
+    if (!eng) return -1;
+    int first = xbase::MAX_AREA;
+    for (const auto slot : xbase::workspace::members(handle)) {
+        if (slot >= 0 && slot < first && eng->area(slot).isOpen()) first = slot;
+    }
+    if (first < xbase::MAX_AREA) return first;
+    for (int slot = 0; slot < xbase::MAX_AREA; ++slot) {
+        if (!eng->area(slot).isOpen()) return slot;
+    }
+    return -1;
+}
+
 static bool same_path_best_effort(const fs::path& a, const fs::path& b) {
     auto normalize = [](const fs::path& p) {
         std::error_code ec;
@@ -980,53 +1021,19 @@ static inline bool area_open(xbase::DbArea& A) {
 }
 
 static fs::path resolve_workspace_file_path(const fs::path& file, bool for_save) {
-    fs::path p = file;
-    const fs::path rootWORKSPACE = WORKSPACE_root();
-
-    auto make_candidate = [&](const fs::path& candidate) -> fs::path {
-        if (candidate.is_relative()) return rootWORKSPACE / candidate;
-        return candidate;
-    };
-
-    auto existing_candidate = [&](const fs::path& candidate) -> fs::path {
-        std::error_code ec;
-        if (fs::exists(candidate, ec) && !ec) return candidate;
-        return {};
-    };
-
-    if (for_save) {
-        if (p.is_relative()) p = rootWORKSPACE / p;
-        if (!p.has_extension()) p.replace_extension(".dtschema");
-        return p;
-    }
-
-    if (p.has_extension()) {
-        if (p.is_relative()) {
-            fs::path candidate = rootWORKSPACE / p;
+    // File kind chooses the root, never existence in cwd. Explicit relative
+    // paths are DATA-relative, as for DBF and scripts. The legacy plural
+    // extension is accepted only in this same directory, when omitted.
+    fs::path p = paths::resolve_in_slot(WORKSPACE_root(), file.string());
+    if (p.has_extension()) return p;
+    if (!for_save) {
+        for (const char* ext : {".dtschema", ".dtschemas"}) {
+            auto candidate = p; candidate.replace_extension(ext);
             std::error_code ec;
-            if (fs::exists(candidate, ec) && !ec) return candidate;
-            return fs::current_path() / p;
+            if (fs::is_regular_file(candidate, ec) && !ec) return candidate;
         }
-        return p;
     }
-
-    const std::vector<std::string> exts = {".dtschema", ".dtschemas"};
-    for (const auto& ext : exts) {
-        fs::path probe = p;
-        probe.replace_extension(ext);
-
-        if (fs::path hit = existing_candidate(make_candidate(probe)); !hit.empty()) return hit;
-        if (fs::path hit = existing_candidate(fs::current_path() / probe); !hit.empty()) return hit;
-        if (fs::path hit = existing_candidate(probe); !hit.empty()) return hit;
-    }
-
     p.replace_extension(".dtschema");
-    if (p.is_relative()) {
-        fs::path candidate = rootWORKSPACE / p;
-        std::error_code ec;
-        if (fs::exists(candidate, ec) && !ec) return candidate;
-        return fs::current_path() / p;
-    }
     return p;
 }
 
@@ -2573,11 +2580,12 @@ static std::string posture_area_field(const std::string& line, const char* key) 
 // arrives with them reordered, preflight and load will at least be wrong
 // together rather than disagreeing.
 static std::vector<std::string> preflight_missing_members(const std::string& payload,
-                                                          int& declared_out) {
+                                                          int& declared_out,
+                                                          const fs::path& defaultDbf) {
     std::vector<std::string> missing;
     declared_out = 0;
 
-    fs::path rootDbf = dbf_root();
+    fs::path rootDbf = defaultDbf;
     std::istringstream scan(payload);
     std::string line;
     bool first = true;
@@ -2599,6 +2607,30 @@ static std::vector<std::string> preflight_missing_members(const std::string& pay
         }
     }
     return missing;
+}
+
+static int workspace_schema_version(const std::string& header) {
+    const auto normalized = to_lower(trim_copy(header));
+    if (normalized == "dtshema 1") return 1;
+    if (normalized == "dtshema 2") return 2;
+    if (normalized == "dtshema 3") return 3;
+    return 0;
+}
+
+cli::WorkspaceDefinitionCheck cli::check_workspace_definition(const fs::path& file,
+                                                             const fs::path& default_dbf) {
+    WorkspaceDefinitionCheck result;
+    std::ifstream in(file, std::ios::binary);
+    if (!in) { result.error = "Cannot read workspace definition: " + s8(file); return result; }
+    std::ostringstream bytes; bytes << in.rdbuf();
+    if (in.bad()) { result.error = "Cannot read complete workspace definition: " + s8(file); return result; }
+    const auto payload = bytes.str();
+    std::istringstream header(payload); std::string first; std::getline(header, first);
+    result.version = workspace_schema_version(first);
+    if (!result.version) { result.error = "Bad or unsupported workspace definition header."; return result; }
+    result.missing = preflight_missing_members(payload, result.declared,
+                                              default_dbf.empty() ? dbf_root() : default_dbf);
+    return result;
 }
 
 // AIF-070 M1: loader split from file I/O. workspace_load_from_stream() is the
@@ -2657,13 +2689,8 @@ static void workspace_load_from_stream(std::istream& in, const std::string& sour
 
     std::string header;
     std::getline(payloadIn, header);
-    const std::string headerNorm = to_lower(trim_copy(header));
-
-    int schemaVersion = 0;
-    if (headerNorm == "dtshema 1") schemaVersion = 1;
-    else if (headerNorm == "dtshema 2") schemaVersion = 2;
-    else if (headerNorm == "dtshema 3") schemaVersion = 3;  // superset of 2; extra declarative lines
-    else {
+    const int schemaVersion = workspace_schema_version(header);
+    if (!schemaVersion) {
         std::cout << "WORKSPACE LOAD: bad or unsupported file header.\n";
         return;
     }
@@ -2671,7 +2698,7 @@ static void workspace_load_from_stream(std::istream& in, const std::string& sour
     // ---- the refusal, BEFORE anything is closed -----------------------------
     if (!allowPartial) {
         int declared = 0;
-        const std::vector<std::string> missing = preflight_missing_members(payloadText, declared);
+        const std::vector<std::string> missing = preflight_missing_members(payloadText, declared, rootDbf);
         if (!missing.empty()) {
             std::cout << "WORKSPACE LOAD: ABORTED -- the posture declares "
                       << declared << " table(s); " << missing.size()
@@ -3036,17 +3063,28 @@ static fs::path catalog_path() { return catalog_dir() / "WORKSPACES.dbf"; }
 // RAII whole-table lock; the bbs_store idiom (cross-process FLOCK,
 // pid-stamped, stale-owner recovering). Appends grow the header, so
 // whole-table granularity is correct.
+// OI-043, 2026-09-19: REBUILT ON THE SHARED FENCE, keeping this type's own
+// interface so no caller changes.
+//
+// What stood here was a THIRD hand-written copy of the table-lock protocol --
+// cmd_commit.cpp had one, cmd_workspace.cpp had one, this file had one -- which
+// is the shape that ends with two of them disagreeing. The shared guard now
+// lives in include/cli/append_fence.hpp and this is a thin wrapper over it.
+//
+// AND THE COPY HAD A LATENT BUG THE SHARED ONE DOES NOT. `held =
+// try_lock_table(...)` is TRUE when this process ALREADY held the lock, because
+// the lock is re-entrant for its own owner by design -- so the destructor would
+// RELEASE A FENCE THIS SCOPE DID NOT TAKE, tearing down an enclosing holder's
+// protection. Nothing nests these locks today, so it never fired; it was a
+// defect waiting for the first caller that nested them. cli::fence::TableFence
+// asks who holds the lock before taking it and releases only what it acquired.
 struct WsLock {
-    xbase::DbArea& a; bool held = false;
-    WsLock(xbase::DbArea& area, std::string& err) : a(area) {
-        std::string lerr;
-        held = xbase::locks::try_lock_table(a, &lerr);
-        if (!held && err.empty())
-            err = "WORKSPACE MEMO: catalog busy (locked by another process)"
-                  + (lerr.empty() ? std::string() : ": " + lerr);
+    cli::fence::TableFence fence;
+    WsLock(xbase::DbArea& area, std::string& err) : fence(area) {
+        if (!fence.ready && err.empty())
+            err = "WORKSPACE MEMO: catalog busy (locked by another process)" + (fence.error.empty() ? std::string() : ": " + fence.error);
     }
-    ~WsLock() { if (held) xbase::locks::unlock_table(a); }
-    explicit operator bool() const { return held; }
+    explicit operator bool() const { return fence.ready; }
     WsLock(const WsLock&) = delete;
     WsLock& operator=(const WsLock&) = delete;
 };
@@ -3095,6 +3133,19 @@ static bool ensure_catalog(std::string& err) {
     // PAYLOAD_SHA / EST_HYD_B / VERIFIED_AT / dimension fields are created
     // now and populated by later milestones -- an empty column is a
     // chartered claim, same rule as the public status board.
+    //
+    // TWO OF THOSE CLAIMS HAVE SINCE BEEN PAID, and this comment is corrected
+    // in place rather than left to be read as current: EST_HYD_B is written for
+    // MINIDB payloads (AIF-120 R103) and PAYLOAD_SHA is written for every
+    // payload (owner, 2026-10-13). VERIFIED_AT is still a claim, and the verb
+    // it names still does not exist.
+    //
+    // ROWS WRITTEN BEFORE THOSE DATES ARE NOT BACKFILLED, deliberately. A blank
+    // PAYLOAD_SHA means "this row's identity was never recorded", which is
+    // true; a value computed today would assert the row was identified when it
+    // was not, and would do it by rewriting the lineage the column exists to
+    // make trustworthy. Backfill, if it is ever wanted, is a separate verb with
+    // its own ruling -- not a side effect of opening the catalog.
     std::vector<xbase::dbf_create::FieldSpec> f;
     auto C = [&](const char* n, std::uint32_t len) {
         xbase::dbf_create::FieldSpec s; s.name = n; s.type = 'C'; s.len = len; s.dec = 0;
@@ -3110,7 +3161,11 @@ static bool ensure_catalog(std::string& err) {
     C("FLAVOR", 8);        // dimension: X64/X32/VFP/REF (M2 populates)
     C("OS_COMPAT", 8);     // dimension: ALL/WIN/POSIX/MAC -- a CLAIM, not a partition
     C("FMT", 12);          // payload format tag: "DTSHEMA 2" now, "MINIDB n" later
-    C("PAYLOAD_SHA", 64);  // integrity + cycle-detection material (chartered)
+    C("PAYLOAD_SHA", 64);  // SHA-256 hex of the payload AS WRITTEN -- written
+                           // since 2026-10-13. 64 == crypto_hash_sha256 hex.
+                           // Integrity today; content identity is what it is
+                           // FOR, and cycle detection by identity is the half
+                           // still unbuilt (SELF_REF is the declaration half).
     N("SIZE_B", 12);       // payload bytes (populated now)
     N("EST_HYD_B", 12);    // estimated hydrated bytes (chartered; budget input)
     N("MAX_AREAS", 4);     // areas the posture opens (populated now; admission input)
@@ -3243,36 +3298,50 @@ static bool read_all_bytes(const fs::path& p, std::string& out) {
     return true;
 }
 
-static std::string build_minidb_container(const std::string& posture,
+static std::string build_minidb_container(const std::string& posture, const SaveScope& scope,
                                           std::size_t& files_out,
                                           std::uint64_t& bytes_out) {
-    std::string c = "MINIDB 1\n";
-    c += "POSTURE " + std::to_string(posture.size()) + "\n";
-    c += posture;
-
+    // The same scope must govern both AREA declarations and carried bytes.
+    // Build before touching catalog lineage: an unreadable member is a failed
+    // save, not a successful image with missing data. Keep flat names where
+    // possible and give collisions a per-area directory. Posture paths must
+    // name those exact members, including tables outside the current DBF root.
+    std::string members;
+    std::map<std::string, std::string> sources, destinations;
+    std::map<int, std::pair<std::string, std::string>> area_paths;
     files_out = 0; bytes_out = 0;
-    auto add = [&](const fs::path& src, const std::string& rel) {
-        std::string bytes;
-        if (!read_all_bytes(src, bytes)) {
-            std::cout << "  ! minidb: cannot read " << s8(src) << "\n";
-            return;
+    auto add = [&](const fs::path& src, std::string rel, int area0) {
+        std::string source = s8(fs::absolute(src).lexically_normal());
+#if defined(_WIN32)
+        source = to_lower(source);
+#endif
+        if (auto found = sources.find(source); found != sources.end()) return found->second;
+        if (destinations.count(to_lower(rel))) {
+            const bool index = rel.rfind("indexes/", 0) == 0;
+            rel = (index ? "indexes/" : "") + std::string("area-") + std::to_string(area0) + "/" + s8(src.filename());
         }
-        c += "FILE " + std::to_string(bytes.size()) + " " + rel + "\n";
-        c += bytes;
+        if (destinations.count(to_lower(rel))) throw std::runtime_error("MINIDB member collision: " + rel);
+        std::string bytes;
+        if (!read_all_bytes(src, bytes)) throw std::runtime_error("MINIDB cannot read " + s8(src));
+        members += "FILE " + std::to_string(bytes.size()) + " " + rel + "\n";
+        members += bytes;
+        sources.emplace(source, rel); destinations.emplace(to_lower(rel), source);
         ++files_out; bytes_out += bytes.size();
+        return rel;
     };
 
     for (int area0 = 0; area0 < xbase::MAX_AREA; ++area0) {
-        try {
             xbase::DbArea& A = get_area_0based(area0);
-            if (!area_open(A)) continue;
+            if (!area_open(A) || !scope.contains(area0)) continue;
             const fs::path dbf(A.filename());
-            add(dbf, s8(dbf.filename()));
+            const auto table_path = add(dbf, s8(dbf.filename()), area0);
+            std::string index_path = "none";
             const std::string idx = getOrderNameSafe(A);
             if (!idx.empty() && to_lower(idx) != "none") {
                 const fs::path ip(idx);
-                add(ip, "indexes/" + s8(ip.filename()));
+                index_path = add(ip, "indexes/" + s8(ip.filename()), area0).substr(8);
             }
+            area_paths.emplace(area0, std::make_pair(table_path, index_path));
             // Memo sidecar carriage, landed 2026-08-12. CITATION CORRECTED
             // 2026-08-30: this named AIF-108, a TEST-DESIGN lane chartered
             // "NO engine change proposed" and asleep until 2026-09-29
@@ -3287,14 +3356,27 @@ static std::string build_minidb_container(const std::string& posture,
             // is_virtual(path) is true under the mount but exists() in the
             // VFS is false for a DTX, so it falls through to the OS read.
             if (auto* ms = cli_memo::memo_backend_for(A); ms && ms->is_open()) {
-                (void)ms->flush();
+                if (!ms->flush().ok) throw std::runtime_error("MINIDB cannot flush memo " + ms->path());
                 const fs::path mp(ms->path());
-                if (!mp.empty()) add(mp, s8(mp.filename()));
+                if (!mp.empty()) add(mp, s8(fs::path(table_path).parent_path() / mp.filename()), area0);
             }
-        } catch (...) {}
     }
-    c += "END\n";
-    return c;
+    std::istringstream input(posture); std::string line, portable;
+    while (std::getline(input, line)) {
+        if (line.rfind("AREA ", 0) == 0) {
+            std::istringstream key(line.substr(5)); int area0 = -1; key >> area0;
+            const auto& paths = area_paths.at(area0);
+            auto replace = [&](const std::string& field, const std::string& value) {
+                const auto start = line.find(" | " + field);
+                if (start == std::string::npos) throw std::runtime_error("MINIDB missing posture field " + field);
+                const auto begin = start + 3 + field.size(), end = line.find(" | ", begin);
+                line.replace(begin, end == std::string::npos ? std::string::npos : end - begin, value);
+            };
+            replace("dbf=", paths.first); replace("index=", paths.second);
+        }
+        portable += line + "\n";
+    }
+    return "MINIDB 1\nPOSTURE " + std::to_string(portable.size()) + "\n" + portable + members + "END\n";
 }
 
 // ---------------------------------------------------------------------------
@@ -3440,7 +3522,7 @@ static bool ensure_durable_workspace(const std::string& name,
             ok        = true;
         } else {
             const std::uint64_t newId = scan.max_id + 1;
-            a.appendBlank();
+            (void)cli::fence::append_fenced(a);
             ok = set_by_name(a, "WS_ID",      std::to_string(newId), err)
               && set_by_name(a, "WS_NAME",    name, err)
               && set_by_name(a, "SCHEMA_NAME", name, err)
@@ -3795,13 +3877,6 @@ static void save_to_memo(const std::string& name, int version,
         const WsCatalogScan scan = scan_catalog(a, name);
         const std::uint64_t prevId = scan.live_id;
         const std::uint64_t newId  = scan.max_id + 1;
-        if (scan.live_rec >= 0) {
-            try {
-                a.gotoRec(scan.live_rec); a.readCurrent();
-                if (!set_by_name(a, "SUPERSEDED", "1", err)) { std::cout << err << "\n"; }
-                else a.writeCurrent();
-            } catch (...) {}
-        }
 
         // Instance identity (owner rule 2026-08-11): memo-carried postures
         // stamp a memo-flavored unique id -- M<ws_id> -- as a WSID line
@@ -3820,9 +3895,39 @@ static void save_to_memo(const std::string& name, int version,
         const bool selfRef = posture.find("WORKSPACES") != std::string::npos;
 
         std::size_t mdFiles = 0; std::uint64_t mdBytes = 0;
-        const std::string payload = minidb
-            ? build_minidb_container(posture, mdFiles, mdBytes)
-            : posture;
+        std::string payload;
+        try { payload = minidb ? build_minidb_container(posture, sc, mdFiles, mdBytes) : posture; }
+        catch (const std::exception& e) {
+            std::cout << "WORKSPACE SAVE refused: " << e.what() << "\n";
+            cli_memo::memo_auto_on_close(a); a.close(); return;
+        }
+
+        // PAYLOAD_SHA: THE IDENTITY OF THESE BYTES. Owner instruction
+        // 2026-10-13, "proceed with filling payload sha".
+        //
+        // The column was chartered C(64) on 2026-08-11 and never written. 64 is
+        // exactly SHA-256 hex, so the width has encoded the intended algorithm
+        // since the day the catalog was designed.
+        //
+        // WHAT IS HASHED IS THE PAYLOAD AS WRITTEN -- the posture text for a
+        // DTSHEMA save, the container bytes for a MINIDB one -- so the column
+        // means the same thing for every FMT. Hashing the posture inside a
+        // MINIDB instead would make two rows with the same SHA hold different
+        // bytes, which is the one thing a content identity may never do.
+        //
+        // A FAILURE HERE DOES NOT REFUSE THE SAVE. sha256_hex throws only if
+        // libsodium cannot initialise, which is a whole-product condition and
+        // not this row's fault. A workspace that saves with no identity is
+        // worse than one that saves with one and better than one that does not
+        // save; blank means UNKNOWN, which is the same thing it means on every
+        // row written before today.
+        std::string payloadSha;
+        try { payloadSha = dottalk::security::sha256_hex(payload); }
+        catch (const std::exception& e) {
+            std::cout << "WORKSPACE SAVE: warning -- payload identity could not be"
+                      << " computed (" << e.what() << "); PAYLOAD_SHA left blank"
+                      << " for this row.\n";
+        }
 
         // Fresh row + memo payload.
         auto* store = cli_memo::memo_store_for(a);
@@ -3837,7 +3942,15 @@ static void save_to_memo(const std::string& name, int version,
             cli_memo::memo_auto_on_close(a); a.close(); return;
         }
 
-        a.appendBlank();
+        if (scan.live_rec >= 0) {
+            a.gotoRec(scan.live_rec); a.readCurrent();
+            if (!set_by_name(a, "SUPERSEDED", "1", err) || !a.writeCurrent()) {
+                std::cout << "WORKSPACE SAVE refused: cannot supersede previous snapshot " << err << "\n";
+                cli_memo::memo_auto_on_close(a); a.close(); return;
+            }
+        }
+
+        (void)cli::fence::append_fenced(a);
         bool ok = set_by_name(a, "WS_ID", std::to_string(newId), err)
                && set_by_name(a, "WS_NAME", name, err)
                && set_by_name(a, "SCHEMA_NAME", name, err)   // display name; defaults to handle until owner supplies one
@@ -3881,9 +3994,12 @@ static void save_to_memo(const std::string& name, int version,
                && set_by_name(a, "SUPERSEDED", "0", err)
                && set_by_name(a, "DBF_ROOT", s8(dbf_root()), err)
                && set_by_name(a, "IDX_ROOT", s8(idx_root()), err)
+               && set_by_name(a, "PAYLOAD_SHA", payloadSha, err)
                && set_by_name(a, "SNAPSHOT", mr.ref.token, err);
-        // PAYLOAD_SHA / VERIFIED_AT remain chartered columns; EST_HYD_B is
-        // populated above for MINIDB payloads as of AIF-120 R103.
+        // VERIFIED_AT remains a chartered column -- it records WORKSPACE
+        // VERIFY, which does not exist (AIPR-20261012-COWORK-213). EST_HYD_B is
+        // populated above for MINIDB payloads as of AIF-120 R103, and
+        // PAYLOAD_SHA as of the owner instruction of 2026-10-13.
         if (!ok) { std::cout << err << "\n"; cli_memo::memo_auto_on_close(a); a.close(); return; }
         a.writeCurrent();
 
@@ -3903,6 +4019,15 @@ static void save_to_memo(const std::string& name, int version,
             std::cout << "WORKSPACE SAVE: wrote memo '" << name << "' ("
                       << payload.size() << " B, oracle byte-compare OK) to "
                       << s8(catalog_path()) << "\n";
+            // THE READBACK IS NOT RE-HASHED, and that is a decision rather than
+            // an omission. `back.text != payload` above is an EXACT comparison,
+            // so a hash of the readback could not disagree with it -- adding one
+            // would be an instrument incapable of failing, which this tree has
+            // a folder about. The identity is printed so the operator can see
+            // and cite it; the byte-compare is what proves it describes what a
+            // fresh session will read.
+            if (!payloadSha.empty())
+                std::cout << "  PAYLOAD_SHA: " << payloadSha << "\n";
             if (minidb) {
                 std::cout << "  MINIDB 1: " << mdFiles << " file(s), " << mdBytes
                           << " B of table+index bytes carried IN the memo"
@@ -4674,7 +4799,26 @@ static void hydrate_to_ram(const std::string& name) {
     // Carrier detection: a MINIDB container carries its own table bytes, so
     // hydration reads the PAYLOAD, not the disk. Same verb, different source.
     if (f.text.rfind("MINIDB 1\n", 0) == 0) {
-        (void)hydrate_minidb(name, f.text, ramRoot, ramRoot / "indexes");
+        std::vector<std::uint64_t> before;
+        const auto owner = xbase::workspace::current_handle();
+        if (cli::workspace_image_observer)
+            for (const auto slot : xbase::workspace::members(owner)) {
+                auto& area = get_area_0based(slot);
+                if (area.isOpen()) before.push_back(area.areaHandle());
+            }
+        const bool materialized = hydrate_minidb(name, f.text, ramRoot, ramRoot / "indexes");
+        if (materialized && cli::workspace_image_observer) {
+            cli::WorkspaceImageEvent event{name, f.text, catalog_path(), ramRoot, owner, {}};
+            for (const auto slot : xbase::workspace::members(owner)) {
+                auto& area = get_area_0based(slot);
+                if (area.isOpen() && std::find(before.begin(), before.end(), area.areaHandle()) == before.end())
+                    event.opened_areas.push_back(area.areaHandle());
+            }
+            // Observation must not convert a completed engine mutation into a
+            // reported loader failure. The host can retry inspection separately.
+            try { cli::workspace_image_observer(event); }
+            catch (const std::exception& e) { std::cout << "Image observer: " << e.what() << '\n'; }
+        }
         return;
     }
 
@@ -5081,11 +5225,11 @@ static void workspace_print_usage() {
     std::cout << "  WORKSPACE OPEN <target> INX|IDX [FALLBACK] [recursive] [TABLE]\n";
     std::cout << "  WORKSPACE OPEN <target> CDX [FALLBACK] [recursive] [TABLE]   (LMDB)\n";
     std::cout << "  WORKSPACE OPEN <target> NOINDEX [recursive] [TABLE]\n";
-    std::cout << "  WORKSPACE NEW <name> [UNDER <parent>]      (Declare a workspace; allocates its WS_ID)\n";
+    std::cout << "  WORKSPACE NEW <name> [UNDER <parent>]      (Create and enter a workspace; allocates its WS_ID)\n";
     std::cout << "  WORKSPACE DESTROY <name-or-handle>         (Retire an empty, childless workspace)\n";
     std::cout << "  WORKSPACE DELETE <name>                    (Catalog hygiene: flag a retired name's rows; there is no PACK)\n"
               "  WORKSPACE PURGE <name>                     (accepted alias for DELETE)\n";
-    std::cout << "  WORKSPACE SWITCH <name-or-handle>          (Areas opened next join this workspace)\n";
+    std::cout << "  WORKSPACE SWITCH <name-or-handle>          (Enter workspace and select its first open area)\n";
     std::cout << "  WORKSPACE REGISTRY                         (Report runtime membership and nesting)\n";
     std::cout << "  WORKSPACE CLOSE                            (Close the CURRENT workspace)\n";
     std::cout << "  WORKSPACE CLOSE ALL                        (Close every workspace, everywhere)\n";
@@ -5136,11 +5280,13 @@ static void workspace_print_usage() {
     std::cout << "  - REGISTRY reports the RUNTIME workspace membership (which areas belong to\n";
     std::cout << "    which workspace right now), which is not the catalog: WORKSPACES.dbf is the\n";
     std::cout << "    persistence authority and answers what has been SAVED.\n";
-    std::cout << "  - NEW <name> [UNDER <parent>] declares a workspace, and it is BORN DURABLE:\n";
+    std::cout << "  - NEW <name> [UNDER <parent>] creates and enters a workspace, BORN DURABLE:\n";
     std::cout << "    it adopts the durable identity its name already means in the catalog, or\n";
     std::cout << "    writes a birth row to mint one (D10.1). This line said NEW was runtime-only\n";
     std::cout << "    until 2026-08-24; that stopped being true when D10.1 landed on 08-23.\n";
     std::cout << "  - SWITCH <name-or-handle> sets which workspace the NEXT opened area joins.\n";
+    std::cout << "    It selects the destination's first open area. Empty NEW/SWITCH selects an\n"
+                 "    unused area (no table open); entry is refused when all areas are occupied.\n";
     std::cout << "    The model is SWITCH-then-open. Names must be unique, and a name cannot be\n";
     std::cout << "    reclaimed in a session -- there is no DROP verb.\n";
     std::cout << "  - Bare CLOSE is SCOPED to the current workspace and costs one walk of ITS\n";
@@ -5467,6 +5613,12 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 return;
             }
 
+            const int entry_area = workspace_entry_area(0);
+            if (entry_area < 0) {
+                std::cout << "WORKSPACE NEW: no unused area available; close a table first. Nothing was created.\n";
+                return;
+            }
+
             // D10.1: durable first. A refusal here opens nothing.
             std::uint64_t wsId = 0;
             bool adopted = false;
@@ -5548,8 +5700,10 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                              "under this name keeps its WS_ID rather than gaining "
                              "a second one.\n";
             }
-            std::cout << "  Areas opened after WORKSPACE SWITCH " << nm
-                      << " join this workspace.\n";
+            xbase::workspace::set_current_handle(h);
+            (void)select_engine_area(entry_area);
+            std::cout << "  Current workspace: " << nm << "; area " << entry_area
+                      << " (no table open). New tables join this workspace.\n";
 
         } else if (sub_command == "destroy") {
             // AIF-078 D10.3 (steward, 2026-08-23: "it is the same lane").
@@ -5866,6 +6020,11 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 std::cout << "WORKSPACE SWITCH: no such workspace: " << toks[0] << "\n";
                 return;
             }
+            const int entry_area = workspace_entry_area(h);
+            if (entry_area < 0) {
+                std::cout << "WORKSPACE SWITCH: destination is empty and no unused area is available; close a table first.\n";
+                return;
+            }
             // R131. STAMP THE ONE WE ARE LEAVING FIRST, and the order is
             // load-bearing rather than tidy. Under Q2 every workspace the CLI
             // creates is stamped at birth, which leaves exactly one that is
@@ -5890,6 +6049,9 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             // workarea_util.hpp for why that is not decoration.
             cli::workspace_roots_ensure_stamped(h);
             (void)cli::workspace_roots_apply_to_slots(h);
+            (void)select_engine_area(entry_area);
+            std::cout << "  Current area: " << entry_area
+                      << (get_area_0based(entry_area).isOpen() ? "\n" : " (no table open)\n");
 
         } else if (sub_command == "add") {
             auto toks = split_tokens(rest_of_args);

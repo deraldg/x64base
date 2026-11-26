@@ -1,0 +1,87 @@
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+ECHO === JOURNAL REPLAY PROBE, PART 1 of 2 -- build the fixtures ===
+ECHO
+ECHO Part 1 builds four tables of KNOWN size and closes them. The harness then
+ECHO hand-writes a .tbj beside each one carrying a recno that is deliberately
+ECHO stale. Part 2 opens them, which is what fires
+ECHO recover_table_buffer_journal (table_state.cpp:798).
+ECHO
+ECHO NO CRASH IS NEEDED. The reader validates the header version and the record
+ECHO tags and NOTHING about the recnos, and a C marker short-circuits the group
+ECHO decision lookup -- so a well-formed log with a stale recno reaches the
+ECHO replay branch by the front door.
+
+SET PATH DBF DBF/SANDBOX
+
+ECHO
+ECHO --- ARM 0, carried over from the SQL INSERT probe and never yet read ---
+ECHO Does the LEGACY bare INSERT verb honour TABLE ON? NATIVE mode, so this is
+ECHO cmd_sql_insert.cpp and not the SQL-mode alias.
+ERASE JRN0 CONFIRM
+CREATE X64 JRN0 (ID C(4), TAG C(12))
+USE JRN0
+TABLE ON
+INSERT (ID,TAG) VALUES ("B0","BAREINS")
+ECHO If BAREINS is listed below with no COMMIT having run, the bare verb wrote
+ECHO straight to disk and is not a buffered-mode citizen.
+COUNT
+SMARTLIST 10
+ROLLBACK
+ECHO after ROLLBACK -- if BAREINS survives it was never buffered:
+COUNT
+SMARTLIST 10
+TABLE OFF
+USE
+
+ECHO
+ECHO --- JRN1: CONTROL. 2 records, journal will say I 3 -- the true next recno.
+ERASE JRN1 CONFIRM
+CREATE X64 JRN1 (ID C(4), TAG C(12))
+USE JRN1
+INSERT (ID,TAG) VALUES ("S1","SEED1")
+INSERT (ID,TAG) VALUES ("S2","SEED2")
+COUNT
+USE
+
+ECHO
+ECHO --- JRN2: STALE AND IN BOUNDS. 4 records, journal will say I 3.
+ECHO Expect the else branch -> gotoRec64(3) -> record 3 overwritten.
+ERASE JRN2 CONFIRM
+CREATE X64 JRN2 (ID C(4), TAG C(12))
+USE JRN2
+INSERT (ID,TAG) VALUES ("S1","SEED1")
+INSERT (ID,TAG) VALUES ("S2","SEED2")
+INSERT (ID,TAG) VALUES ("L3","LIVE3")
+INSERT (ID,TAG) VALUES ("L4","LIVE4")
+COUNT
+USE
+
+ECHO
+ECHO --- JRN3: STALE AND OUT OF BOUNDS. 1 record, journal will say I 3.
+ECHO Expect "if (recno > recCount()) continue" -> the row is DROPPED, the log
+ECHO is removed anyway, and recover returns true.
+ERASE JRN3 CONFIRM
+CREATE X64 JRN3 (ID C(4), TAG C(12))
+USE JRN3
+INSERT (ID,TAG) VALUES ("S1","SEED1")
+COUNT
+USE
+
+ECHO
+ECHO --- JRN4: THE PARTIAL-FIELD BLEND. 4 records, journal says I 3 setting
+ECHO ONLY field 2. Expect record 3 to keep ID=L3 from the live row and take
+ECHO TAG from the journal -- neither the old row nor the new one.
+ERASE JRN4 CONFIRM
+CREATE X64 JRN4 (ID C(4), TAG C(12))
+USE JRN4
+INSERT (ID,TAG) VALUES ("S1","SEED1")
+INSERT (ID,TAG) VALUES ("S2","SEED2")
+INSERT (ID,TAG) VALUES ("L3","LIVE3")
+INSERT (ID,TAG) VALUES ("L4","LIVE4")
+COUNT
+SMARTLIST 10
+USE
+
+ECHO === part 1 done -- fixtures built and closed ===

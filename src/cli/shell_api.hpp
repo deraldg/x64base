@@ -11,7 +11,11 @@
 #include <string>
 #include <filesystem>
 
-namespace xbase { class DbArea; }
+namespace xbase { class DbArea; class XBaseEngine; }
+
+// Non-owning engine binding for a prompt or a serialized embedded host.
+// The host must unbind before destroying its engine; commands share this engine.
+void shell_bind_engine(xbase::XBaseEngine* engine) noexcept;
 
 // Dispatch a single command line through the registered CLI.
 // Returns true if a command handler was found and executed, false otherwise.
@@ -38,5 +42,7 @@ void shell_script_pop();
 bool shell_script_active();
 bool shell_script_in_subscript();
 std::filesystem::path shell_script_current_dir();
+// Absolute paths are exact. Outside a script, bare names use SCRIPTS and
+// qualified relative paths use DATA. Inside a script, relatives use its
+// directory. A missing extension means .dts; there is no directory fallback.
 std::filesystem::path shell_resolve_script_path(const std::string& token);
-

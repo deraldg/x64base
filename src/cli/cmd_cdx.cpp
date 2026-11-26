@@ -64,6 +64,10 @@
 //   DROPTAG is deliberately NOT field-checked: removing a tag whose field is gone is exactly
 //     when you need it, so requiring the field to exist would fence off the repair.
 //   CDX manages container header/tag metadata; backend tag build data persistence is owned elsewhere.
+//   INFO's per-tag root_off/recs fields are written by the NATIVE rebuild only (2026-09-22):
+//     BUILDLMDB -- the x64 default flow -- reads tag NAMES and never writes the directory back,
+//     so those fields read 0 on an LMDB-backed container while the env holds the live keys.
+//     INFO appends a pathless note saying so when the env exists; LMDB INFO has the live counts.
 //
 // risk:
 //   reads_index_file: INFO TAGS ADDTAG DROPTAG
@@ -309,6 +313,33 @@ void cmd_CDX(xbase::DbArea& area, std::istringstream& args)
                         {"root_off", std::to_string(t.root_page_off)},
                         {"recs", std::to_string(t.stats_rec)}
                     });
+            }
+            // 2026-09-22 -- METAREPORT's parked question, answered by source
+            // and closed here. root_off/recs above are TAG-DIRECTORY fields
+            // that only the NATIVE rebuild writes (cdx_native_backend.cpp,
+            // the RUN8 writer sets root_page_off/stats_rec/updated_ts then
+            // write_tagdir). BUILDLMDB -- the x64 default flow -- reads the
+            // directory for tag NAMES only, builds every key into the LMDB
+            // env, and never writes the directory back, so on an LMDB-backed
+            // container these fields read 0 honestly while the env holds the
+            // live keys. The defect was the PRESENTATION: two fields shown
+            // as though authoritative with nothing saying which build path
+            // maintains them -- the same species as the four reports
+            // repaired 2026-09-10. When the container's env exists, say so.
+            // print_line keeps it message-catalog-free (the SET PARALLEL
+            // precedent), and the note deliberately names NO PATH: MR-P3
+            // fails any CDX INFO line mentioning a .cnx, and MR-P1/P2 read
+            // only the "CDX file" line, so a pathless note cannot disturb
+            // the validator in either direction.
+            {
+                const fs::path envdir =
+                    dottalk::paths::resolve_lmdb_env_for_cdx(target);
+                if (file_exists(envdir)) {
+                    cli::cmdout::print_line(
+                        "CDX INFO: per-tag root_off/recs are written by the "
+                        "NATIVE rebuild only; this container is LMDB-backed "
+                        "(env present) -- LMDB INFO holds the live keys.");
+                }
             }
             cdxfile::close(h);
             return;

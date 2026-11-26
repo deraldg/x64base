@@ -281,7 +281,24 @@ bool is_engine_state_file(const std::string& file_path);
 // afterwards leaves binaries in the field that half-replay silently.
 // Graded by src/tests/test_journal_version_gate.cpp, whose G0 control proves
 // the fixture can replay at all before the refusal arms are believed.
-bool recover_table_buffer_journal(xbase::DbArea& area);
+// WHAT A REPLAY ACTUALLY DID (OI-044, 2026-09-19).
+//
+// The bool below means "a log was found and processed" and has never meant
+// "the rows landed". Measured 2026-09-19: a replay whose only redo record was
+// skipped returned true, printed the same success sentence as a replay that
+// applied everything, and DELETED ITS OWN LOG on the way out -- removing the
+// only durable evidence that a committed row had existed. Three arms and one
+// total loss were indistinguishable to the caller because nothing counted.
+//
+// Callers that pass `out` can tell those apart. The bool is unchanged so the
+// version-gate test and every existing caller keep compiling.
+struct RecoverStats {
+    int  applied = 0;   // redo records written to the table
+    int  skipped = 0;   // redo records the replay could not place
+    bool log_kept = false;
+};
+
+bool recover_table_buffer_journal(xbase::DbArea& area, RecoverStats* out = nullptr);
 
 // History mode control
 bool is_history_enabled(int area0);
@@ -290,6 +307,27 @@ void set_history_enabled(int area0, bool value);
 // Table buffer access
 TableBuffer&       get_tb(int area0);
 const TableBuffer& get_tb_const(int area0);
+
+// THE BUFFER KEY FOR A STAGED INSERT -- ONE PRODUCER, NOT TWO (OI-043, 2026-09-20).
+//
+// Under owner ruling (A) an INSERT always appends and the number a staged row
+// carries is a BUFFER KEY, never an address: it orders the multimap and joins a
+// read-your-own-writes lookup, and record identity is minted at COMMIT by the
+// file. The key must still be UNIQUE and ASCENDING within the buffer, because
+// COMMIT walks the multimap in key order and that order is the order the rows
+// are appended in.
+//
+// The rule -- start past the last physical record, then past the highest key
+// already staged as an insert -- lived inline in execute_insert_statement and
+// nowhere else, which was fine while SQLSEL was the only verb that staged an
+// insert. The legacy bare INSERT verb becoming a buffered citizen makes that
+// two, and two copies of the rule that decides record identity is the shape
+// this tree has now consolidated three times in two days (three hand-written
+// copies of the table-lock protocol, 2026-09-19).
+//
+// `rec_count` is passed rather than read, because the caller already has the
+// area and this header must not depend on DbArea's definition.
+std::uint64_t next_insert_key(int area0, std::uint64_t rec_count);
 
 // Area index validation
 inline bool in_range(int area0) {

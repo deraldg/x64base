@@ -30,11 +30,12 @@
 //   DDICT TAGS <table-or-alias>
 //   DDICT REL <object> [IN|OUT|BOTH]
 //   DDICT EVIDENCE <object>
+//   DDICT OBJECTS [TYPE <type>] [PROFILE <profile>] [FAMILY LEGACY|X64]
 //
 // notes:
 //   Bare DDICT reports STATUS, so the command behaves like a status-first inspector.
 //   Alias bridge -- legacy DD* spellings preserved as compatibility names, resolved
-//     to the authoritative x64 catalog names:
+//     for owner lookup. The shared view preserves BOTH physical catalog families:
 //       DDOBJECT -> DATA_DICTIONARY_OBJECTS
 //       DDATTR   -> DATA_DICTIONARY_OBJECT_ATTRIBUTES
 //       DDEDGE   -> DATA_DICTIONARY_RELATION_EDGES
@@ -88,6 +89,7 @@ role: command-implementation
 #include "datadict/ddict_read_helpers.hpp"
 #include "datadict/ddict_catalog_paths.hpp"
 #include "datadict/ddict_dbf_reader.hpp"
+#include "datadict/ddict_catalog_view.hpp"
 #include "datadict/ddict_object_resolver.hpp"
 #include "datadict/ddict_catalog_resolver.hpp"
 #include "datadict/ddict_callsite_bridge.hpp"
@@ -201,6 +203,18 @@ std::string joined_owner_candidates(const std::vector<std::string>& candidates) 
     return out.str();
 }
 
+CatalogView load_catalog(const fs::path& dir) {
+    auto view = read_catalog_view(dir);
+    for (const auto& diagnostic : view.diagnostics)
+        cli::cmdout::print_note("DDICT", "CATALOG_REVIEW: " + diagnostic);
+    std::size_t legacy = 0, extended = 0;
+    for (const auto& row : view.rows("DDOBJECT"))
+        (value_of(row, "_DD_FAMILY") == "X64" ? extended : legacy)++;
+    cli::cmdout::print_info("DDICT", "Catalog objects: LEGACY=" + std::to_string(legacy) +
+        " X64=" + std::to_string(extended) + " diagnostics=" + std::to_string(view.diagnostics.size()));
+    return view;
+}
+
 void print_ddict_usage() {
     cli::cmdout::print_message(MessageId::DDictUsageText);
 }
@@ -213,6 +227,7 @@ void print_pending(const std::string& sub) {
 
 void print_status() {
     CatalogStats stats = collect_stats();
+    const auto catalog = load_catalog(stats.dir);
     cli::cmdout::print_message(MessageId::DDictStatusTitle);
     cli::cmdout::print_message(MessageId::DDictActiveCatalogLine, {{"path", stats.dir.string()}});
     cli::cmdout::print_message(MessageId::DDictReadModeLine);
@@ -227,10 +242,17 @@ void print_status() {
     cli::cmdout::print_message(
         MessageId::DDictDbfBytesLine,
         {{"bytes", std::to_string(stats.total_dbf_bytes)}});
-    if (stats.dbf_present == static_cast<int>(kTables.size())) {
+    if (stats.dbf_present == static_cast<int>(kTables.size()) && catalog.diagnostics.empty()) {
         cli::cmdout::print_message(MessageId::DDictCatalogStatePresentLine);
     } else {
         cli::cmdout::print_message(MessageId::DDictCatalogStateReviewLine);
+    }
+}
+
+void print_catalog_tables(const CatalogView& catalog) {
+    for (const auto& table : catalog.physical_tables) {
+        const char* state = table.state == TableReadState::Ready ? "READY" : table.state == TableReadState::Missing ? "MISSING" : "ERROR";
+        cli::cmdout::print_info("DDICT", table.family + " " + table.physical_name + " " + state + " rows=" + std::to_string(table.rows) + " logical=" + table.logical_name);
     }
 }
 
@@ -241,6 +263,7 @@ void print_tables() {
     cli::cmdout::print_message(MessageId::DDictReadModeLine);
     std::cout << cli::cmdout::message_text(MessageId::DDictTablesColumnHeader) << "\n"
               << cli::cmdout::message_text(MessageId::DDictTablesDivider) << "\n";
+    print_catalog_tables(load_catalog(dir));
     for (const auto& t : kTables) {
         fs::path dbf = dir / (std::string(t.name) + ".dbf");
         fs::path dtx = dir / (std::string(t.name) + ".dtx");
@@ -266,9 +289,16 @@ void print_fields(std::istringstream& args) {
     }
 
     fs::path dir = find_catalog_dir();
-    std::vector<Row> objects = read_dbf_table(dir, "DDOBJECT");
-    std::vector<Row> attrs = read_dbf_table(dir, "DDATTR");
+    const auto catalog = load_catalog(dir);
+    std::vector<Row> objects = catalog.rows("DDOBJECT");
+    std::vector<Row> attrs = catalog.rows("DDATTR");
     std::vector<Row> fields;
+    for (const auto& physical : catalog.physical_tables) {
+        if (upper_copy(physical.physical_name) != table_token || physical.state != TableReadState::Ready) continue;
+        cli::cmdout::print_info("DDICT", "Physical schema: " + physical.physical_name + " logical=" + physical.logical_name);
+        for (const auto& field : physical.fields)
+            cli::cmdout::print_line("  " + field.name + "  " + std::string(1, field.type) + "  " + std::to_string(field.width));
+    }
     std::vector<std::string> owner_candidates = owner_lookup_candidates(table_token);
     std::string metadata_owner_used;
 
@@ -325,10 +355,10 @@ void print_fields(std::istringstream& args) {
         int acount = objid.empty() ? 0 : attr_counts[objid];
 
         std::cout
-            << "  " << std::left << std::setw(10) << name.substr(0, 10)
-            << "  " << std::setw(24) << objid.substr(0, 24)
-            << "  " << std::setw(24) << status.substr(0, 24)
-            << "  " << std::setw(12) << profile.substr(0, 12)
+            << "  " << std::left << std::setw(10) << name
+            << "  " << std::setw(24) << objid
+            << "  " << std::setw(24) << status
+            << "  " << std::setw(12) << profile
             << "  " << acount
             << "\n";
     }
@@ -348,8 +378,9 @@ void print_tags(std::istringstream& args) {
     fs::path dbf = dir / (table_token + ".dbf");
     fs::path cdx = find_cdx_file(table_token);
     fs::path lmdb = find_lmdb_dir(table_token);
-    std::vector<Row> objects = read_dbf_table(dir, "DDOBJECT");
-    std::vector<Row> attrs = read_dbf_table(dir, "DDATTR");
+    const auto catalog = load_catalog(dir);
+    std::vector<Row> objects = catalog.rows("DDOBJECT");
+    std::vector<Row> attrs = catalog.rows("DDATTR");
     std::vector<Row> tags;
     std::vector<std::string> owner_candidates = owner_lookup_candidates(table_token);
     std::string metadata_owner_used;
@@ -398,7 +429,7 @@ void print_tags(std::istringstream& args) {
     if (tags.empty()) {
         // DD096Z-D2ZP TAGS PHYSICAL-REPORT PATCH MARKER
         // Runtime bridge: catalog tag lookup uses owner_lookup_candidates(); physical artifacts are reported honestly.
-        bool has_physical_artifact = exists_quiet(dbf) || !cdx.empty() || !lmdb.empty();
+        bool has_physical_artifact = !cdx.empty() || !lmdb.empty();
         if (has_physical_artifact) {
             cli::cmdout::print_message(MessageId::DDictTagsPhysicalNoCatalogLine);
             cli::cmdout::print_message(
@@ -424,10 +455,10 @@ void print_tags(std::istringstream& args) {
         int acount = objid.empty() ? 0 : attr_counts[objid];
 
         std::cout
-            << "  " << std::left << std::setw(10) << name.substr(0, 10)
-            << "  " << std::setw(24) << objid.substr(0, 24)
-            << "  " << std::setw(24) << status.substr(0, 24)
-            << "  " << std::setw(12) << profile.substr(0, 12)
+            << "  " << std::left << std::setw(10) << name
+            << "  " << std::setw(24) << objid
+            << "  " << std::setw(24) << status
+            << "  " << std::setw(12) << profile
             << "  " << acount
             << "\n";
     }
@@ -445,18 +476,18 @@ void print_rel_edge_row(const std::string& dir_label,
     std::string edgetype = value_of(edge, "EDGETYPE");
     std::string evid = value_of(edge, "EVID");
     std::string other_id = value_of(edge, outgoing ? "TOOBJ" : "FROMOBJ");
-    std::string other_type = other ? value_of(*other, "OBJTYPE") : "";
-    std::string other_name = other ? value_of(*other, "NAME") : "";
+    std::string other_type = other ? value_of(*other, "OBJTYPE") : value_of(edge, outgoing ? "_DD_TO_KIND" : "_DD_FROM_KIND");
+    std::string other_name = other ? value_of(*other, "NAME") : value_of(edge, outgoing ? "_DD_TO_NAME" : "_DD_FROM_NAME");
     std::string other_owner = other ? value_of(*other, "OWNER") : "";
 
     std::cout
         << "  " << std::left << std::setw(3) << dir_label
-        << "  " << std::setw(18) << short_text(edgetype, 18)
-        << "  " << std::setw(24) << short_text(other_id, 24)
-        << "  " << std::setw(18) << short_text(other_type, 18)
-        << "  " << std::setw(14) << short_text(other_owner, 14)
-        << "  " << std::setw(14) << short_text(other_name, 14)
-        << "  " << short_text(evid, 20)
+        << "  " << std::setw(18) << edgetype
+        << "  " << std::setw(24) << other_id
+        << "  " << std::setw(18) << other_type
+        << "  " << std::setw(14) << other_owner
+        << "  " << std::setw(14) << other_name
+        << "  " << evid
         << "\n";
 }
 
@@ -481,8 +512,9 @@ void print_rel(std::istringstream& args) {
     }
 
     fs::path dir = find_catalog_dir();
-    std::vector<Row> objects = read_dbf_table(dir, "DDOBJECT");
-    std::vector<Row> edges = read_dbf_table(dir, "DDEDGE");
+    const auto catalog = load_catalog(dir);
+    std::vector<Row> objects = catalog.rows("DDOBJECT");
+    std::vector<Row> edges = catalog.rows("DDEDGE");
     auto by_id = object_index(objects);
     const Row* obj = resolve_object(objects, token);
 
@@ -576,11 +608,12 @@ void print_evidence(std::istringstream& args) {
     }
 
     fs::path dir = find_catalog_dir();
-    std::vector<Row> objects = read_dbf_table(dir, "DDOBJECT");
-    std::vector<Row> attrs = read_dbf_table(dir, "DDATTR");
-    std::vector<Row> evids = read_dbf_table(dir, "DDEVID");
-    std::vector<Row> sources = read_dbf_table(dir, "DDSOURCE");
-    std::vector<Row> artifacts = read_dbf_table(dir, "DDARTIF");
+    const auto catalog = load_catalog(dir);
+    std::vector<Row> objects = catalog.rows("DDOBJECT");
+    std::vector<Row> attrs = catalog.rows("DDATTR");
+    std::vector<Row> evids = catalog.rows("DDEVID");
+    std::vector<Row> sources = catalog.rows("DDSOURCE");
+    std::vector<Row> artifacts = catalog.rows("DDARTIF");
 
     const Row* obj = resolve_object(objects, token);
 
@@ -669,11 +702,12 @@ void print_evidence(std::istringstream& args) {
         std::string art_name = art ? (value_of(*art, "PATH").empty() ? value_of(*art, "NAME") : value_of(*art, "PATH")) : "";
 
         std::cout
-            << "  " << std::left << std::setw(20) << short_text(value_of(*ev, "EVID"), 20)
-            << "  " << std::setw(20) << short_text(value_of(*ev, "KIND"), 20)
-            << "  " << std::setw(20) << short_text(srcid, 20)
-            << "  " << std::setw(18) << short_text(src_name, 18)
-            << "  " << short_text(art_name, 18)
+            << "  " << std::left << std::setw(20) << value_of(*ev, "EVID")
+            << "  " << std::setw(20) << value_of(*ev, "KIND")
+            << "  " << std::setw(20) << srcid
+            << "  " << std::setw(18) << src_name
+            << "  " << art_name
+            << "  " << value_of(*ev, "DETAIL")
             << "\n";
     }
 
@@ -695,9 +729,9 @@ void print_evidence(std::istringstream& args) {
             attrval = value_of(*attr, "ATTRMEMO");
         }
         std::cout
-            << "  " << std::left << std::setw(18) << short_text(value_of(*attr, "ATTRNAME"), 18)
-            << "  " << std::setw(30) << short_text(attrval, 30)
-            << "  " << short_text(value_of(*attr, "EVID"), 20)
+            << "  " << std::left << std::setw(18) << value_of(*attr, "ATTRNAME")
+            << "  " << std::setw(30) << attrval
+            << "  " << value_of(*attr, "EVID")
             << "\n";
     }
 
@@ -711,6 +745,7 @@ void print_objects(std::istringstream& args) {
     std::string word;
     std::string type_filter;
     std::string profile_filter;
+    std::string family_filter;
 
     while (args >> word) {
         std::string key = upper_copy(trim_copy(word));
@@ -722,14 +757,22 @@ void print_objects(std::istringstream& args) {
             std::string value;
             args >> value;
             profile_filter = upper_copy(trim_copy(value));
+        } else if (key == "FAMILY") {
+            args >> family_filter;
+            family_filter = upper_copy(family_filter);
+            if (family_filter != "LEGACY" && family_filter != "X64") {
+                cli::cmdout::print_info("DDICT", "FAMILY requires LEGACY or X64.");
+                return;
+            }
         } else if (type_filter.empty()) {
             type_filter = key;
         }
     }
 
     fs::path dir = find_catalog_dir();
-    std::vector<Row> objects = read_dbf_table(dir, "DDOBJECT");
-    std::vector<Row> attrs = read_dbf_table(dir, "DDATTR");
+    const auto catalog = load_catalog(dir);
+    std::vector<Row> objects = catalog.rows("DDOBJECT");
+    std::vector<Row> attrs = catalog.rows("DDATTR");
 
     std::unordered_map<std::string, int> attr_counts;
     for (const auto& attr : attrs) {
@@ -750,6 +793,7 @@ void print_objects(std::istringstream& args) {
         if (!profile_filter.empty() && profile != profile_filter) {
             continue;
         }
+        if (!family_filter.empty() && value_of(obj, "_DD_FAMILY") != family_filter) continue;
         selected.push_back(&obj);
     }
 
@@ -771,6 +815,7 @@ void print_objects(std::istringstream& args) {
     std::cout << cli::cmdout::message_text(MessageId::DDictObjectsColumnHeader) << "\n"
               << cli::cmdout::message_text(MessageId::DDictObjectsDivider) << "\n";
 
+    cli::cmdout::print_note("DDICT", "Trailing columns: FAMILY, OBJID. Use FAMILY X64 or FAMILY LEGACY to scope results.");
     constexpr std::size_t kLimit = 80;
     std::size_t shown = 0;
     for (const Row* obj : selected) {
@@ -781,12 +826,13 @@ void print_objects(std::istringstream& args) {
         int acount = objid.empty() ? 0 : attr_counts[objid];
 
         std::cout
-            << "  " << std::left << std::setw(18) << short_text(value_of(*obj, "OBJTYPE"), 18)
-            << "  " << std::setw(16) << short_text(value_of(*obj, "NAME"), 16)
-            << "  " << std::setw(16) << short_text(value_of(*obj, "OWNER"), 16)
-            << "  " << std::setw(24) << short_text(value_of(*obj, "STATUS"), 24)
-            << "  " << std::setw(12) << short_text(value_of(*obj, "PROFILE"), 12)
+            << "  " << std::left << std::setw(18) << value_of(*obj, "OBJTYPE")
+            << "  " << std::setw(16) << value_of(*obj, "NAME")
+            << "  " << std::setw(16) << value_of(*obj, "OWNER")
+            << "  " << std::setw(24) << value_of(*obj, "STATUS")
+            << "  " << std::setw(12) << value_of(*obj, "PROFILE")
             << "  " << acount
+            << "  " << value_of(*obj, "_DD_FAMILY") << "  " << objid
             << "\n";
     }
 

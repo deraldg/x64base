@@ -1,3 +1,28 @@
+# WHAT A GREEN CHECK HERE MEANS, AND WHAT IT DOES NOT (OI-024 decision 3,
+# 2026-09-19).
+#
+# This workflow runs a build, ctest, and a draft release upload. IT RUNS
+# NONE OF THE HOUSE GATES.
+#
+# The gates -- prepush_gate, check_cited_paths, check_house_style,
+# check_header_reachability, check_open_items, the AIF and R-number collision
+# gates, repository_role_guard, session_coordinator -- run at COMMIT time from a
+# pre-commit hook. That hook lives in the clone's local hooks directory, which is
+# NOT TRACKED, so enforcement is a property of a clone and not of this tree. A
+# fresh clone enforces nothing. Measured 2026-08-31 and again 2026-09-19:
+# `git ls-files` matches no hooks path and core.hooksPath is unset.
+#
+# So a green check on this workflow is evidence that the code BUILDS and its
+# TESTS PASS. It is not evidence that the change met the house gates, and it
+# must not be read as an approval they never offered. Two of these gates would
+# not even be meaningful on a runner -- repository_role_guard and
+# check_sandbox_git_guard ask questions about a local working copy and would go
+# green by confusion.
+#
+# Whether the gates SHOULD run here is open and unruled; it is decision 3 of
+# OI-024 in coordination/OPEN_ITEMS.md. This banner is the other half of that
+# decision: until they do, say so where a reader sees the check.
+
 name: Release beta
 
 on:

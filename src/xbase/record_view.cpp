@@ -11,6 +11,7 @@
 #include "textio.hpp"
 #include "xbase_64.hpp"
 #include "xbase/field_codec.hpp"
+#include "xbase/x64_memo_slot.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -26,14 +27,16 @@ namespace xbase {
 
 namespace {
 
-static inline bool is_memo_type(const FieldDef& f) noexcept
-{
-    return (f.type == 'M' || f.type == 'm');
-}
-
+// THE DECODER ASKS THE OWNER. This used to be the predicate's own definition,
+// one of ten; it is now the only name that remains, kept because three hot
+// loops in this file read better for it. THIS FILE IS THE REASON THE OWNER
+// EXISTS: what it decides here -- eight raw bytes read as a uint64 object id,
+// or text through the field codec -- is what every consumer downstream then
+// believes about the value it receives, and the write-back path below has to
+// make the same call in reverse. See xbase/x64_memo_slot.hpp and R149.
 static inline bool is_x64_memo_field_fast(bool is_x64, const FieldDef& f) noexcept
 {
-    return is_x64 && is_memo_type(f) && f.length == X64_MEMO_FIELD_LEN;
+    return x64_memo_slot_kind(f, is_x64) == X64MemoSlotKind::ObjectId8;
 }
 
 static inline std::uint64_t read_u64_le(const char* p) noexcept

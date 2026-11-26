@@ -1598,6 +1598,100 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
         return;
     }
 
+    // SET PARALLEL <n>|ON|OFF|DEFAULT <n>  (AIF-168: parallel read-only SQLSEL scans)
+    // Default OFF (0): every statement runs exactly as before. <n> partitions
+    // eligible single-table scans across n worker threads, each holding a
+    // PRIVATE DbArea per AIF-120 R21 (workers never share a cursor). Writes,
+    // subquery predicates, and memo-bearing rows never enter the pool; those
+    // statements report the decline and run serial.
+    // WHAT ON MEANS IS CONFIGURABLE (PERF-4, owner ruling 2026-09-22): the
+    // compiled default stays 8 (the OQ-P1 ruling -- the curve decided), and
+    // `SET PARALLEL DEFAULT <n>` (or DOTTALK_PARALLEL_ON at startup) moves it
+    // for the session rather than baking a new number in. Context for the
+    // chooser: the post-PERF-4 curve (PIN-PERF4-001) measured 12 beating 8 on
+    // BOTH probe statements with no degradation through 22 -- the heap-lock
+    // and unwinder-lock walls that made wide counts degrade are gone.
+    // print_line keeps it message-catalog-free, like its INDEXTXN sibling.
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: PARALLEL
+    // category: index
+    // tier: public
+    // status: experimental
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // brief: Worker count for parallel read-only SQLSEL scans (default OFF).
+    //   OFF/0 keeps every statement on the serial path. <n> (2..64) fans
+    //   eligible single-table scans across n workers with private cursors
+    //   (AIF-120 R21). Statements the pool cannot serve honestly (DML,
+    //   subquery predicates, memo columns, small tables) report the decline
+    //   and run serial. Deliberately message-catalog-free (print_line).
+    //   ON resolves to the session's DEFAULT width (compiled 8 per the OQ-P1
+    //   curve; movable with SET PARALLEL DEFAULT <n> or DOTTALK_PARALLEL_ON
+    //   -- the post-PERF-4 curve measured 12 winning both probe statements
+    //   on the reference 185H).
+    // usage:
+    //   SET PARALLEL
+    //   SET PARALLEL <n>|ON|OFF
+    //   SET PARALLEL DEFAULT <n>
+    //   SET PARALLEL STATUS|CHECK
+    //   SET PARALLEL USAGE|HELP|?
+    if (opt == "PARALLEL") {
+        const auto report = [&]() {
+            const int n = S.parallel_workers.load();
+            if (n <= 1) cli::cmdout::print_line("SET PARALLEL: OFF");
+            else cli::cmdout::print_line("SET PARALLEL: " + std::to_string(n) + " worker(s)");
+        };
+        const auto usage = [&]() {
+            cli::cmdout::print_line("Usage: SET PARALLEL <n>|ON|OFF|DEFAULT <n>   (default OFF; ON = "
+                                    + std::to_string(cli::Settings::parallelOnWorkers())
+                                    + "; n in 2..64)");
+        };
+        const auto parse_width = [&](const std::string& u, int& out) -> bool {
+            int n = 0;
+            if (u.empty()) return false;
+            for (char c : u) { if (c < '0' || c > '9') return false; n = n * 10 + (c - '0'); if (n > 1000) break; }
+            if (n < 2 || n > 64) return false;
+            out = n;
+            return true;
+        };
+        std::string tok;
+        if (!(args >> tok)) { report(); return; }
+        const std::string up = up_copy(tok);
+        if (up == "STATUS" || up == "CHECK") {
+            report();
+            cli::cmdout::print_line("SET PARALLEL: ON = " + std::to_string(cli::Settings::parallelOnWorkers())
+                                    + " worker(s) (SET PARALLEL DEFAULT <n> to change)");
+            return;
+        }
+        if (up == "USAGE" || up == "HELP" || up == "?") { usage(); return; }
+        if (up == "DEFAULT") {
+            std::string dtok;
+            int n = 0;
+            if (!(args >> dtok) || !parse_width(up_copy(dtok), n)) { usage(); return; }
+            cli::Settings::setParallelOnWorkers(n);
+            cli::cmdout::print_line("SET PARALLEL: ON now means " + std::to_string(n)
+                                    + " worker(s) (session only; the active width is unchanged)");
+            return;
+        }
+        if (up == "OFF" || up == "0" || up == "1") {
+            cli::Settings::setParallelWorkers(0);
+            report();
+            return;
+        }
+        if (up == "ON") {
+            cli::Settings::setParallelWorkers(cli::Settings::parallelOnWorkers());
+            report();
+            return;
+        }
+        int n = 0;
+        if (!parse_width(up, n)) { usage(); return; }
+        cli::Settings::setParallelWorkers(n);
+        report();
+        return;
+    }
+
     // ─────────────────────────────────────────────────────────────
     // SET ERRORSTOP [TO] OFF|WARNING|ERROR
     // Compatibility form of the native STOP_ON_ERROR command. Sets the severity
@@ -1894,9 +1988,13 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // usage-access: SET USAGE
     // summary:
     //   Routed to the SET_UNIQUE handler; see that command for argument
-    //   detail.
+    //   detail. PRIMARY designates the table's primary key (implies ON,
+    //   stamped durably into the x64 header; refused where the header
+    //   cannot carry it). This line was missing until 2026-09-23 although
+    //   the spelling shipped 2026-09-06 -- PKP_G1's comment named the gap.
     // usage:
     //   SET UNIQUE FIELD <name> ON|OFF
+    //   SET UNIQUE FIELD <name> PRIMARY
     if (opt == "UNIQUE") {
         std::istringstream r(rest(args));
         cmd_SET_UNIQUE(A, r);

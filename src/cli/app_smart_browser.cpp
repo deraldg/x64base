@@ -38,6 +38,8 @@
 //   The browser is read-only for table data but traverses tuple streams and may move cursors.
 //   Work-area cursors are restored best-effort when the browser exits.
 //   Interactive pager commands include TOP, BOTTOM, SKIP, GOTO, FOR, CLEAR FOR, ORDER, SPEC, SHOW, OPEN CHILD, BACK, STATUS, HELP, and QUIT.
+//   SHOW SCHEMA and SHOW JSON are bound to the AREA, not to the session: OPEN CHILD,
+//   BACK and SPEC change the area and both panels are re-derived for it (R146).
 //
 // risk:
 //   interactive_prompt: yes
@@ -54,10 +56,12 @@
 #include <algorithm>
 #include <cctype>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
 
+#include "area_bound_view.hpp"
 #include "db_tuple_stream.hpp"
 #include "schema_loader.hpp"
 #include "relations_status.hpp"
@@ -306,8 +310,16 @@ static void run_smart_browser(std::istringstream& iss) {
     if (!for_expr.empty()) stream.set_filter_for(for_expr);
     stream.top();
 
-    const auto schema  = dottalk::SchemaResolver::resolve(stream.current_area_name());
-    const auto sidecar = dottalk::SidecarLoader::load_json_sidecar(stream.current_area_name());
+    // R146 -- THESE ARE BOUND TO THE AREA, AND THE AREA CHANGES UNDER THEM.
+    // OPEN CHILD, BACK and SPEC all re-point the stream through set_spec(), so
+    // resolving once here (as this did until R146) printed the PARENT table's
+    // field list and Source: line above the CHILD table's rows, silently. The
+    // holder re-derives on an area-NAME change and on nothing else -- not on a
+    // cursor move, which leaves a schema correct, and not on nav_event, which is
+    // also set by TOP, SKIP, FOR and ORDER.
+    dottalk::AreaBoundView<dottalk::LogicalSchema, std::optional<std::string>> view(
+        [](const std::string& a) { return dottalk::SchemaResolver::resolve(a); },
+        [](const std::string& a) { return dottalk::SidecarLoader::load_json_sidecar(a); });
 
     std::vector<StreamCtx> breadcrumbs;
     StreamCtx cur_ctx{spec, for_expr};
@@ -317,7 +329,12 @@ static void run_smart_browser(std::istringstream& iss) {
         if (page.empty()) std::cout << "(end)\n";
         else for (const auto& r : page) print_tuple_row(r);
 
+        // R146. AFTER next_page, so the panels describe the area the rows just
+        // came from rather than the one the stream held a command ago.
+        view.sync(stream.current_area_name());
+
         if (ps.show_schema) {
+            const auto& schema = view.schema();
             std::cout << "Schema:\n";
             if (schema.fields.empty()) std::cout << "  (no logical schema)\n";
             else {
@@ -327,6 +344,7 @@ static void run_smart_browser(std::istringstream& iss) {
             }
         }
         if (ps.show_json) {
+            const auto& sidecar = view.sidecar();
             std::cout << "JSON/sidecar:\n";
             if (!sidecar.has_value()) std::cout << "  (none)\n";
             else std::cout << "  " << *sidecar << "\n";

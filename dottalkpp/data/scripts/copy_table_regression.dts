@@ -1,0 +1,416 @@
+* ============================================================================
+* copy_table_regression.dts
+*
+* COPY TABLE <stem> [FROM <ws>] [TO <ws>] -- THE TWO-ROOT COPY AND ITS SIX
+* REFUSALS.
+*
+* EXPECTED MARKER COUNT: 16  (CT_G0..CT_G3, CT_T1..CT_T12)
+*   THAT NUMBER IS THE PRIMARY INSTRUMENT, not a nicety. A marker that ERRORS
+*   PRINTS NOTHING RATHER THAN GOING RED, so a claim can leave this suite in
+*   silence while every remaining arm still reads green. Count the markers in
+*   the transcript. Fifteen green is a pass; fourteen green is a FAILURE that
+*   looks like a pass, and which one vanished is the first thing to find out.
+*
+* FIRST RUN 2026-10-13 AT 2701ae13b: 15 of 15 markers printed, 13 GREEN AND TWO
+* RED -- and the two reds were a real defect, not a bad test. This file paid for
+* itself before any mutation pass.
+*
+*   CT_T10 red: the open-destination refusal DID NOT FIRE and the copy
+*     overwrote a table open in area 8. Cause: the destination root arrived from
+*     a stamp as ...\data\DBF\SANDBOX\CTDST while the open area reported
+*     ...\data\dbf\sandbox\CTDST\CTSRC.dbf. Same file, different spelling.
+*     The comparison was a plain string compare over absolute() plus
+*     lexically_normal(), which does not case-fold, so on Windows two spellings
+*     of one file compared UNEQUAL. Fixed by path_key(), which lowercases under
+*     _WIN32 exactly as same_path() in the same file had been doing all along.
+*
+*   CT_T7 red: A CASCADE, NOT AN INDEPENDENT FAILURE. Its own refusal fired
+*     correctly, but CT_T10's leak had already replaced the destination, so the
+*     value CT_T7 expected was gone. That is the "arms are coupled" outcome the
+*     mutation procedure warns about, observed for real. CT_T7 now establishes
+*     its own destination value through CT_G3 and no longer depends on CT_T10.
+*
+* SECOND RUN 2026-10-13, same commit, after the path_key() fix: 16 of 16 markers,
+* ALL GREEN. CT_T10 red-then-green across a real defect and its real fix is the
+* full demonstration the house doctrine asks for, earned rather than simulated,
+* and the same is true of CT_T7 once it was decoupled.
+*
+* STILL OWED: the mutation pass below for the other TWELVE arms. Two are proven;
+* twelve have never been shown able to red and are therefore decoration until
+* they have been.
+*
+* WHY EVERY ASSERTION IS A POSITIVE FIELD READ
+*   Two rules from the tree, both learned expensively:
+*
+*   1. NO MARKER CAN ASSERT THAT SOMETHING IS ABSENT. The evaluator binds a null
+*      area unless the area is OPEN, and an errored marker is silent. COPY TABLE
+*      is mostly REFUSALS and a refusal is an absence, so no arm here claims a
+*      file was not written. Each refusal is proved by CONTRAST: the destination
+*      already holds bytes with a sentinel of its own, the refused copy would
+*      have replaced them, and the arm reads the OLD sentinel back. If a refusal
+*      leaks, the sentinel changes and the arm reds.
+*
+*   2. EVERY MARKER IS A FIELD-VALUE COMPARISON. cmd_regression.cpp records why:
+*      RECCOUNT(), RECNO() and FOUND() render EMPTY on the marker path -- they
+*      serve compile_predicate, not '?'. A guard built on RECCOUNT() VANISHES
+*      from the suite while the count still reads full. An earlier draft of this
+*      file used RECCOUNT() for exactly the guard meant to catch that silence.
+*
+* THE USE ... AGAIN TRAP, WHICH ALMOST COST TWO ARMS
+*   The copies below land a table under the DESTINATION root with the SAME STEM
+*   as the source, and the source is open. DTS_AUTHORING_AND_DATA_ENV_RULES_V1
+*   rule 2: a second plain USE of an already-open table prints "already open in
+*   area N" and DOES NOT CHANGE THE CURRENT AREA. So SELECT 8 + USE CTSRC would
+*   leave area 8 empty, the read would error, and CT_T6 and CT_T9 would vanish
+*   silently -- failure mode 1 above, committed inside the arms written to
+*   detect it. Every destination read below is USE ... AGAIN, the explicit
+*   second-handle form the WORKSPACE contract names.
+*
+* TWO ROOTS, WHICH IS THE ENTIRE POINT OF THE VERB
+*   COPY TABLE exists because a table lives under DBFROOT and its index under
+*   IDXROOT, and no other COPY form reaches two roots. Getting two roots needs
+*   R131's stamping order: ensure_stamped(CURRENT) runs BEFORE
+*   set_current_handle(target), so roots are captured ON THE WAY OUT. The
+*   SWITCH / SET PATH / SWITCH sequence in the setup is load-bearing -- remove a
+*   SWITCH and both workspaces collapse onto one root, where CT_T5 is the only
+*   arm that would still mean anything.
+*
+* THIS FILE OWNS ITS TOPOLOGY AND TEARS DOWN THE AMBIENT WORKSPACE.
+*   Rule 4 of the authoring doc says not to close the ambient workspace unless
+*   the test truly owns it. This one does -- it builds every table it reads --
+*   and workspace_multi_regression.dts sets the same precedent. Do not run it in
+*   a session whose restored workspace you still want.
+*
+* WHAT IS NOT COVERED, SAID PLAINLY
+*   THE RAM HALF IS ABSENT AND IS THEREFORE TESTED BY NOTHING. A hydrated minidb
+*   is a RAM-resident workspace and COPY TABLE crosses RAM and disk both ways,
+*   but reaching that state needs a mounted VDISK root and a saved MINIDB
+*   payload -- a fixture this file does not build. That half is the most likely
+*   to be wrong, because ramfs has no truncate and no directories and both are
+*   handled by hand.
+*
+*   Also absent: the .cdx.d environment refusal; the memo (.dbt/.fpt) leg; the
+*   [slots] versus [stamp] divergence NOTE; and the index leg SUCCEEDING, since
+*   building a CDX into a second root is its own fixture. CT_T3 proves only that
+*   a MISSING index refuses.
+*
+* MARKER PREFIX
+*   CT_ -- CT_G* are setup guards, CT_T* are arms. If a guard reds, every arm
+*   below it is UNPROVEN rather than passing: the arms read sentinels the guards
+*   established.
+*
+* IDEMPOTENT PER PROCESS, NOT PER SESSION. A second run in one session hits "a
+* workspace named CTSRCWS already exists" and then proceeds against the FIRST
+* run's topology. Restart rather than trusting a second pass.
+* ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "COPY-TABLE-PROOF-BEGIN"
+
+* ---------------------------------------------------------------------------
+* SETUP. Source root DBF/SANDBOX, destination root DBF/SANDBOX/CTDST -- which
+* COPY TABLE's own writer creates for a disk destination, so the directory
+* existing afterwards is a consequence rather than something arranged here.
+* ---------------------------------------------------------------------------
+
+WORKSPACE SWITCH DEFAULT
+WORKSPACE CLOSE ALL
+
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+
+ERASE ctsrc CONFIRM
+ERASE ctdst CONFIRM
+
+SELECT 1
+CREATE X64 CTSRC (ID N(4), MARK C(12))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "SRCMARK"
+
+* The table standing in the destination's way. Every refusal arm reads this
+* sentinel, or the first copy's, back.
+SELECT 2
+CREATE X64 CTDST (ID N(4), MARK C(12))
+APPEND
+REPLACE ID WITH 2
+REPLACE MARK WITH "DSTMARK"
+
+SELECT 1
+GO TOP
+? "CT_G0_source_sentinel:" + (ALLTRIM(MARK) = "SRCMARK")
+SELECT 2
+GO TOP
+? "CT_G1_blocker_sentinel:" + (ALLTRIM(MARK) = "DSTMARK")
+
+WORKSPACE NEW CTSRCWS
+WORKSPACE SWITCH CTSRCWS
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+
+WORKSPACE NEW CTDSTWS
+WORKSPACE SWITCH CTDSTWS
+SET PATH DBF DBF/SANDBOX/CTDST
+SET PATH INDEXES INDEXES/SANDBOX/CTDST
+
+WORKSPACE SWITCH CTSRCWS
+WORKSPACE REGISTRY
+
+* ---------------------------------------------------------------------------
+* CT_T12 -- NEITHER END NAMED IS REFUSED BY THE PARSER, before any root is
+* resolved. Both would default to the current workspace.
+* ---------------------------------------------------------------------------
+
+COPY TABLE CTSRC
+
+SELECT 1
+GO TOP
+? "CT_T12_neither_end_refused:" + (ALLTRIM(MARK) = "SRCMARK")
+
+* ---------------------------------------------------------------------------
+* CT_T1 -- A WORKSPACE THAT IS NOT OPEN IS REFUSED. NOSUCHWS was never created.
+* ---------------------------------------------------------------------------
+
+COPY TABLE CTSRC FROM CTSRCWS TO NOSUCHWS
+
+SELECT 2
+GO TOP
+? "CT_T1_unopened_ws_refused:" + (ALLTRIM(MARK) = "DSTMARK")
+
+* ---------------------------------------------------------------------------
+* CT_T2 -- A MISSING SOURCE TABLE IS REFUSED, in the gather, before the
+* destination probe.
+* ---------------------------------------------------------------------------
+
+COPY TABLE NOSUCHTBL FROM CTSRCWS TO CTDSTWS
+
+SELECT 2
+GO TOP
+? "CT_T2_missing_source_refused:" + (ALLTRIM(MARK) = "DSTMARK")
+
+* ---------------------------------------------------------------------------
+* CT_T3 -- WITH INDEXES IS A REFUSAL, NOT A BEST EFFORT. CTSRC has no index
+* container, so nothing may be written -- INCLUDING the table leg, which would
+* otherwise have succeeded. This arm is what separates gather-all-before-
+* writing from a per-leg best effort.
+* ---------------------------------------------------------------------------
+
+COPY TABLE CTSRC FROM CTSRCWS TO CTDSTWS WITH INDEXES OVERWRITE
+
+SELECT 2
+GO TOP
+? "CT_T3_with_indexes_shortfall_wrote_nothing:" + (ALLTRIM(MARK) = "DSTMARK")
+
+* ---------------------------------------------------------------------------
+* CT_T4 -- NAMING ONE WORKSPACE TWICE IS REFUSED, by handle, before the gather.
+* ---------------------------------------------------------------------------
+
+COPY TABLE CTSRC FROM CTSRCWS TO CTSRCWS OVERWRITE
+
+SELECT 1
+GO TOP
+? "CT_T4_same_workspace_refused:" + (ALLTRIM(MARK) = "SRCMARK")
+
+* ---------------------------------------------------------------------------
+* CT_T5 -- TWO DIFFERENT WORKSPACES OVER ONE ROOT ARE REFUSED, by path. A
+* DISTINCT refusal from CT_T4: WORKSPACE NEW stamps from whatever the slots
+* hold, so CTTWINWS is a different handle over CTSRCWS's directory and every
+* leg would copy a file onto itself. The code carried only the handle check
+* until this arm was written.
+*
+* CTSRC is open in area 1 and the destination path IS that file, so this arm
+* also pins the refusal ORDER: same-path is checked before open-destination, or
+* this reports "it is open" and says nothing about the real problem.
+* ---------------------------------------------------------------------------
+
+WORKSPACE NEW CTTWINWS
+WORKSPACE SWITCH CTTWINWS
+WORKSPACE SWITCH CTSRCWS
+
+COPY TABLE CTSRC FROM CTSRCWS TO CTTWINWS OVERWRITE
+
+SELECT 1
+GO TOP
+? "CT_T5_same_path_refused:" + (ALLTRIM(MARK) = "SRCMARK")
+
+* ---------------------------------------------------------------------------
+* CT_T6 -- THE PUSH. No WITH INDEXES, so the table leg alone travels; OVERWRITE
+* because nothing is in the way yet but the flag costs nothing. Then open the
+* destination through its OWN root and read the SOURCE's sentinel.
+*
+* USE ... AGAIN, not USE -- see the header. CTSRC is already open in area 1.
+* ---------------------------------------------------------------------------
+
+COPY TABLE CTSRC FROM CTSRCWS TO CTDSTWS OVERWRITE
+
+WORKSPACE SWITCH CTDSTWS
+SELECT 8
+USE CTSRC AGAIN
+GO TOP
+? "CT_T6_push_carried_the_sentinel:" + (ALLTRIM(MARK) = "SRCMARK")
+
+* ---------------------------------------------------------------------------
+* CT_G2 -- move the source sentinel so every later arm can tell the FIRST copy
+* from a LATER one. Without this the refusal arms below compare a value to
+* itself and prove nothing.
+* ---------------------------------------------------------------------------
+
+WORKSPACE SWITCH CTSRCWS
+SELECT 1
+GO TOP
+REPLACE MARK WITH "SRCMARK2"
+GO TOP
+? "CT_G2_source_sentinel_moved:" + (ALLTRIM(MARK) = "SRCMARK2")
+
+* ---------------------------------------------------------------------------
+* CT_T10 -- AN OPEN DESTINATION IS REFUSED. Area 8 still holds the destination
+* copy from CT_T6. Rewriting those bytes under a live area would leave the
+* engine holding a header that no longer describes the file. The arm reads area
+* 8: it must still be the FIRST copy's value, not SRCMARK2.
+* ---------------------------------------------------------------------------
+
+COPY TABLE CTSRC FROM CTSRCWS TO CTDSTWS OVERWRITE
+
+SELECT 8
+GO TOP
+? "CT_T10_open_destination_refused:" + (ALLTRIM(MARK) = "SRCMARK")
+
+* ---------------------------------------------------------------------------
+* CT_T7 -- WITHOUT OVERWRITE AN EXISTING DESTINATION IS REFUSED.
+*
+* THIS ARM ESTABLISHES ITS OWN BASELINE, and the first run is why. It used to
+* assert the value CT_T6 had put at the destination, so when CT_T10's leak
+* overwrote that value CT_T7 went red for a defect that was not its own -- one
+* bug, two reds, and the second one pointing at the wrong place.
+*
+* So: close area 8 (this arm tests the OVERWRITE rule, not the open-area rule),
+* land a known value with an explicit OVERWRITE, move the SOURCE on past it,
+* and only then try the copy that must refuse. Whatever happened upstream, the
+* destination holds SRCMARK2 and the source holds SRCMARK3 when the refusal is
+* tested.
+* ---------------------------------------------------------------------------
+
+SELECT 8
+USE
+WORKSPACE SWITCH CTSRCWS
+
+COPY TABLE CTSRC FROM CTSRCWS TO CTDSTWS OVERWRITE
+
+SELECT 1
+GO TOP
+REPLACE MARK WITH "SRCMARK3"
+GO TOP
+? "CT_G3_source_moved_past_destination:" + (ALLTRIM(MARK) = "SRCMARK3")
+
+COPY TABLE CTSRC FROM CTSRCWS TO CTDSTWS
+
+WORKSPACE SWITCH CTDSTWS
+SELECT 9
+USE CTSRC AGAIN
+GO TOP
+? "CT_T7_no_overwrite_refused:" + (ALLTRIM(MARK) = "SRCMARK2")
+
+* ---------------------------------------------------------------------------
+* CT_T8 -- THE DEFAULTED PUSH. COPY TABLE TO <ws> takes the stem from the
+* CURRENT AREA and FROM from the CURRENT WORKSPACE. Close the destination area
+* first, or the open-destination refusal fires instead.
+* ---------------------------------------------------------------------------
+
+SELECT 9
+USE
+WORKSPACE SWITCH CTSRCWS
+SELECT 1
+GO TOP
+COPY TABLE TO CTDSTWS OVERWRITE
+
+WORKSPACE SWITCH CTDSTWS
+SELECT 10
+USE CTSRC AGAIN
+GO TOP
+? "CT_T8_defaulted_push:" + (ALLTRIM(MARK) = "SRCMARK3")
+
+* ---------------------------------------------------------------------------
+* CT_T9 -- THE PULL. COPY TABLE <stem> FROM <ws> defaults TO to the CURRENT
+* workspace. Current is CTDSTWS, so this pulls CTSRC in from CTSRCWS.
+*
+* THE STEM-DEFAULTED PULL IS NOT TESTED HERE AND CANNOT EASILY BE. COPY TABLE
+* FROM <ws> with no stem reads the stem from the current area -- and that area's
+* table IS the destination, so the open-destination refusal fires by
+* construction. The form is legal and will almost always require closing the
+* area first; that is a property of the design, not a defect, and it is stated
+* in the usage block for the same reason it is stated here.
+* ---------------------------------------------------------------------------
+
+SELECT 10
+USE
+WORKSPACE SWITCH CTDSTWS
+
+COPY TABLE CTSRC FROM CTSRCWS OVERWRITE
+
+SELECT 11
+USE CTSRC AGAIN
+GO TOP
+? "CT_T9_pull_carried_the_sentinel:" + (ALLTRIM(MARK) = "SRCMARK3")
+
+* ---------------------------------------------------------------------------
+* CT_T11 -- THE SOURCE IS NOT A CASUALTY. A copy is not a move; there is no
+* cmd_move.cpp and this verb must not become one by accident.
+* ---------------------------------------------------------------------------
+
+WORKSPACE SWITCH CTSRCWS
+SELECT 1
+GO TOP
+? "CT_T11_source_survived_every_copy:" + (ALLTRIM(MARK) = "SRCMARK3")
+
+FORMULA "COPY-TABLE-PROOF-END"
+
+* ============================================================================
+* MUTATION PROCEDURE -- OWED, NOT DONE.
+*
+* Every arm is unproven until shown able to RED. Three outcomes, and only the
+* first is acceptable:
+*
+*   the mutated arm reds, the others stay green  -> live AND independent
+*   everything reds                              -> the arms are coupled
+*   nothing reds, or the count drops             -> the arm never reached the
+*                                                   data; this is the dangerous
+*                                                   one and it looks like a pass
+*
+* FRESH PROCESS EVERY TIME -- idempotent per process, not per session.
+*
+* 0. COUNT FIRST, EVERY RUN. 16 markers expected. If the unmutated run prints
+*    fewer, stop: an arm is already silent and nothing below is meaningful.
+*
+*    ALREADY PROVEN LIVE, 2026-10-13, by a real defect and its fix rather than
+*    by a mutation: CT_T10 reds when the open-destination refusal leaks and
+*    greens when it holds; CT_T7 reds when the destination carries the wrong
+*    bytes. Those two need no step-1 mutation. THE OTHER TWELVE DO, and until
+*    they have had it a green from them means only that nothing crashed.
+*
+* 1. EXPECTED-STRING MUTATION, one arm at a time:
+*      ? "CT_T1_unopened_ws_refused:" + (ALLTRIM(MARK) = "MUTANT")
+*    Expect exactly that arm red and the count still 15.
+*
+* 2. MAKE THE REFUSALS ACTUALLY LEAK -- harder and worth more than step 1:
+*      CT_T3  comment out the indexes_found == 0 block. CT_T3 MUST red,
+*             because the table leg then lands over DSTMARK. If it greens,
+*             gather-all-before-writing is not observed by this spec at all.
+*      CT_T5  comment out the same-path block. Expect CT_T5 to report the OPEN
+*             refusal instead and still green -- which is the ordering this arm
+*             exists to pin, so ALSO reverse the two blocks and confirm CT_T5
+*             changes which refusal it prints.
+*      CT_T10 comment out the open-destination block. CT_T10 MUST red.
+*      CT_T7  drop the !overwrite guard on the destination probe. CT_T7 MUST
+*             red.
+*
+* 3. THE SILENCE CHECK. Change one destination read from USE ... AGAIN to a
+*    plain USE and re-run. The count MUST drop to 14 and that arm MUST vanish
+*    rather than red -- which is the behaviour the header warns about, and
+*    confirming it is what makes the count trustworthy as an instrument.
+*
+* 4. RECORD THE RESULT IN THIS HEADER, replacing the "NEVER BEEN RUN" paragraph
+*    with what was observed and at what commit. Until then that paragraph is the
+*    honest state of this file.
+* ============================================================================

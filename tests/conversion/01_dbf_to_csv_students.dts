@@ -1,4 +1,0 @@
-USE students
-SET ORDER TO SID
-EXPORT CSV _drops/students_export.csv HEADER ON DELIMITER , DATES ISO QUOTES RFC4180
-ECHO OK: DBF→CSV complete

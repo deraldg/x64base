@@ -1712,9 +1712,66 @@ static void mine_one_file(const SourceMineOptions& options,
     const bool allow_runtime_messages = permits_runtime_message_mining(file, commands);
 
     if (!catalog_authority) {
-        // Authority order matters: never let heuristic identity/argument/string
-        // candidates consume the per-file budget before the source contract.
-        mine_usage_contracts(options, file, text, commands, artifacts, unique, counts);
+        // THE CONTRACT FAMILY IS NO LONGER MINED HERE. ONE CONTRACT, ONE ROW.
+        //
+        // Until 2026-09-13 this call and helpdata_cmdhelp_bridge.cpp BOTH wrote
+        // the same contract line, under two names, into the same store:
+        //
+        //     CONTRACT_*        5,196 rows   this file        (mine_usage_contracts)
+        //     USAGE_CONTRACT*   3,817 rows   the bridge       (append_usage_contract_artifacts_for_doc)
+        //
+        // -- 9,013 rows whose deduped union is 5,666, so ~37% of the store's
+        // contract text was the same line twice. Worse than the waste: NEITHER
+        // FAMILY WAS A SUPERSET, so a reader of one silently missed content and
+        // a reader of both double-counted, and nothing said which was canonical.
+        //
+        // THE BRIDGE WON ON MEASUREMENT, NOT ON TASTE. Counted on the live store:
+        //
+        //   command coverage   bridge 223, this file 217, and the six it misses
+        //                      (CMDARGCHK, CMDHELPCHK, CMDREL, PREDHELP,
+        //                      TABLEMETA, TABLE_BUFFER) are missed ONLY here --
+        //                      the bridge covers everything this file covers.
+        //   summaries          bridge 219, this file 4.
+        //   self-duplication   1,277 of this file's 1,278 CONTRACT_SYNTAX rows
+        //                      merely restate its own CONTRACT_USAGE_LINE rows.
+        //                      The bridge emits no SYNTAX echo at all.
+        //   truncation         the '#' cut below (line ~1421) stored
+        //                      `IDX ON <field|#n> TAG <name>` as `IDX ON <field|`
+        //                      -- and once truncated the five IDX forms became
+        //                      identical, so dedup dropped four of them. The
+        //                      store's ords read 1,2,3,8,9,10; that gap is the
+        //                      fingerprint. The bridge does not cut on '#'.
+        //   over-absorption    with no @dottalk.end (196 of 210 files), this
+        //                      file keeps appending post-contract DESIGN
+        //                      COMMENTARY to the last open section. cmd_rel.cpp:
+        //                      3 real contract notes here became 32. The bridge
+        //                      read 3. Most of this file's 590 "exclusive"
+        //                      non-SYNTAX lines are that commentary, not contract.
+        //
+        // NOTHING OUTSIDE THIS FILE READ A CONTRACT_* NAME (grepped, 2026-09-13);
+        // the one rank that exists, cmdhelp.cpp:1560, already keys on
+        // "USAGE_CONTRACT" -- the family that survives.
+        //
+        // WHAT THIS DOES NOT DO, stated rather than implied: it does not fix the
+        // '#' truncation or the over-absorption, it stops SHIPPING them. Both
+        // defects are still in the functions below and would return the moment
+        // anyone re-enables this call. And it does not terminate one contract:
+        // the 196 files without @dottalk.end are a source lane of their own.
+        //
+        // Authority order still matters for everything that remains: never let
+        // heuristic identity/argument/string candidates consume the per-file
+        // budget before the source contract.
+        //
+        // THE CALL IS GATED, NOT DELETED, AND THE FUNCTION STAYS COMPILED.
+        // Re-enabling is one word, the code cannot rot unnoticed behind an
+        // #if, and mine_usage_contracts() plus everything only it calls stay
+        // referenced -- a static function left unreferenced is C4505 under
+        // /W4 and this tree does not need a new warning to argue about.
+        constexpr bool kMineContractFamilyHere = false;
+        if (kMineContractFamilyHere) {
+            mine_usage_contracts(options, file, text, commands, artifacts, unique, counts);
+        }
+
         mine_command_identity(options, file, text, commands, artifacts, unique, counts);
         mine_arguments(options, file, text, commands, artifacts, unique, counts);
         mine_syntax_strings(options, file, text, commands, artifacts, unique, counts);

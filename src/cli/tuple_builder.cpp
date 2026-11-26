@@ -451,4 +451,348 @@ TupleBuildResult build_tuple_from_spec(const std::string& spec_in, const TupleBu
     return res;
 }
 
+// PERF-1b (AIF-168): the constant half of build_tuple_from_spec, run once.
+// The body deliberately MIRRORS build_tuple_from_spec's resolution and error
+// texts line for line (kept duplicated rather than refactored so the proven
+// per-row path above is untouched); the per-row half lives in
+// build_tuple_from_plan below.
+TupleBuildPlan compile_tuple_plan(const std::string& spec_in, const TupleBuildOptions& opt) {
+    TupleBuildPlan plan;
+    plan.opt = opt;
+
+    std::string spec = trim(spec_in);
+    if (spec.empty()) spec = "*";
+
+    std::vector<std::string> toks;
+    {
+        std::stringstream ss(spec);
+        std::string tok;
+        while (std::getline(ss, tok, ',')) toks.push_back(tok);
+    }
+
+    const auto pr = parse_tokens(toks);
+    if (!pr.ok) {
+        plan.ok = false;
+        plan.error = pr.error;
+        return plan;
+    }
+
+    std::vector<std::pair<int, std::string>> items;
+    for (const auto& r : pr.refs) {
+        auto v = expand(r);
+        items.insert(items.end(), v.begin(), v.end());
+    }
+
+    if (items.empty()) {
+        plan.ok = true;   // empty plan builds an empty row, like the spec path
+        return plan;
+    }
+
+    plan.items.reserve(items.size());
+    plan.prototype.columns.reserve(items.size());
+    plan.prototype.cell_kinds.reserve(items.size());
+
+    std::vector<int> touched_order;   // first-touch order, deduplicated
+
+    for (const auto& item : items) {
+        const int slot = item.first;
+        const std::string fieldName = item.second;
+
+        const xbase::DbArea* ar = resolve_area(static_cast<std::size_t>(slot));
+        std::string canonicalField = fieldName;
+        const bool have_area = area_is_open(ar);
+        int field1 = 0;
+        bool resolve_threw = false;   // spec path: an exception here bypasses
+                                      // strict_fields and yields an empty cell
+
+        if (have_area) {
+            try {
+                const auto& fs = ar->fields();
+                const int idx0 = xfg::resolve_field_index_std(*ar, fieldName);
+                if (idx0 >= 0 && idx0 < static_cast<int>(fs.size())) {
+                    canonicalField = fs[static_cast<std::size_t>(idx0)].name;
+                    field1 = idx0 + 1;
+                }
+            } catch (...) { field1 = 0; resolve_threw = true; }
+
+            if (field1 == 0 && !resolve_threw) {
+                if (opt.strict_fields) {
+                    plan.ok = false;
+                    std::ostringstream oss;
+                    oss << "ERROR: field '" << fieldName << "' not found in area slot " << slot << ".";
+                    plan.error = oss.str();
+                    return plan;
+                }
+                field1 = resolve_field1(ar, canonicalField);
+            }
+        } else if (opt.strict_fields) {
+            plan.ok = false;
+            std::ostringstream oss;
+            oss << "ERROR: area slot " << slot << " is not open.";
+            plan.error = oss.str();
+            return plan;
+        }
+
+        std::string colName = canonicalField;
+        if (opt.header_area_prefix) {
+            const std::string areaName = area_display_name_upper(slot);
+            if (!areaName.empty()) colName = areaName + "." + canonicalField;
+        }
+
+        TupleColumn col{colName, slot, canonicalField};
+        if (have_area && field1 > 0) {
+            try {
+                const auto& fd = ar->fields().at(static_cast<std::size_t>(field1 - 1));
+                col.ftype = fd.type;
+                col.flen  = static_cast<int>(fd.length);
+                col.fdec  = static_cast<int>(fd.decimals);
+            } catch (...) {}
+        }
+        plan.prototype.columns.push_back(std::move(col));
+        plan.prototype.cell_kinds.push_back(TupleCellKind::Present);
+
+        TupleBuildPlan::Item pi;
+        pi.slot = slot;
+        pi.field1 = (have_area && !resolve_threw) ? field1 : 0;
+        // A threw column stays permanently empty on the spec path; an empty
+        // lookup name makes build_tuple_from_plan reproduce that exactly.
+        pi.canonical = resolve_threw ? std::string{} : canonicalField;
+        plan.items.push_back(std::move(pi));
+
+        if (have_area &&
+            std::find(touched_order.begin(), touched_order.end(), slot) == touched_order.end()) {
+            touched_order.push_back(slot);
+        }
+    }
+
+    for (int slot : touched_order) {
+        const xbase::DbArea* ar = resolve_area(static_cast<std::size_t>(slot));
+        if (!area_is_open(ar)) continue;
+        TupleBuildPlan::FragmentSeed seed;
+        seed.slot = slot;
+        try { seed.note = "DBF:" + basename_upper(ar->name()); }
+        catch (...) { seed.note = "DBF"; }
+        plan.fragment_seeds.push_back(std::move(seed));
+    }
+
+    plan.ok = true;
+    return plan;
+}
+
+TupleBuildResult build_tuple_from_plan(const TupleBuildPlan& plan) {
+    TupleBuildResult res;
+    if (!plan.ok) {
+        res.ok = false;
+        res.error = plan.error;
+        return res;
+    }
+
+    if (plan.opt.refresh_relations) {
+        relations_api::refresh_for_current_parent();
+    }
+
+    TupleRow row;
+    row.columns = plan.prototype.columns;       // SSO-cheap descriptor copies
+    row.cell_kinds = plan.prototype.cell_kinds;
+    row.values.reserve(plan.items.size());
+
+    for (const auto& item : plan.items) {
+        const xbase::DbArea* ar = resolve_area(static_cast<std::size_t>(item.slot));
+        const bool have_area = area_is_open(ar);
+
+        std::string val;
+        int field1 = have_area ? item.field1 : 0;   // mirrors the spec path's
+                                                    // catch(...) { field1 = 0; }
+        if (have_area) {
+            try {
+                if (item.field1 > 0) {
+                    // PERF-1c: decode straight from the record buffer -- the
+                    // same codec loadFieldsFromBuffer uses, one field, one
+                    // allocation, no _fd staging copy. Identical bytes to
+                    // rtrim(get(idx0+1)). Valid after readCurrent OR
+                    // readCurrentRaw/gotoRec64Raw.
+                    val = xfg::rtrim_copy(ar->decodeFieldFromBuffer(item.field1));
+                } else if (!item.canonical.empty()) {
+                    val = xfg::getFieldAsString(
+                        *const_cast<xbase::DbArea*>(ar), item.canonical);
+                }
+            } catch (...) {
+                val.clear();
+                field1 = 0;
+            }
+        }
+
+        if (plan.opt.overlay_table_buffer && have_area && field1 > 0) {
+            std::string ov;
+            if (get_buffer_override(item.slot, safe_recno(ar), field1, ov)) {
+                val = ov;
+            }
+        }
+
+        if (have_area && field1 > 0) {
+            try {
+                val = cli_memo::resolve_display_value(
+                    *const_cast<xbase::DbArea*>(ar), field1, val);
+            } catch (...) {
+                // Leave raw value unchanged on lookup failure.
+            }
+        }
+
+        row.values.push_back(std::move(val));
+    }
+
+    for (const auto& seed : plan.fragment_seeds) {
+        const xbase::DbArea* ar = resolve_area(static_cast<std::size_t>(seed.slot));
+        if (!area_is_open(ar)) continue;
+        TupleFragment f;
+        f.area_slot = seed.slot;
+        f.recno = safe_recno(ar);
+        f.kind = TupleSourceKind::DBF;
+        try { f.deleted = ar->isDeleted(); } catch (...) { f.deleted = false; }
+        f.note = seed.note;
+        row.fragments.push_back(std::move(f));
+    }
+
+    res.ok = true;
+    res.row = std::move(row);
+    return res;
+}
+
+TupleBuildResult build_tuple_for_area(const TupleBuildPlan& plan, xbase::DbArea& area) {
+    TupleBuildResult res;
+    if (!plan.ok) {
+        res.ok = false;
+        res.error = plan.error;
+        return res;
+    }
+    // NO refresh_relations, NO workareas access, NO overlay, NO memo resolve:
+    // this is the R21 worker path. The caller guarantees the plan is
+    // single-source and memo-free (the parallel scan declines otherwise).
+
+    TupleRow row;
+    row.columns = plan.prototype.columns;
+    row.cell_kinds = plan.prototype.cell_kinds;
+    row.values.reserve(plan.items.size());
+
+    for (const auto& item : plan.items) {
+        std::string val;
+        if (item.field1 > 0) {
+            // PERF-1c: buffer decode, no _fd staging. Valid after readCurrent
+            // OR readCurrentRaw/gotoRec64Raw -- the worker path uses the raw
+            // navigation and never pays the eager all-fields decode at all.
+            try { val = xfg::rtrim_copy(area.decodeFieldFromBuffer(item.field1)); }
+            catch (...) { val.clear(); }
+        } else if (!item.canonical.empty()) {
+            try { val = xfg::getFieldAsString(area, item.canonical); }
+            catch (...) { val.clear(); }
+        }
+        row.values.push_back(std::move(val));
+    }
+
+    for (const auto& seed : plan.fragment_seeds) {
+        TupleFragment f;
+        f.area_slot = seed.slot;                       // provenance label only
+        try { f.recno = area.recno64(); } catch (...) { f.recno = 0; }
+        f.kind = TupleSourceKind::DBF;
+        try { f.deleted = area.isDeleted(); } catch (...) { f.deleted = false; }
+        f.note = seed.note;
+        row.fragments.push_back(std::move(f));
+    }
+
+    res.ok = true;
+    res.row = std::move(row);
+    return res;
+}
+
+// PERF-4 (AIF-168): the per-row halves of the two builders above, applied to
+// an EXISTING row. Each body mirrors its builder's value/fragment code line
+// for line (kept duplicated rather than refactored, the compile_tuple_plan
+// precedent: the proven fresh-build paths stay untouched). What is deliberately
+// NOT redone per row: the prototype columns copy, the cell_kinds copy, the
+// vector constructions, and the fragment note -- the plan guarantees they are
+// row-invariant.
+void refill_tuple_from_plan(const TupleBuildPlan& plan, TupleRow& row) {
+    if (!plan.ok) return;
+
+    if (plan.opt.refresh_relations) {
+        relations_api::refresh_for_current_parent();
+    }
+
+    const std::size_t n = plan.items.size();
+    for (std::size_t i = 0; i < n && i < row.values.size(); ++i) {
+        const auto& item = plan.items[i];
+        const xbase::DbArea* ar = resolve_area(static_cast<std::size_t>(item.slot));
+        const bool have_area = area_is_open(ar);
+
+        std::string& val = row.values[i];
+        val.clear();
+        int field1 = have_area ? item.field1 : 0;
+
+        if (have_area) {
+            try {
+                if (item.field1 > 0) {
+                    val = xfg::rtrim_copy(ar->decodeFieldFromBuffer(item.field1));
+                } else if (!item.canonical.empty()) {
+                    val = xfg::getFieldAsString(
+                        *const_cast<xbase::DbArea*>(ar), item.canonical);
+                }
+            } catch (...) {
+                val.clear();
+                field1 = 0;
+            }
+        }
+
+        if (plan.opt.overlay_table_buffer && have_area && field1 > 0) {
+            std::string ov;
+            if (get_buffer_override(item.slot, safe_recno(ar), field1, ov)) {
+                val = ov;
+            }
+        }
+
+        if (have_area && field1 > 0) {
+            try {
+                val = cli_memo::resolve_display_value(
+                    *const_cast<xbase::DbArea*>(ar), field1, val);
+            } catch (...) {
+                // Leave raw value unchanged on lookup failure.
+            }
+        }
+    }
+
+    std::size_t fi = 0;
+    for (const auto& seed : plan.fragment_seeds) {
+        const xbase::DbArea* ar = resolve_area(static_cast<std::size_t>(seed.slot));
+        if (!area_is_open(ar)) continue;   // fresh build skips closed areas too
+        if (fi >= row.fragments.size()) break;
+        TupleFragment& f = row.fragments[fi++];
+        f.recno = safe_recno(ar);
+        try { f.deleted = ar->isDeleted(); } catch (...) { f.deleted = false; }
+    }
+}
+
+void refill_tuple_for_area(const TupleBuildPlan& plan, xbase::DbArea& area, TupleRow& row) {
+    if (!plan.ok) return;
+    // R21 worker path: no workareas, no overlay, no memo resolve -- exactly
+    // build_tuple_for_area's boundary.
+
+    const std::size_t n = plan.items.size();
+    for (std::size_t i = 0; i < n && i < row.values.size(); ++i) {
+        const auto& item = plan.items[i];
+        std::string& val = row.values[i];
+        val.clear();
+        if (item.field1 > 0) {
+            try { val = xfg::rtrim_copy(area.decodeFieldFromBuffer(item.field1)); }
+            catch (...) { val.clear(); }
+        } else if (!item.canonical.empty()) {
+            try { val = xfg::getFieldAsString(area, item.canonical); }
+            catch (...) { val.clear(); }
+        }
+    }
+
+    for (TupleFragment& f : row.fragments) {
+        try { f.recno = area.recno64(); } catch (...) { f.recno = 0; }
+        try { f.deleted = area.isDeleted(); } catch (...) { f.deleted = false; }
+    }
+}
+
 } // namespace dottalk

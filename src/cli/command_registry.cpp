@@ -176,6 +176,10 @@ RunResult CommandRegistry::try_run(DbArea& area,
     } scope{raw};
 
     try {
+        if (execution_guard_) {
+            auto refusal = execution_guard_(normalize_key(normalized_key), raw);
+            if (!refusal.empty()) return {RunStatus::HandlerError, false, std::move(refusal)};
+        }
         ltrim_stream(args);
         it->second(area, args);
         return {RunStatus::Ok, false, {}};

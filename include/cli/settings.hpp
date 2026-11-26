@@ -37,6 +37,40 @@ inline bool default_index_txn_enabled() {
     return !(c == '0' || c == 'n' || c == 'N' || c == 'f' || c == 'F');
 }
 
+// SET PARALLEL default (AIF-168 PERF-2). 0 = OFF unless DOTTALK_PARALLEL env
+// seeds a worker count (CI/regression can opt in without editing scripts).
+// Runtime `SET PARALLEL` always overrides. Clamped to [0, 64].
+inline int default_parallel_workers() {
+    const char* v = std::getenv("DOTTALK_PARALLEL");
+    if (!v || !*v) return 0;
+    int n = 0;
+    for (const char* p = v; *p; ++p) {
+        if (*p < '0' || *p > '9') return 0;
+        n = n * 10 + (*p - '0');
+        if (n > 64) return 64;
+    }
+    return n;
+}
+
+// What `SET PARALLEL ON` means (AIF-168 PERF-4, owner ruling 2026-09-22:
+// the ON width is CONFIGURABLE, not baked). Compiled default 8 -- the
+// OQ-P1 ruling stands until the owner moves it. DOTTALK_PARALLEL_ON env
+// seeds a different width (2..64); runtime `SET PARALLEL DEFAULT <n>`
+// always overrides. Context for the chooser: the post-PERF-4 curve
+// (PIN-PERF4-001) measured 12 beating 8 on BOTH probe statements with
+// no degradation through 22 on the reference 185H.
+inline int default_parallel_on_workers() {
+    const char* v = std::getenv("DOTTALK_PARALLEL_ON");
+    if (!v || !*v) return 8;
+    int n = 0;
+    for (const char* p = v; *p; ++p) {
+        if (*p < '0' || *p > '9') return 8;
+        n = n * 10 + (*p - '0');
+        if (n > 64) return 64;
+    }
+    return (n >= 2) ? n : 8;
+}
+
 } // namespace detail
 
 enum class EditorMode {
@@ -78,6 +112,18 @@ struct Settings {
     // Transactional in-COMMIT index maintenance (SET INDEXTXN). OFF (default) keeps
     // the legacy batch behavior (BUILDLMDB / REBUILD / REINDEX); ON is opt-in.
     std::atomic<bool> index_txn_on{detail::default_index_txn_enabled()}; // SET INDEXTXN
+
+    // Parallel read-only SQLSEL scans (SET PARALLEL, AIF-168 PERF-2). 0 = OFF
+    // (default): every statement runs exactly as before. n >= 2 partitions
+    // eligible single-table scans across n workers, each with a PRIVATE DbArea
+    // (AIF-120 R21: workers never share a cursor). Writes never enter the pool.
+    std::atomic<int> parallel_workers{detail::default_parallel_workers()}; // SET PARALLEL
+
+    // What `SET PARALLEL ON` resolves to (SET PARALLEL DEFAULT <n>, AIF-168
+    // PERF-4). Session-only like every other SET; env-seedable via
+    // DOTTALK_PARALLEL_ON. Never read by the scan itself -- only by the ON
+    // spelling in cmd_set.cpp, so an explicit `SET PARALLEL <n>` is untouched.
+    std::atomic<int> parallel_on_workers{detail::default_parallel_on_workers()}; // SET PARALLEL DEFAULT
 
     // ---- Formatting ----
     std::atomic<bool> century_on{false};      // SET CENTURY
@@ -144,6 +190,22 @@ struct Settings {
     // SET INDEXTXN -- transactional in-COMMIT index maintenance toggle.
     static bool indexTxnOn() { return instance().index_txn_on.load(); }
     static void setIndexTxn(bool on) { instance().index_txn_on.store(on); }
+
+    // SET PARALLEL -- worker count for read-only SQLSEL scans (0 = OFF).
+    static int parallelWorkers() { return instance().parallel_workers.load(); }
+    static void setParallelWorkers(int n) {
+        if (n < 0) n = 0;
+        if (n > 64) n = 64;
+        instance().parallel_workers.store(n);
+    }
+
+    // SET PARALLEL DEFAULT -- what the ON spelling resolves to (AIF-168 PERF-4).
+    static int parallelOnWorkers() { return instance().parallel_on_workers.load(); }
+    static void setParallelOnWorkers(int n) {
+        if (n < 2) n = 2;
+        if (n > 64) n = 64;
+        instance().parallel_on_workers.store(n);
+    }
 };
 
 } // namespace cli

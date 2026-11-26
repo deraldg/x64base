@@ -809,21 +809,27 @@ std::size_t matching_paren(const std::string& text, std::size_t open) {
     return std::string::npos;
 }
 
-std::vector<RegistryCommand> collect_static_registry_commands(const fs::path& workspace_root) {
+std::vector<RegistryCommand> collect_static_registry_commands(const fs::path& workspace_root, const CollectOptions& options) {
     std::vector<fs::path> files;
     std::error_code ec;
-    const auto source_root = workspace_root / "src";
-    if (!fs::exists(source_root, ec)) {
-        return {};
+    std::vector<fs::path> roots;
+    if (options.source_roots.empty()) roots.push_back(workspace_root / "src");
+    else for (const auto& requested : options.source_roots) {
+        const fs::path path(requested);
+        roots.push_back(path.is_absolute() ? path : workspace_root / path);
     }
-    for (fs::recursive_directory_iterator it(source_root, fs::directory_options::skip_permission_denied, ec), end;
+    for (const auto& source_root : roots) {
+      if (!fs::exists(source_root, ec)) continue;
+      for (fs::recursive_directory_iterator it(source_root, fs::directory_options::skip_permission_denied, ec), end;
          it != end && !ec;
          it.increment(ec)) {
         if (it->is_regular_file() && it->path().extension() == ".cpp" && !is_ignored_path(it->path())) {
             files.push_back(it->path());
         }
+      }
     }
     std::sort(files.begin(), files.end());
+    files.erase(std::unique(files.begin(), files.end()), files.end());
 
     const std::regex registration(
         R"METAREGEX((?:registry\s*\(\s*\)\s*\.\s*add|register_(?:extension_)?command)\s*\(\s*"([^"]+)")METAREGEX");
@@ -883,22 +889,28 @@ std::vector<RegistryCommand> collect_static_registry_commands(const fs::path& wo
     return commands;
 }
 
-std::vector<UsageContract> collect_command_usage_contracts(const fs::path& workspace_root) {
+std::vector<UsageContract> collect_command_usage_contracts(const fs::path& workspace_root, const CollectOptions& options) {
     std::vector<UsageContract> contracts;
     std::vector<fs::path> files;
     std::error_code ec;
-    const auto source_root = workspace_root / "src";
-    if (!fs::exists(source_root, ec)) {
-        return contracts;
+    std::vector<fs::path> roots;
+    if (options.source_roots.empty()) roots.push_back(workspace_root / "src");
+    else for (const auto& requested : options.source_roots) {
+        const fs::path path(requested);
+        roots.push_back(path.is_absolute() ? path : workspace_root / path);
     }
-    for (fs::recursive_directory_iterator it(source_root, fs::directory_options::skip_permission_denied, ec), end;
+    for (const auto& source_root : roots) {
+      if (!fs::exists(source_root, ec)) continue;
+      for (fs::recursive_directory_iterator it(source_root, fs::directory_options::skip_permission_denied, ec), end;
          it != end && !ec;
          it.increment(ec)) {
         if (it->is_regular_file() && it->path().extension() == ".cpp" && !is_ignored_path(it->path())) {
             files.push_back(it->path());
         }
+      }
     }
     std::sort(files.begin(), files.end());
+    files.erase(std::unique(files.begin(), files.end()), files.end());
     for (const auto& file : files) {
         for (auto& contract : parse_usage_contracts(file)) {
             contract.command = normalize_command_name(contract.command);
@@ -930,8 +942,8 @@ bool is_developer_command(const std::string& token, const UsageContract* contrac
 
 std::vector<SysCmdSeedRow> build_syscmd_seed_rows(const CollectOptions& options,
                                                   const fs::path& workspace_root) {
-    const auto registrations = collect_static_registry_commands(workspace_root);
-    const auto contracts = collect_command_usage_contracts(workspace_root);
+    const auto registrations = collect_static_registry_commands(workspace_root, options);
+    const auto contracts = collect_command_usage_contracts(workspace_root, options);
 
     std::unordered_map<std::string, const UsageContract*> contract_by_name;
     std::unordered_map<std::string, std::string> name_by_compact;
@@ -1084,7 +1096,10 @@ std::vector<SysArgSeedRow> build_sysargs_seed_rows(const CollectOptions& options
                 const auto aggregate_key = contract.command + "|" + arg_kind + "|" + arg_name;
                 auto& agg = aggregates[aggregate_key];
                 if (agg.row.arg_id.empty()) {
-                    agg.row.arg_id = "ARG_" + sanitize_symbol(contract.command) + "_" + arg_name;
+                    // Candidate v2: match the canonical reference identity;
+                    // keyword and placeholder are distinct owned entities.
+                    agg.row.arg_id = "ARG:COMMAND:" + normalize_command_name(contract.command) + ":" +
+                                     (arg_kind == "keyword" ? "KEYWORD" : "PLACEHOLDER") + ":" + arg_name;
                     agg.row.owner_knd = "command";
                     agg.row.owner_nam = contract.command;
                     agg.row.arg_name = arg_name;

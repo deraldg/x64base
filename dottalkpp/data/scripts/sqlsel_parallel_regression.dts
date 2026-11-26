@@ -1,0 +1,175 @@
+; ============================================================================
+; AIF-168 PERF-2 -- SET PARALLEL differential regression (G-P2 registered gate)
+;
+; Status: CANDIDATE / explicit-run
+; Safety: MUTATING (SANDBOX only; both fixtures self-erase)
+;
+; Proves:
+;   P1 OFF == ON pairwise for COUNT, char/function WHERE, seam-straddling
+;      numeric bands, and ORDER BY + LIMIT row sets (2-worker pool, private
+;      DbArea per worker -- AIF-120 R21).
+;   P2 DELETED rows are excluded in BOTH partitions and in a band that
+;      STRADDLES the 2-worker seam (recno 1200/1201 of 2400).
+;   P3 clamp honesty: SET PARALLEL 6 over 2400 rows runs workers=2 and the
+;      access-path line says so.
+;   P4 decline honesty: a 5-row table declines (too small) and a subquery
+;      predicate declines (shared runtime) -- both with EXACT serial answers.
+;   P5 both cursors restored; PARALLEL left OFF for whatever runs next.
+;
+; Fixture: PARLL 2400 rows, ID == RECNO() by construction; BAND = 'CSCI' on
+; ID 1150..1249 (100 rows) BEFORE three 10-row DELETE bands at 900..909,
+; 1196..1205 (straddles the seam), 1900..1909 -- so visible total is 2370
+; and visible CSCI is 90. PARSM is 5 rows for the small-table decline.
+;
+; Read rule: REGRESSION RUN SQLSEL_PARALLEL must print
+;   SQLSEL PARALLEL DIFFERENTIAL: PASS.
+; Missing/empty blocks, any OFF/ON divergence, a wrong workers= count, a
+; missing decline, or cursor drift fails closed.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+SET PARALLEL OFF
+
+FORMULA "SQLSEL-PAR-BEGIN"
+
+ERASE TABLE PARLL CONFIRM
+ERASE TABLE PARSM CONFIRM
+
+; ID is written from a counter VARIABLE, not from RECNO(): REPLACE's RHS
+; evaluator does not resolve RECNO() (first red run 2026-09-22 -- every row
+; printed "invalid numeric for field" and ID stayed blank; the function
+; catalog records the same quirk for '?' markers). &counter macro-expands to
+; a plain numeric literal before REPLACE parses, and SET VAR! does its own
+; expansion + arithmetic, so ID == RECNO() still holds by construction.
+SET VAR counter = 0
+CREATE X64 PARLL (ID N(8,0), BAND C(4))
+LOOP 2400
+APPEND
+SET VAR! counter = &counter + 1
+REPLACE ID WITH &counter
+ENDLOOP
+CLOSE
+
+SET VAR counter = 0
+CREATE X64 PARSM (ID N(8,0))
+LOOP 5
+APPEND
+SET VAR! counter = &counter + 1
+REPLACE ID WITH &counter
+ENDLOOP
+CLOSE
+
+SELECT 1
+USE PARLL
+SELECT 2
+USE PARSM
+SELECT 1
+
+; Shape the fixture: the CSCI band FIRST, then the three deleted bands, so
+; visible CSCI = 100 - 10 = 90 whatever UPDATE's deleted-row policy is.
+SQLSEL UPDATE PARLL SET BAND = 'CSCI' WHERE ID >= 1150 AND ID < 1250
+SQLSEL DELETE FROM PARLL WHERE ID >= 900 AND ID < 910
+SQLSEL DELETE FROM PARLL WHERE ID >= 1196 AND ID < 1206
+SQLSEL DELETE FROM PARLL WHERE ID >= 1900 AND ID < 1910
+
+; Park both cursors on known rows; every statement below must restore them.
+GO 7
+SELECT 2
+GO 3
+SELECT 1
+
+; --- P1a. bare COUNT: 2370 both modes (30 deleted excluded, both partitions)
+SET PARALLEL OFF
+FORMULA "PAR-T1-OFF-BEGIN"
+SQLSEL SELECT COUNT(*) FROM PARLL
+FORMULA "PAR-T1-OFF-END"
+SET PARALLEL 2
+FORMULA "PAR-T1-ON-BEGIN"
+SQLSEL SELECT COUNT(*) FROM PARLL
+FORMULA "PAR-T1-ON-END"
+
+; --- P1b. char WHERE: visible CSCI = 90 both modes (10 of the band deleted
+;     ACROSS the seam)
+SET PARALLEL OFF
+FORMULA "PAR-T2-OFF-BEGIN"
+SQLSEL SELECT COUNT(*) FROM PARLL WHERE BAND = 'CSCI'
+FORMULA "PAR-T2-OFF-END"
+SET PARALLEL 2
+FORMULA "PAR-T2-ON-BEGIN"
+SQLSEL SELECT COUNT(*) FROM PARLL WHERE BAND = 'CSCI'
+FORMULA "PAR-T2-ON-END"
+
+; --- P1c. function WHERE: same 90 through ALLTRIM
+SET PARALLEL OFF
+FORMULA "PAR-T2F-OFF-BEGIN"
+SQLSEL SELECT COUNT(*) FROM PARLL WHERE ALLTRIM(BAND) = 'CSCI'
+FORMULA "PAR-T2F-OFF-END"
+SET PARALLEL 2
+FORMULA "PAR-T2F-ON-BEGIN"
+SQLSEL SELECT COUNT(*) FROM PARLL WHERE ALLTRIM(BAND) = 'CSCI'
+FORMULA "PAR-T2F-ON-END"
+
+; --- P1d. numeric band straddling the seam: 200 - 10 deleted = 190
+SET PARALLEL OFF
+FORMULA "PAR-T3-OFF-BEGIN"
+SQLSEL SELECT COUNT(*) FROM PARLL WHERE ID >= 1100 AND ID < 1300
+FORMULA "PAR-T3-OFF-END"
+SET PARALLEL 2
+FORMULA "PAR-T3-ON-BEGIN"
+SQLSEL SELECT COUNT(*) FROM PARLL WHERE ID >= 1100 AND ID < 1300
+FORMULA "PAR-T3-ON-END"
+
+; --- P1e. ORDER BY + LIMIT across the deleted seam band: identical rows,
+;     identical order (visible in 1195..1214 = 1195 and 1206..1214)
+SET PARALLEL OFF
+FORMULA "PAR-T4-OFF-BEGIN"
+SQLSEL SELECT ID FROM PARLL WHERE ID >= 1195 AND ID < 1215 ORDER BY ID DESC LIMIT 6
+FORMULA "PAR-T4-OFF-END"
+SET PARALLEL 2
+FORMULA "PAR-T4-ON-BEGIN"
+SQLSEL SELECT ID FROM PARLL WHERE ID >= 1195 AND ID < 1215 ORDER BY ID DESC LIMIT 6
+FORMULA "PAR-T4-ON-END"
+
+; --- P3. clamp honesty: request 6, 2400 rows can carry only 2 -- the path
+;     line must SAY workers=2 while the setting says 6
+SET PARALLEL 6
+FORMULA "PAR-T5-BEGIN"
+SQLSEL SELECT COUNT(*) FROM PARLL
+FORMULA "PAR-T5-END"
+
+; --- P4a. small-table decline: 5 rows, reported, exact serial answer
+SET PARALLEL 2
+FORMULA "PAR-T6-BEGIN"
+SQLSEL SELECT COUNT(*) FROM PARSM
+FORMULA "PAR-T6-END"
+
+; --- P4b. subquery decline: outer declines (shared runtime), the 5-row inner
+;     declines too (too small), answer exact
+FORMULA "PAR-T7-BEGIN"
+SQLSEL SELECT COUNT(*) FROM PARLL P WHERE P.ID IN (SELECT Q.ID FROM PARSM Q)
+FORMULA "PAR-T7-END"
+
+; --- P5. cursors restored; PARALLEL back OFF for the next spec
+? "PAR_C1_parll_cursor_restored:" + (ID = 7)
+SELECT 2
+? "PAR_C2_parsm_cursor_restored:" + (ID = 3)
+SELECT 1
+
+SET PARALLEL OFF
+SET PARALLEL STATUS
+
+CLOSE
+SELECT 2
+CLOSE
+SELECT 1
+
+ERASE TABLE PARLL CONFIRM
+ERASE TABLE PARSM CONFIRM
+
+FORMULA "SQLSEL-PAR-END"

@@ -19,6 +19,7 @@
 #include "identity/identity_schema.hpp"
 
 #include "xbase.hpp"
+#include "cli/append_fence.hpp"
 #include "xbase/dbf_create.hpp"
 #include "xbase/field_name_policy.hpp"
 #include "xbase/fields.hpp"
@@ -137,9 +138,27 @@ bool save_identity_tables(const InMemoryIdentityStore& store,
         if (!create_table(dir, t, err)) return false;
 
     // 2) populate each from its vector
+    // OI-043: ONE FENCE PER TABLE, HERE, because this lambda IS the save
+    // boundary. Ten appends live inside the emit() callbacks below and every
+    // one of them borrows this fence rather than taking its own -- the same
+    // shape IMPORT uses, and the reason cli::fence::TableFence is
+    // borrowed-aware.
+    //
+    // NOT FENCED, AND SAID RATHER THAN IMPLIED: step 1 above REMOVES AND
+    // RECREATES every table before this runs (create_table calls fs::remove).
+    // A lock file lives beside the DBF, so it cannot guard a file that is
+    // about to be deleted -- fencing a destructive rewrite is a different
+    // problem from fencing an append, and this fence does not solve it.
     auto append = [&](const char* name, auto&& emit) -> bool {
         xbase::DbArea a;
         if (!open_table(dir, name, a, err)) return false;
+        cli::fence::TableFence fence(a);
+        if (!fence.ready) {
+            err = std::string("identity save: ") + name + " table locked ("
+                + fence.error + ")";
+            a.close();
+            return false;
+        }
         bool ok = emit(a);
         a.close();
         return ok;
@@ -149,7 +168,7 @@ bool save_identity_tables(const InMemoryIdentityStore& store,
 
     ok = ok && append("SYSUSER", [&](xbase::DbArea& a) {
         for (const auto& u : store.users) {
-            a.appendBlank(); RowW w{a, err};
+            (void)cli::fence::append_fenced(a); RowW w{a, err};
             w.set("ID", s_id(u.id));          w.set("UKEY", u.key);
             w.set("LOGIN", u.login_name);      w.set("DISPLAY", u.display_name);
             w.set("AUTHKIND", s_enum(static_cast<std::uint8_t>(u.auth_kind)));
@@ -164,7 +183,7 @@ bool save_identity_tables(const InMemoryIdentityStore& store,
 
     ok = ok && append("SYSMEMBER", [&](xbase::DbArea& a) {
         for (const auto& m : store.members) {
-            a.appendBlank(); RowW w{a, err};
+            (void)cli::fence::append_fenced(a); RowW w{a, err};
             w.set("ID", s_id(m.id));            w.set("USERID", s_optid(m.user_id));
             w.set("MKEY", m.key);               w.set("KIND", s_enum(static_cast<std::uint8_t>(m.kind)));
             w.set("DEFROLE", s_optid(m.default_role));
@@ -179,7 +198,7 @@ bool save_identity_tables(const InMemoryIdentityStore& store,
 
     ok = ok && append("SYSROLE", [&](xbase::DbArea& a) {
         for (const auto& r : store.roles) {
-            a.appendBlank(); RowW w{a, err};
+            (void)cli::fence::append_fenced(a); RowW w{a, err};
             w.set("ID", s_id(r.id));  w.set("RKEY", r.key);   w.set("RNAME", r.name);
             w.set("RKIND", r.kind);   w.set("DESCR", r.description);
             w.set("STATUS", s_enum(static_cast<std::uint8_t>(r.status)));
@@ -190,7 +209,7 @@ bool save_identity_tables(const InMemoryIdentityStore& store,
 
     ok = ok && append("SYSPERM", [&](xbase::DbArea& a) {
         for (const auto& p : store.permissions) {
-            a.appendBlank(); RowW w{a, err};
+            (void)cli::fence::append_fenced(a); RowW w{a, err};
             w.set("ID", s_id(p.id));   w.set("PKEY", p.key);
             w.set("RESCLASS", p.resource_class); w.set("PACTION", p.action);
             w.set("RISK", s_enum(static_cast<std::uint8_t>(p.risk)));
@@ -203,7 +222,7 @@ bool save_identity_tables(const InMemoryIdentityStore& store,
 
     ok = ok && append("SYSORG", [&](xbase::DbArea& a) {
         for (const auto& o : store.org_units) {
-            a.appendBlank(); RowW w{a, err};
+            (void)cli::fence::append_fenced(a); RowW w{a, err};
             w.set("ID", s_id(o.id));        w.set("OKEY", o.key);
             w.set("PARENT", s_optid(o.parent));
             w.set("OTYPE", s_enum(static_cast<std::uint8_t>(o.type)));
@@ -219,7 +238,7 @@ bool save_identity_tables(const InMemoryIdentityStore& store,
 
     ok = ok && append("SYSROLEPERM", [&](xbase::DbArea& a) {
         for (const auto& rp : store.role_permissions) {
-            a.appendBlank(); RowW w{a, err};
+            (void)cli::fence::append_fenced(a); RowW w{a, err};
             w.set("ROLEID", s_id(rp.role)); w.set("PERMID", s_id(rp.permission));
             if (!w.ok) return false; a.writeCurrent();
         }
@@ -228,7 +247,7 @@ bool save_identity_tables(const InMemoryIdentityStore& store,
 
     ok = ok && append("SYSMEMROLE", [&](xbase::DbArea& a) {
         for (const auto& mr : store.member_roles) {
-            a.appendBlank(); RowW w{a, err};
+            (void)cli::fence::append_fenced(a); RowW w{a, err};
             w.set("MEMBERID", s_id(mr.member)); w.set("ROLEID", s_id(mr.role));
             w.set("ORGSCOPE", s_optid(mr.org_scope)); w.set("WORKSCOPE", s_optid(mr.work_scope));
             if (!w.ok) return false; a.writeCurrent();
@@ -238,7 +257,7 @@ bool save_identity_tables(const InMemoryIdentityStore& store,
 
     ok = ok && append("SYSOVERRIDE", [&](xbase::DbArea& a) {
         for (const auto& ov : store.overrides) {
-            a.appendBlank(); RowW w{a, err};
+            (void)cli::fence::append_fenced(a); RowW w{a, err};
             w.set("MEMBERID", s_id(ov.member)); w.set("PERMID", s_id(ov.permission));
             w.set("EFFECT", s_enum(static_cast<std::uint8_t>(ov.effect)));
             w.set("ORGSCOPE", s_optid(ov.org_scope)); w.set("WORKSCOPE", s_optid(ov.work_scope));
@@ -249,7 +268,7 @@ bool save_identity_tables(const InMemoryIdentityStore& store,
 
     ok = ok && append("SYSASSIGN", [&](xbase::DbArea& a) {
         for (const auto& as : store.assignments) {
-            a.appendBlank(); RowW w{a, err};
+            (void)cli::fence::append_fenced(a); RowW w{a, err};
             w.set("ID", s_id(as.id));        w.set("MEMBERID", s_id(as.member));
             w.set("ORGUNIT", s_optid(as.org_unit)); w.set("WORK", s_optid(as.work));
             w.set("ROLE", s_optid(as.role)); w.set("PSET", s_optid(as.permission_set));
@@ -264,7 +283,7 @@ bool save_identity_tables(const InMemoryIdentityStore& store,
 
     ok = ok && append("SYSGRANT", [&](xbase::DbArea& a) {
         for (const auto& g : store.grants) {
-            a.appendBlank(); RowW w{a, err};
+            (void)cli::fence::append_fenced(a); RowW w{a, err};
             w.set("ID", s_id(g.id));         w.set("REQBY", s_id(g.requested_by));
             w.set("GRANTTO", s_id(g.granted_to)); w.set("ROLEASN", s_optid(g.role_assignment));
             w.set("WORK", s_optid(g.work));  w.set("RESSCOPE", g.resource_scope);

@@ -16,6 +16,7 @@
 #include "datadict/ddict_catalog_paths.hpp"
 #include "datadict/ddict_object_resolver.hpp"
 #include "datadict/ddict_read_helpers.hpp"
+#include "datadict/ddict_catalog_view.hpp"
 #include "dottalk/version.hpp"
 #include "gui/core/gui_command_catalog.hpp"
 #include "gui/core/gui_workspace_format.hpp"
@@ -1472,11 +1473,12 @@ void MainFrame::ApplyRelations(const WorkspaceModel& model) {
 
 void MainFrame::LoadDDictCatalog() {
     ddict_catalog_dir_ = dottalk::datadict::find_catalog_dir();
-    ddict_objects_ = dottalk::datadict::read_dbf_table(ddict_catalog_dir_, "DDOBJECT");
-    ddict_attributes_ = dottalk::datadict::read_dbf_table(ddict_catalog_dir_, "DDATTR");
-    ddict_edges_ = dottalk::datadict::read_dbf_table(ddict_catalog_dir_, "DDEDGE");
-    ddict_evidence_ = dottalk::datadict::read_dbf_table(ddict_catalog_dir_, "DDEVID");
-    ddict_sources_ = dottalk::datadict::read_dbf_table(ddict_catalog_dir_, "DDSOURCE");
+    const auto catalog = dottalk::datadict::read_catalog_view(ddict_catalog_dir_);
+    ddict_objects_ = catalog.rows("DDOBJECT");
+    ddict_attributes_ = catalog.rows("DDATTR");
+    ddict_edges_ = catalog.rows("DDEDGE");
+    ddict_evidence_ = catalog.rows("DDEVID");
+    ddict_sources_ = catalog.rows("DDSOURCE");
 
     ApplyDDictObjects();
     if (!ddict_objects_.empty()) {
@@ -1492,6 +1494,12 @@ void MainFrame::LoadDDictCatalog() {
                                 " attributes, " + std::to_string(ddict_edges_.size()) +
                                 " relations, " + std::to_string(ddict_sources_.size()) +
                                 " sources | " + ddict_catalog_dir_.string());
+        if (!catalog.diagnostics.empty()) {
+            std::string review = " | CATALOG_REVIEW";
+            for (const auto& diagnostic : catalog.diagnostics) review += "\n" + diagnostic;
+            ddict_status_->SetLabel(ddict_status_->GetLabel() + wxString::FromUTF8(review));
+            ddict_status_->SetToolTip(wxString::FromUTF8(review));
+        }
     }
 }
 
@@ -1522,7 +1530,7 @@ void MainFrame::ApplyDDictObjects() {
         }
     }
 
-    reset_grid(ddict_objects_grid_, static_cast<int>(ddict_visible_object_rows_.size()), 7);
+    reset_grid(ddict_objects_grid_, static_cast<int>(ddict_visible_object_rows_.size()), 8);
     ddict_objects_grid_->SetColLabelValue(0, "OBJID");
     ddict_objects_grid_->SetColLabelValue(1, "Type");
     ddict_objects_grid_->SetColLabelValue(2, "Name");
@@ -1530,6 +1538,7 @@ void MainFrame::ApplyDDictObjects() {
     ddict_objects_grid_->SetColLabelValue(4, "Status");
     ddict_objects_grid_->SetColLabelValue(5, "Profile");
     ddict_objects_grid_->SetColLabelValue(6, "Source");
+    ddict_objects_grid_->SetColLabelValue(7, "Catalog family");
 
     for (std::size_t visible = 0; visible < ddict_visible_object_rows_.size(); ++visible) {
         const auto& object = ddict_objects_[ddict_visible_object_rows_[visible]];
@@ -1542,6 +1551,7 @@ void MainFrame::ApplyDDictObjects() {
         ddict_objects_grid_->SetCellValue(grid_row, 4, ddict_value(object, "STATUS"));
         ddict_objects_grid_->SetCellValue(grid_row, 5, ddict_value(object, "PROFILE"));
         ddict_objects_grid_->SetCellValue(grid_row, 6, ddict_value(object, "SRCID"));
+        ddict_objects_grid_->SetCellValue(grid_row, 7, ddict_value(object, "_DD_FAMILY"));
     }
     ddict_objects_grid_->AutoSizeColumns(false);
 }
@@ -1571,6 +1581,7 @@ void MainFrame::ApplyDDictDetails(const dottalk::datadict::DDictRow* object) {
 
     if (object) {
         for (const auto& row : ddict_objects_) {
+            if (ddict_value(row, "_DD_FAMILY") != ddict_value(*object, "_DD_FAMILY")) continue;
             const std::string type = upper_ascii(ddict_value(row, "OBJTYPE"));
             if (ddict_value(row, "OWNER") == owner && type == "CATALOG_FIELD") {
                 fields.push_back(&row);
@@ -1583,7 +1594,7 @@ void MainFrame::ApplyDDictDetails(const dottalk::datadict::DDictRow* object) {
                 attrs.push_back(&row);
             }
             const std::string evid = ddict_value(row, "EVID");
-            if (!evid.empty()) {
+            if (ddict_value(row, "OBJID") == objid && !evid.empty()) {
                 for (const auto& ev : ddict_evidence_) {
                     if (ddict_value(ev, "EVID") == evid) {
                         evidence.push_back(&ev);
@@ -1621,7 +1632,7 @@ void MainFrame::ApplyDDictDetails(const dottalk::datadict::DDictRow* object) {
     for (const auto* attr : attrs) {
         ddict_fields_grid_->SetCellValue(out_row, 0, "ATTR");
         ddict_fields_grid_->SetCellValue(out_row, 1, ddict_value(*attr, "ATTRNAME"));
-        ddict_fields_grid_->SetCellValue(out_row, 2, ddict_value(*attr, "ATTRVAL"));
+        ddict_fields_grid_->SetCellValue(out_row, 2, ddict_value(*attr, "ATTRVAL").empty() ? ddict_value(*attr, "ATTRMEMO") : ddict_value(*attr, "ATTRVAL"));
         ddict_fields_grid_->SetCellValue(out_row, 3, ddict_value(*attr, "OBJID"));
         ddict_fields_grid_->SetCellValue(out_row, 4, ddict_value(*attr, "EVID"));
         ++out_row;
@@ -1660,20 +1671,21 @@ void MainFrame::ApplyDDictDetails(const dottalk::datadict::DDictRow* object) {
         ddict_relations_grid_->SetCellValue(grid_row, 0, from == objid ? "OUT" : "IN");
         ddict_relations_grid_->SetCellValue(grid_row, 1, ddict_value(edge, "EDGETYPE"));
         ddict_relations_grid_->SetCellValue(grid_row, 2, from);
-        ddict_relations_grid_->SetCellValue(grid_row, 3, from_it == by_id.end() ? "" : object_label(from_it->second));
+        ddict_relations_grid_->SetCellValue(grid_row, 3, from_it == by_id.end() ? ddict_value(edge, "_DD_FROM_KIND") + ": " + ddict_value(edge, "_DD_FROM_NAME") : object_label(from_it->second));
         ddict_relations_grid_->SetCellValue(grid_row, 4, to);
-        ddict_relations_grid_->SetCellValue(grid_row, 5, to_it == by_id.end() ? "" : object_label(to_it->second));
+        ddict_relations_grid_->SetCellValue(grid_row, 5, to_it == by_id.end() ? ddict_value(edge, "_DD_TO_KIND") + ": " + ddict_value(edge, "_DD_TO_NAME") : object_label(to_it->second));
         ddict_relations_grid_->SetCellValue(grid_row, 6, ddict_value(edge, "EVID"));
     }
     ddict_relations_grid_->AutoSizeColumns(false);
 
-    reset_grid(ddict_evidence_grid_, static_cast<int>(evidence.size()), 6);
+    reset_grid(ddict_evidence_grid_, static_cast<int>(evidence.size()), 7);
     ddict_evidence_grid_->SetColLabelValue(0, "EVID");
     ddict_evidence_grid_->SetColLabelValue(1, "OBJID");
     ddict_evidence_grid_->SetColLabelValue(2, "Object");
     ddict_evidence_grid_->SetColLabelValue(3, "Source");
     ddict_evidence_grid_->SetColLabelValue(4, "Kind");
     ddict_evidence_grid_->SetColLabelValue(5, "Confidence");
+    ddict_evidence_grid_->SetColLabelValue(6, "Detail");
     for (std::size_t row = 0; row < evidence.size(); ++row) {
         const auto& ev = *evidence[row];
         const std::string ev_objid = ddict_value(ev, "OBJID");
@@ -1685,6 +1697,7 @@ void MainFrame::ApplyDDictDetails(const dottalk::datadict::DDictRow* object) {
         ddict_evidence_grid_->SetCellValue(grid_row, 3, ddict_value(ev, "SRCID"));
         ddict_evidence_grid_->SetCellValue(grid_row, 4, ddict_value(ev, "KIND"));
         ddict_evidence_grid_->SetCellValue(grid_row, 5, ddict_value(ev, "CONF"));
+        ddict_evidence_grid_->SetCellValue(grid_row, 6, ddict_value(ev, "DETAIL"));
     }
     ddict_evidence_grid_->AutoSizeColumns(false);
 
@@ -1708,7 +1721,7 @@ void MainFrame::ApplyDDictSource(const std::string& source_id) {
     if (!source) {
         ddict_source_text_->SetValue(source_id.empty()
             ? "No source id is attached to the selected dictionary row."
-            : "Source id not found in DDSOURCE: " + source_id);
+            : (source_id.rfind("x64:artifact:", 0) == 0 ? "External source artifact (not a DDSOURCE identity): " : "Source id not found in DDSOURCE: ") + source_id);
         return;
     }
 

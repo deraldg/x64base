@@ -522,6 +522,25 @@ mcc/*.DBF
 # (manualgen/reports/mdo_226_*, labtalk/reports/.../crosswalk_v1) stay tracked.
 **/generated/**/*.csv
 **/reports/**/*.csv
+# ...AND THE .md/.json EVIDENCE BESIDE THEM, FOR ONE DIRECTORY ONLY.
+# The CSV rule above is extension-scoped ON PURPOSE and must stay that way:
+# 45 tracked files live under `reports/` directories in this tree, including
+# the 15-file Python application under tools/reports/. Widening it to
+# `**/reports/**` would ignore all of them. Measured 2026-09-20 before the
+# widening was written, which is the only reason it was not.
+#
+# docs/cases/reports/ is different and is named individually. Every file in
+# it is REVIEW OUTPUT of the case catalog -- CASE_REVIEW_V1.md opens with
+# "Safety: REPORT_ONLY / NO MUTATION", review_summary_v1.json carries
+# counters and a gate verdict, and the inventory CSV is the tracked registry
+# plus two derived columns. Five of its seven files were already caught by
+# the CSV rule; the .md and the .json escaped it, so the directory was
+# ignored in a way nobody chose. Nothing in it is tracked, so this adds two
+# files to the ignore set and removes nothing from the index.
+#
+# It is also STALE -- the summary counts 15 case files against 17 on disk --
+# which is what generated evidence does when its subject moves on.
+docs/cases/reports/
 docs/manuals/developer/manualgen/**/*.csv
 docs/maintenance/lanes/**/runs/**/*.csv
 docs/**/candidates/**/*.csv
@@ -552,3 +571,28 @@ scripts/build/
 # AIF-093: `.text` is the curated "chosen to travel" marker -- never ignore it.
 # No rule above matches `.text`; this is an explicit durability guard (R1).
 !**/*.text
+
+# Added 2026-11-26 (tree cleanup, onboarding-fixes thread): local backups and
+# IDE captures that were sitting untracked. Ignoring them deletes nothing.
+/terminals/
+/dottalkpp/data/help.bak-*/
+/dottalkpp/docs/generated/backups/
+/dottalkpp/data/datadict/datadict_promotion_backups/
+# Staged Linux runtime bins (the extensionless binary escapes *.exe).
+/dottalkpp/bin-wsl/
+/dottalkpp/bin-wsl-lean/
+/dottalkpp/bin/bin-wsl/
+
+# Added 2026-11-26, cleanup plan section 3 (owner yes). Generated data
+# products and run outputs; ignoring deletes nothing and does not untrack
+# files already committed. A deliberate run record still lands with
+# `git add -f`. Plan: docs/agents/TREE_CLEANUP_PLAN_2026-11-26.md
+/dottalkpp/data/systems/
+/dottalkpp/data/dbf/cascade_og/
+/dottalkpp/data/dbf/cascade_dbf/
+/dottalkpp/data/dbf/sandbox/
+/dottalkpp/data/indexes/sandbox/
+/dottalkpp/docs/generated/
+/docs/maintenance/lanes/full_stack_documentation/runs/
+/dottalkpp/docs/Bible/*
+!/dottalkpp/docs/Bible/assemble_bible_zip.ps1

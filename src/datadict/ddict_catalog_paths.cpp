@@ -91,11 +91,29 @@ std::vector<fs::path> base_roots() {
 std::vector<fs::path> catalog_candidates() {
     std::vector<fs::path> candidates;
     for (const auto& root : base_roots()) {
+        // THE CANONICAL CATALOG, NAMED. Measured 2026-09-18: until this line
+        // existed, nothing in this list named dottalkpp/data/datadict -- the
+        // directory that actually holds DDOBJECT.dbf and its ten siblings. It
+        // resolved only by accident, through root = cwd/.. , because the
+        // launcher pushes the working directory to dottalkpp\data before
+        // starting the Workbench. Run the same binary from the repo root and
+        // the winner was dottalkpp/data/datadict/datadict, a nested mirror
+        // that is byte-identical today (all eleven tables, md5-checked) and
+        // that forks the day either side is regenerated.
+        //
+        // So the catalog the DDict panel read depended on the working
+        // directory, and nothing in the panel or the code said so.
+        candidates.push_back(root / "dottalkpp" / "data" / "datadict");
         candidates.push_back(root / "data" / "datadict");
         candidates.push_back(root / "data" / "metadata" / "datadict");
         candidates.push_back(root / "dottalkpp" / "data" / "metadata" / "datadict");
+        // LAST WITHIN EACH ROOT, deliberately. The mirror lives INSIDE the
+        // canonical directory, so it must never outrank its own parent. It is
+        // kept as a candidate rather than deleted: removing a catalog is the
+        // owner's call, and a tree that has only the mirror still resolves.
         candidates.push_back(root / "dottalkpp" / "data" / "datadict" / "datadict");
     }
+    candidates.push_back(fs::path("dottalkpp") / "data" / "datadict");
     candidates.push_back(fs::path("data") / "metadata" / "datadict");
     candidates.push_back(fs::path("dottalkpp") / "data" / "metadata" / "datadict");
     candidates.push_back(fs::path("dottalkpp") / "data" / "datadict" / "datadict");
@@ -108,7 +126,12 @@ fs::path find_catalog_dir() {
             return normalize_quiet(c);
         }
     }
-    return normalize_quiet(fs::path("dottalkpp") / "data" / "metadata" / "datadict");
+    // A MISS NAMES A REAL PLACE. This used to return
+    // dottalkpp/data/metadata/datadict, which does not exist in this tree and
+    // never has, so a failed search reported a directory nobody could go and
+    // look at -- and the Workbench status line printed it beside a row count of
+    // zero as though it were the answer.
+    return normalize_quiet(fs::path("dottalkpp") / "data" / "datadict");
 }
 
 fs::path find_cdx_file(const std::string& table_name) {

@@ -1,0 +1,18 @@
+SET ECHO OFF
+STOP_ON_ERROR OFF
+ECHO === OI-031: NULLASSERT through the BRACKETED regression path ===
+ECHO
+ECHO Not DOTSCRIPT. REGRESSION RUN takes the L3 catalog-isolation arm before and
+ECHO after, the CatalogBracket, the marker-count grader and the rollup -- the
+ECHO machinery REGRESSION ALL actually runs through, and the machinery that has
+ECHO only ever seen this spec green.
+ECHO
+ECHO READ THE COUNT FIRST AND THE VERDICTS SECOND. An errored marker PRINTS
+ECHO NOTHING rather than going red, so a transcript with 20 is a spec that lost
+ECHO a claim, not a spec that passed. 21 graded: 5 NL_G* guards, 16 NL_T* arms.
+ECHO The 3 NL_P* probes are UNGRADED and are not part of the 21.
+ECHO
+ECHO If any NL_G* reds, every NL_T* is UNPROVEN -- the arms read fields of rows
+ECHO the guards establish.
+REGRESSION RUN NULLASSERT
+ECHO === run done ===

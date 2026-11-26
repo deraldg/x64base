@@ -30,6 +30,9 @@
 #include <cctype>
 #include <cstdint>
 #include <cmath>
+#include <thread>   // PERF-2 (AIF-168): SET PARALLEL scan workers
+#include "cli/settings.hpp"   // PERF-2: Settings::parallelWorkers()
+#include <deque>
 #include <filesystem>
 #include <iomanip>
 #include <iostream>
@@ -38,6 +41,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "xbase.hpp"
@@ -449,17 +454,73 @@ PredicateState evaluate_tuple_predicate_node(const dottalk::expr::Expr* node,
 // cells yield UNKNOWN without pretending that x64base stores SQL NULL. Boolean
 // composition follows SQL truth tables, while every other evaluator error
 // remains a reported failure.
+// PERF-1a (AIF-168): the context overload is the hot path -- the caller
+// hoists one TupleViewContext out of its row loop and the per-row cost drops
+// from copy-row-three-times-plus-build-two-hash-maps to a pointer rebind.
 PredicateVerdict evaluate_tuple_predicate(const dottalk::expr::Expr* program,
-                                          const dottalk::TupleRow& row) {
+                                          const dottalk::TupleRow& row,
+                                          dottalk::exprglue::TupleViewContext& view_ctx) {
     if (!program) return {PredicateState::True, {}};
     try {
-        const auto view = dottalk::exprglue::make_record_view(row);
+        const auto& view = view_ctx.view_for(row);
         return {evaluate_tuple_predicate_node(program, view), {}};
     } catch (const std::exception& ex) {
         return {PredicateState::Error, ex.what()};
     } catch (...) {
         return {PredicateState::Error, "unknown predicate evaluation error"};
     }
+}
+
+// One-shot convenience for cold call sites (subquery scalar comparisons and
+// the like). Still cheaper than the old body: the context builds the index
+// once but never deep-copies the row into the closures.
+PredicateVerdict evaluate_tuple_predicate(const dottalk::expr::Expr* program,
+                                          const dottalk::TupleRow& row) {
+    dottalk::exprglue::TupleViewContext local_ctx;
+    return evaluate_tuple_predicate(program, row, local_ctx);
+}
+
+// PERF-1c (AIF-168): collect every field name a compiled predicate can read,
+// so the scan materializes ONLY those columns. Returns false on any node
+// kind it does not recognize -- the caller then thins NOTHING (fail safe:
+// an unthinned row is merely slower, never wrong). RECNO()/DELETED() are
+// FunctionCalls with no field args and read fragments, not values; a bare
+// unknown ident still throws "unknown field" through the CiIndex miss
+// whether or not its value cell was materialized, so unmapped names cost
+// nothing to correctness.
+bool collect_predicate_fields(const dottalk::expr::Expr* node,
+                              std::vector<std::string>& out) {
+    using namespace dottalk::expr;
+    if (!node) return true;
+    if (dynamic_cast<const LitString*>(node) ||
+        dynamic_cast<const LitNumber*>(node) ||
+        dynamic_cast<const LitBool*>(node)) return true;
+    if (const auto* f = dynamic_cast<const FieldRef*>(node)) {
+        out.push_back(f->name);
+        return true;
+    }
+    if (const auto* c = dynamic_cast<const FunctionCall*>(node)) {
+        for (const auto& a : c->args) {
+            if (!collect_predicate_fields(a.get(), out)) return false;
+        }
+        return true;
+    }
+    if (const auto* c = dynamic_cast<const Cmp*>(node)) {
+        return collect_predicate_fields(c->lhs.get(), out) &&
+               collect_predicate_fields(c->rhs.get(), out);
+    }
+    if (const auto* b = dynamic_cast<const BoolBin*>(node)) {
+        return collect_predicate_fields(b->lhs.get(), out) &&
+               collect_predicate_fields(b->rhs.get(), out);
+    }
+    if (const auto* n = dynamic_cast<const Not*>(node)) {
+        return collect_predicate_fields(n->inner.get(), out);
+    }
+    if (const auto* a = dynamic_cast<const Arith*>(node)) {
+        return collect_predicate_fields(a->lhs.get(), out) &&
+               collect_predicate_fields(a->rhs.get(), out);
+    }
+    return false;   // unknown node kind -> do not thin
 }
 
 enum class JoinKind { Inner, Left, Right, Full, Cross };
@@ -786,6 +847,9 @@ bool execute_multi_join(const std::string& select_list,
             }
             on = std::move(compiled.program);
         }
+        // PERF-1a: one view context per stage; candidate layout is constant
+        // within a stage, so the index builds once and rows rebind by pointer.
+        dottalk::exprglue::TupleViewContext on_view_ctx;
         std::vector<dottalk::TupleRow> joined;
         for (const auto& left_row : rows) {
             bool matched = false;
@@ -793,7 +857,7 @@ bool execute_multi_join(const std::string& select_list,
                 dottalk::TupleRow candidate = combine_join_rows(left_row, right_row);
                 bool keep = stage.kind == JoinKind::Cross;
                 if (on) {
-                    const PredicateVerdict verdict = evaluate_tuple_predicate(on.get(), candidate);
+                    const PredicateVerdict verdict = evaluate_tuple_predicate(on.get(), candidate, on_view_ctx);
                     if (verdict.state == PredicateState::Error) {
                         std::cout << "SQLSEL: JOIN stage " << (stage_index + 1)
                                   << " ON evaluation failed: " << verdict.error << "\n";
@@ -821,9 +885,10 @@ bool execute_multi_join(const std::string& select_list,
                       << " (" << compiled.error << ")\n";
             return true;
         }
+        dottalk::exprglue::TupleViewContext where_view_ctx;   // PERF-1a
         std::vector<dottalk::TupleRow> filtered;
         for (auto& row : rows) {
-            const PredicateVerdict verdict = evaluate_tuple_predicate(compiled.program.get(), row);
+            const PredicateVerdict verdict = evaluate_tuple_predicate(compiled.program.get(), row, where_view_ctx);
             if (verdict.state == PredicateState::Error) {
                 std::cout << "SQLSEL: predicate evaluation failed: " << verdict.error << "\n";
                 return true;
@@ -1127,6 +1192,9 @@ bool execute_join(const std::string& select_list,
     std::size_t index_candidates = 0;
     std::size_t scan_probes = 0;
     std::string join_evaluation_error;
+    // PERF-1a: hoisted out of the candidate loops; the joined-candidate
+    // layout is constant for the whole statement.
+    dottalk::exprglue::TupleViewContext on_view_ctx;
 
     for (std::uint64_t li = 1; li <= left_count; ++li) {
         std::vector<std::string> lv;
@@ -1147,7 +1215,7 @@ bool execute_join(const std::string& select_list,
             if (simple_equi_on) {
                 matches = value_equal(lv[on_left.field_index], rv[on_right.field_index]);
             } else if (on_program) {
-                const PredicateVerdict verdict = evaluate_tuple_predicate(on_program.get(), candidate);
+                const PredicateVerdict verdict = evaluate_tuple_predicate(on_program.get(), candidate, on_view_ctx);
                 if (verdict.state == PredicateState::Error) {
                     join_evaluation_error = verdict.error;
                     return;
@@ -1274,10 +1342,11 @@ bool execute_join(const std::string& select_list,
     }
 
     if (where_program) {
+        dottalk::exprglue::TupleViewContext where_view_ctx;   // PERF-1a
         std::vector<dottalk::TupleRow> filtered;
         filtered.reserve(rows.size());
         for (auto& tuple : rows) {
-            const PredicateVerdict verdict = evaluate_tuple_predicate(where_program.get(), tuple);
+            const PredicateVerdict verdict = evaluate_tuple_predicate(where_program.get(), tuple, where_view_ctx);
             if (verdict.state == PredicateState::Error) {
                 std::cout << "SQLSEL: predicate evaluation failed: " << verdict.error << "\n";
                 return true;
@@ -1506,8 +1575,35 @@ bool resolve_result_column(const QueryResult& source,
 struct SubqueryRuntime {
     std::size_t correlated_evaluations = 0;
     std::size_t uncorrelated_evaluations = 0;
-    std::vector<std::pair<std::string, QueryResult>> cache;
+    // FINDING 7 FIX (AIF-167, 2026-09-21): std::deque, not std::vector -- the
+    // cache now hands out POINTERS into itself (no per-row deep copy), and a
+    // deque's elements stay put when a later subquery is appended. The old
+    // vector cache deep-copied the whole materialized result on EVERY cache
+    // hit (old :1589, `result = cached->second;`) -- ~1M copies of a
+    // 5,500-row result in the run aborted after 7.2 h on 2026-09-21.
+    std::deque<std::pair<std::string, QueryResult>> cache;
+    // FINDING 3 FIX: one hash set per uncorrelated IN-subquery text, built
+    // once, probed O(1) -- replaces the linear walk of the cached list (old
+    // :1744) that misses paid in full (~5.5e9 compares in the aborted run).
+    std::unordered_map<std::string, std::unordered_set<std::string>> in_sets;
 };
+
+// FINDING 3 FIX: hash key that preserves value_equal's semantics EXACTLY --
+// numeric literals compare by value (stod: "007" == "7" == "7.0"), everything
+// else by trimmed text. Distinct namespaces so a stored string can never
+// collide with a numeric's canonical form.
+std::string in_probe_key(const std::string& raw) {
+    const std::string t = trim(raw);
+    if (!t.empty() && is_numeric_literal(t)) {
+        try {
+            std::ostringstream os;
+            os.precision(17);
+            os << std::stod(t);
+            return "N:" + os.str();
+        } catch (...) {}
+    }
+    return "S:" + t;
+}
 
 std::size_t find_subquery_paren(const std::string& text) {
     bool in_single = false;
@@ -1579,24 +1675,37 @@ bool evaluate_sql_predicate(const std::string& text,
 bool materialize_subquery(const std::string& sql,
                           const dottalk::TupleRow& outer,
                           SubqueryRuntime& runtime,
-                          QueryResult& result,
+                          const QueryResult*& result_out,
+                          QueryResult& correlated_scratch,
+                          bool& from_cache,
                           std::string& error) {
     const bool correlated = context_is_referenced(sql, outer);
     if (!correlated) {
+        from_cache = true;
         const auto cached = std::find_if(runtime.cache.begin(), runtime.cache.end(),
             [&](const auto& entry) { return entry.first == sql; });
         if (cached != runtime.cache.end()) {
-            result = cached->second;
+            // FINDING 7 FIX: a pointer into the deque-backed cache. The old
+            // `result = cached->second;` deep-copied the ENTIRE materialized
+            // result (columns, rows, every value string) on every single
+            // outer row -- the dominant cost of the >7.2 h aborted run.
+            result_out = &cached->second;
             return true;
         }
         ++runtime.uncorrelated_evaluations;
-        if (!execute_select_term(sql, &result) || !result.ok) {
+        runtime.cache.emplace_back(sql, QueryResult{});
+        QueryResult& slot = runtime.cache.back().second;
+        if (!execute_select_term(sql, &slot) || !slot.ok) {
+            runtime.cache.pop_back();
             error = "uncorrelated subquery failed";
             return false;
         }
-        runtime.cache.push_back({sql, result});
+        result_out = &slot;
         return true;
     }
+    from_cache = false;
+    correlated_scratch = QueryResult{};
+    QueryResult& result = correlated_scratch;
 
     ++runtime.correlated_evaluations;
     const std::string query = trim(sql);
@@ -1665,6 +1774,7 @@ bool materialize_subquery(const std::string& sql,
         }
         result.rows.push_back(std::move(projected));
     }
+    result_out = &correlated_scratch;
     return true;
 }
 
@@ -1708,85 +1818,129 @@ bool evaluate_sql_predicate(const std::string& raw,
         return false;
     }
     const std::string sub_sql = trim(text.substr(sub_open + 1, sub_close - sub_open - 1));
-    QueryResult subquery;
-    if (!materialize_subquery(sub_sql, context, runtime, subquery, error)) return false;
 
+    // FINDING 6 FIX (AIF-167, 2026-09-21): classify and validate the predicate
+    // shape BEFORE materializing the subquery. The old order materialized
+    // first, so a malformed prefix paid a full inner-table pass just to be
+    // refused -- measured 1146 s and 2348 s on the 5.5M fixture to say no.
+    // A refusal must cost microseconds. (Known residue: an AND-conjoined
+    // prefix whose left column RESOLVES, e.g. `X < 5 AND EXISTS (...)`, still
+    // falls to the scalar path and pays one materialization before its 1x1
+    // refusal -- conjunction support, not validation order, is that fix.)
     const std::string prefix = trim(text.substr(0, sub_open));
     const std::string upper_prefix = up(prefix);
-    if (upper_prefix == "EXISTS" || upper_prefix == "NOT EXISTS") {
-        const bool exists = !subquery.rows.empty();
-        state = (upper_prefix == "NOT EXISTS" ? !exists : exists)
+    enum class SubqKind { Exists, NotExists, In, NotIn, Scalar };
+    SubqKind kind = SubqKind::Scalar;
+    std::string left_token;
+    std::string op;
+    if (upper_prefix == "EXISTS") kind = SubqKind::Exists;
+    else if (upper_prefix == "NOT EXISTS") kind = SubqKind::NotExists;
+    else {
+        const std::size_t in_pos = find_kw(prefix, "IN");
+        if (in_pos != std::string::npos && in_pos + 2 == prefix.size()) {
+            kind = SubqKind::In;
+            left_token = trim(prefix.substr(0, in_pos));
+            const std::size_t not_pos = find_kw(left_token, "NOT");
+            if (not_pos != std::string::npos && not_pos + 3 == left_token.size()) {
+                kind = SubqKind::NotIn;
+                left_token = trim(left_token.substr(0, not_pos));
+            }
+        } else {
+            std::size_t op_pos = std::string::npos;
+            for (const char* candidate : {"<=", ">=", "<>", "!=", "=", "<", ">"}) {
+                const std::size_t hit = prefix.rfind(candidate);
+                if (hit != std::string::npos &&
+                    (op_pos == std::string::npos || hit > op_pos)) {
+                    op = candidate;
+                    op_pos = hit;
+                }
+            }
+            if (op_pos == std::string::npos) {
+                error = "subquery predicate must be EXISTS, IN, or a scalar comparison";
+                return false;
+            }
+            kind = SubqKind::Scalar;
+            left_token = trim(prefix.substr(0, op_pos));
+        }
+    }
+
+    std::size_t left_pos = 0;
+    if (kind != SubqKind::Exists && kind != SubqKind::NotExists) {
+        QueryResult context_result;
+        context_result.columns = context.columns;
+        if (!resolve_result_column(context_result, left_token, left_pos, error)) return false;
+    }
+
+    // FINDING 7 FIX: the materialized result arrives BY POINTER; a cache hit
+    // no longer deep-copies thousands of TupleRows per outer row.
+    QueryResult correlated_scratch;
+    const QueryResult* subquery = nullptr;
+    bool from_cache = false;
+    if (!materialize_subquery(sub_sql, context, runtime, subquery, correlated_scratch,
+                              from_cache, error)) return false;
+
+    if (kind == SubqKind::Exists || kind == SubqKind::NotExists) {
+        const bool exists = !subquery->rows.empty();
+        state = (kind == SubqKind::NotExists ? !exists : exists)
             ? PredicateState::True : PredicateState::False;
         return true;
     }
 
-    const std::size_t in_pos = find_kw(prefix, "IN");
-    if (in_pos != std::string::npos && in_pos + 2 == prefix.size()) {
-        std::string left_token = trim(prefix.substr(0, in_pos));
-        bool negate = false;
-        const std::size_t not_pos = find_kw(left_token, "NOT");
-        if (not_pos != std::string::npos && not_pos + 3 == left_token.size()) {
-            negate = true;
-            left_token = trim(left_token.substr(0, not_pos));
-        }
-        QueryResult context_result;
-        context_result.columns = context.columns;
-        std::size_t left_pos = 0;
-        if (!resolve_result_column(context_result, left_token, left_pos, error)) return false;
-        if (subquery.columns.size() != 1) {
+    if (kind == SubqKind::In || kind == SubqKind::NotIn) {
+        const bool negate = (kind == SubqKind::NotIn);
+        if (subquery->columns.size() != 1) {
             error = "IN subquery must return exactly one column";
             return false;
         }
-        if (!same_column_family(context.columns[left_pos].ftype, subquery.columns[0].ftype)) {
+        if (!same_column_family(context.columns[left_pos].ftype, subquery->columns[0].ftype)) {
             error = "IN subquery compares incompatible typed columns";
             return false;
         }
         bool found = false;
-        for (const auto& row : subquery.rows) {
-            if (context.cell_kind(left_pos) == dottalk::TupleCellKind::ProducedAbsent ||
-                row.cell_kind(0) == dottalk::TupleCellKind::ProducedAbsent) continue;
-            if (value_equal(context.values[left_pos], row.values[0])) { found = true; break; }
+        if (context.cell_kind(left_pos) != dottalk::TupleCellKind::ProducedAbsent) {
+            if (from_cache) {
+                // FINDING 3 FIX: uncorrelated IN membership is a hash probe,
+                // built once per subquery text -- the old linear walk paid the
+                // whole list per miss (~5.5e9 compares in the aborted run).
+                // in_probe_key preserves value_equal semantics exactly.
+                auto& probe_set = runtime.in_sets[sub_sql];
+                if (probe_set.empty() && !subquery->rows.empty()) {
+                    for (const auto& row : subquery->rows) {
+                        if (row.cell_kind(0) == dottalk::TupleCellKind::ProducedAbsent) continue;
+                        probe_set.insert(in_probe_key(row.values[0]));
+                    }
+                }
+                found = probe_set.count(in_probe_key(context.values[left_pos])) != 0;
+            } else {
+                // Correlated: the result differs per outer row, so one linear
+                // pass is already optimal -- no set to amortize.
+                for (const auto& row : subquery->rows) {
+                    if (row.cell_kind(0) == dottalk::TupleCellKind::ProducedAbsent) continue;
+                    if (value_equal(context.values[left_pos], row.values[0])) { found = true; break; }
+                }
+            }
         }
         state = (negate ? !found : found) ? PredicateState::True : PredicateState::False;
         return true;
     }
 
-    std::string op;
-    std::size_t op_pos = std::string::npos;
-    for (const char* candidate : {"<=", ">=", "<>", "!=", "=", "<", ">"}) {
-        const std::size_t hit = prefix.rfind(candidate);
-        if (hit != std::string::npos &&
-            (op_pos == std::string::npos || hit > op_pos)) {
-            op = candidate;
-            op_pos = hit;
-        }
-    }
-    if (op_pos == std::string::npos) {
-        error = "subquery predicate must be EXISTS, IN, or a scalar comparison";
-        return false;
-    }
-    const std::string left_token = trim(prefix.substr(0, op_pos));
-    QueryResult context_result;
-    context_result.columns = context.columns;
-    std::size_t left_pos = 0;
-    if (!resolve_result_column(context_result, left_token, left_pos, error)) return false;
-    if (subquery.columns.size() != 1 || subquery.rows.size() != 1) {
+    if (subquery->columns.size() != 1 || subquery->rows.size() != 1) {
         error = "scalar subquery must return exactly one row and one column (got " +
-                std::to_string(subquery.rows.size()) + " row(s), " +
-                std::to_string(subquery.columns.size()) + " column(s))";
+                std::to_string(subquery->rows.size()) + " row(s), " +
+                std::to_string(subquery->columns.size()) + " column(s))";
         return false;
     }
-    if (!same_column_family(context.columns[left_pos].ftype, subquery.columns[0].ftype)) {
+    if (!same_column_family(context.columns[left_pos].ftype, subquery->columns[0].ftype)) {
         error = "scalar subquery compares incompatible typed columns";
         return false;
     }
     dottalk::TupleRow comparison;
     comparison.columns = {
         {"__SQ_LEFT", -1, "__SQ_LEFT", context.columns[left_pos].ftype},
-        {"__SQ_RIGHT", -1, "__SQ_RIGHT", subquery.columns[0].ftype}
+        {"__SQ_RIGHT", -1, "__SQ_RIGHT", subquery->columns[0].ftype}
     };
-    comparison.values = {context.values[left_pos], subquery.rows[0].values[0]};
-    comparison.cell_kinds = {context.cell_kind(left_pos), subquery.rows[0].cell_kind(0)};
+    comparison.values = {context.values[left_pos], subquery->rows[0].values[0]};
+    comparison.cell_kinds = {context.cell_kind(left_pos), subquery->rows[0].cell_kind(0)};
     auto compiled = dottalk::expr::compile_where("__SQ_LEFT " + op + " __SQ_RIGHT");
     if (!compiled) {
         error = "could not compile scalar subquery comparison";
@@ -1872,11 +2026,18 @@ bool project_query_expressions(const std::string& select_list,
     for (const Plan& plan : plans) {
         result.columns.push_back({plan.label, -1, plan.label, plan.type, 0, 0});
     }
+    // PERF-1a: build the view only when some select-list item is an
+    // expression -- an all-direct projection was paying three row copies per
+    // row for a view nothing read. When needed, one context serves the loop.
+    const bool needs_view = std::any_of(plans.begin(), plans.end(),
+        [](const Plan& plan) { return !plan.direct; });
+    dottalk::exprglue::TupleViewContext projection_view_ctx;
     for (const auto& source_row : source.rows) {
         dottalk::TupleRow projected;
         projected.columns = result.columns;
         projected.fragments = source_row.fragments;
-        const auto view = dottalk::exprglue::make_record_view(source_row);
+        const dottalk::expr::RecordView* view =
+            needs_view ? &projection_view_ctx.view_for(source_row) : nullptr;
         for (const Plan& plan : plans) {
             if (plan.direct) {
                 projected.values.push_back(source_row.values[*plan.direct]);
@@ -1884,7 +2045,7 @@ bool project_query_expressions(const std::string& select_list,
                 continue;
             }
             try {
-                projected.values.push_back(trim(plan.expression->evalString(view)));
+                projected.values.push_back(trim(plan.expression->evalString(*view)));
                 projected.cell_kinds.push_back(dottalk::TupleCellKind::Present);
             } catch (const dottalk::exprglue::ProducedAbsentCellAccess&) {
                 projected.values.emplace_back();
@@ -2372,6 +2533,7 @@ bool execute_aggregate_term(const std::string& tail,
                       << " (" << compiled.error << ")\n";
             return true;
         }
+        dottalk::exprglue::TupleViewContext having_view_ctx;   // PERF-1a
         std::vector<dottalk::TupleRow> retained;
         for (auto& row : result.rows) {
             dottalk::TupleRow evaluation = row;
@@ -2381,7 +2543,7 @@ bool execute_aggregate_term(const std::string& tail,
                     evaluation.columns[i].field = evaluation.columns[i].name;
                 }
             }
-            const PredicateVerdict verdict = evaluate_tuple_predicate(compiled.program.get(), evaluation);
+            const PredicateVerdict verdict = evaluate_tuple_predicate(compiled.program.get(), evaluation, having_view_ctx);
             if (verdict.state == PredicateState::Error) {
                 std::cout << "SQLSEL: HAVING evaluation failed: " << verdict.error << "\n";
                 return true;
@@ -2835,6 +2997,9 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
         }
         pred = std::move(compiled.program);
     }
+    // PERF-1a: one view context for the whole scan; the predicate row's
+    // layout (alias-prefixed columns of one table) is constant per statement.
+    dottalk::exprglue::TupleViewContext scan_view_ctx;
 
     // --- scan, projecting each surviving row ---------------------------------
     // Cursor neutrality (R16b): remember where every cursor was and put it back.
@@ -2857,34 +3022,289 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
 
     {
         cli::ScopedAreaSelect focus(area);
+        // PERF-1b (AIF-168): compile the predicate-row plan ONCE. The old
+        // per-row build_tuple_from_spec call re-parsed the spec, re-resolved
+        // the area, and resolved every field name three times per column on
+        // every row; the alias rename loop then reconcatenated every column
+        // name per row. The plan does all of that here, and the prototype
+        // carries the alias-prefixed names.
+        dottalk::TupleBuildPlan predicate_plan;
+        if (pred || subquery_where) {
+            predicate_plan = dottalk::compile_tuple_plan(area_label + ".*", opts);
+            if (predicate_plan.ok) {
+                for (auto& column : predicate_plan.prototype.columns) {
+                    column.name = single_table.alias + "." + column.field;
+                }
+            } else {
+                scan_error = "predicate row build failed: " + predicate_plan.error;
+            }
+        }
+
+        // PERF-1c (AIF-168): thin the predicate row to the columns the AST
+        // actually references. The prototype keeps the FULL column layout
+        // (the CiIndex and unknown-field refusal semantics depend on it);
+        // only the VALUE decode is skipped, via the same field1=0 mechanism
+        // the threw-column edge already uses. Never applied under a subquery
+        // predicate -- that path parses text per row and may read any column.
+        if (pred && !subquery_where && scan_error.empty() && predicate_plan.ok) {
+            std::vector<std::string> refs;
+            if (collect_predicate_fields(pred.get(), refs)) {
+                std::vector<char> needed(predicate_plan.items.size(), 0);
+                for (const auto& rname : refs) {
+                    const std::string R = up(rname);
+                    for (std::size_t i = 0; i < predicate_plan.prototype.columns.size(); ++i) {
+                        const auto& col = predicate_plan.prototype.columns[i];
+                        if (up(col.name) == R || up(col.field) == R) needed[i] = 1;
+                    }
+                }
+                for (std::size_t i = 0; i < predicate_plan.items.size(); ++i) {
+                    if (!needed[i]) {
+                        predicate_plan.items[i].field1 = 0;
+                        predicate_plan.items[i].canonical.clear();
+                    }
+                }
+            }
+        }
+
+        // ============================================================
+        // PERF-2 (AIF-168): SET PARALLEL -- partitioned pass-1 scan.
+        //
+        // R21 law: workers NEVER share a DbArea. Each worker opens a PRIVATE
+        // DbArea on the same file (own handle, own cursor, no index attach --
+        // physical recno walk), compiles its OWN predicate program, owns its
+        // own TupleViewContext, touches no workareas state, and prints
+        // nothing. Partitions are contiguous recno ranges (dev-08: fixed-
+        // width records make that exact arithmetic); merge is monoid --
+        // counts add, match vectors concatenate in range order. ORDER BY
+        // sorts the merged set exactly as the serial path does below.
+        //
+        // The pool serves only what it can serve HONESTLY. Declines (each
+        // reported when PARALLEL is ON, silent when OFF): subquery
+        // predicates (shared SubqueryRuntime), memo-bearing rows (memo
+        // backend not audited for concurrent readers), tables too small to
+        // partition, and any failure to open a private area -- every decline
+        // falls back to the serial walk below, which is byte-identical to
+        // yesterday's behavior. Writes never reach this code (DML has its
+        // own executors).
+        //
+        // NOTE on row order: workers walk PHYSICAL recno ranges. The manual
+        // disclaims result order without ORDER BY, and the serial loop's own
+        // monotonic-recno guard (next <= prev breaks the walk) already binds
+        // it to the same physical universe.
+        bool parallel_done = false;
+        if (scan_error.empty()) {
+            const int requested = cli::Settings::parallelWorkers();
+            if (requested >= 2) {
+                const int64_t rec_count = static_cast<int64_t>(area->recCount());
+                std::string decline;
+                bool memo_col = false;
+                if (pred || subquery_where) {
+                    for (const auto& column : predicate_plan.prototype.columns) {
+                        if (column.ftype == 'M' || column.ftype == 'm') { memo_col = true; break; }
+                    }
+                }
+                int workers = requested;
+                if (rec_count < static_cast<int64_t>(workers) * 1000) {
+                    workers = static_cast<int>(rec_count / 1000);
+                }
+                if (subquery_where) decline = "subquery predicate (shared subquery runtime)";
+                else if (pred && memo_col) decline = "memo column in the row (backend not audited for concurrent readers)";
+                else if (workers < 2) decline = "table too small to partition (< 2000 rows)";
+
+                std::string area_path;
+                if (decline.empty()) {
+                    // filename() is the absolute DBF path; name() is the
+                    // LOGICAL table name and does not open (first diff run
+                    // proved it -- every leg declined here).
+                    try { area_path = area->filename(); } catch (...) { area_path.clear(); }
+                    if (area_path.empty()) decline = "source path unavailable for private opens";
+                }
+                if (decline.empty()) {
+                    // Pre-flight the private open HERE so a failure is an
+                    // honest decline to serial, not a failed statement --
+                    // and carry the reason so the transcript diagnoses it.
+                    try {
+                        xbase::DbArea probe;
+                        probe.open(area_path);
+                        probe.close();
+                    } catch (const std::exception& ex) {
+                        decline = std::string("private open failed for '") + area_path + "': " + ex.what();
+                    } catch (...) {
+                        decline = std::string("private open failed for '") + area_path + "'";
+                    }
+                }
+
+                std::vector<std::unique_ptr<dottalk::expr::Expr>> worker_programs;
+                if (decline.empty() && pred) {
+                    for (int w = 0; w < workers; ++w) {
+                        auto compiled = dottalk::expr::compile_where(where_text);
+                        if (!compiled) { decline = "per-worker predicate compile failed"; break; }
+                        worker_programs.push_back(std::move(compiled.program));
+                    }
+                }
+                // PERF-1c: workers navigate RAW and decode from the buffer,
+                // so the ORDER BY key needs its 1-based index up front (the
+                // by-name getter reads the stale _fd under raw loads). An
+                // unresolvable field leaves 0 -> keys stay empty, and the
+                // post-scan R16d check reports the unknown field exactly as
+                // the serial path does.
+                int order_field1 = 0;
+                if (decline.empty() && !order_field.empty()) {
+                    try {
+                        const int idx0 = xfg::resolve_field_index_std(*area, order_field);
+                        if (idx0 >= 0) order_field1 = idx0 + 1;
+                    } catch (...) { order_field1 = 0; }
+                }
+
+                if (!decline.empty()) {
+                    std::cout << "SQLSEL: parallel declined -- " << decline
+                              << "; scanning serial.\n";
+                } else {
+                    struct WorkerOut {
+                        long long count = 0;
+                        std::vector<MatchRow> found;
+                        std::string error;
+                    };
+                    std::vector<WorkerOut> outs(static_cast<std::size_t>(workers));
+                    std::vector<std::thread> pool;
+                    pool.reserve(static_cast<std::size_t>(workers));
+
+                    const int64_t base = rec_count / workers;
+                    const int64_t rem  = rec_count % workers;
+
+                    for (int w = 0; w < workers; ++w) {
+                        const int64_t lo = 1 + w * base + std::min<int64_t>(w, rem);
+                        const int64_t hi = lo + base - 1 + (w < rem ? 1 : 0);
+                        dottalk::expr::Expr* program =
+                            pred ? worker_programs[static_cast<std::size_t>(w)].get() : nullptr;
+                        WorkerOut* out = &outs[static_cast<std::size_t>(w)];
+                        const bool want_keys = !count_star && !order_field.empty();
+                        const bool want_rows = !count_star;
+                        pool.emplace_back([lo, hi, program, out, want_keys, want_rows,
+                                           order_field1, &area_path, &predicate_plan]() {
+                            try {
+                                xbase::DbArea priv;
+                                priv.open(area_path);
+                                dottalk::exprglue::TupleViewContext view_ctx;
+                                // PERF-4: one row per worker, refilled in
+                                // place -- the per-row prototype copy and
+                                // vector churn were the heap-lock contention
+                                // that survived PERF-3 (the 8-worker cap).
+                                dottalk::TupleBuildResult row_holder;
+                                bool row_built = false;
+                                for (int64_t r = lo; r <= hi; ++r) {
+                                    // PERF-1c: RAW navigation -- no eager
+                                    // all-fields decode; the plan builder
+                                    // decodes only what the row needs.
+                                    if (!priv.gotoRec64Raw(static_cast<std::uint64_t>(r))) break;
+                                    bool keep = true;
+                                    try {
+                                        if (priv.isDeleted()) keep = false;
+                                    } catch (...) { break; }
+                                    if (keep && program) {
+                                        if (!row_built) {
+                                            row_holder =
+                                                dottalk::build_tuple_for_area(predicate_plan, priv);
+                                            if (!row_holder.ok) {
+                                                out->error = "predicate row build failed: " + row_holder.error;
+                                                return;
+                                            }
+                                            row_built = true;
+                                        } else {
+                                            dottalk::refill_tuple_for_area(predicate_plan, priv, row_holder.row);
+                                        }
+                                        const PredicateVerdict verdict =
+                                            evaluate_tuple_predicate(program, row_holder.row, view_ctx);
+                                        if (verdict.state == PredicateState::Error) {
+                                            out->error = "predicate evaluation failed: " + verdict.error;
+                                            return;
+                                        }
+                                        keep = verdict.state == PredicateState::True;
+                                    }
+                                    if (keep) {
+                                        ++out->count;
+                                        if (want_rows) {
+                                            MatchRow m;
+                                            m.recno = r;
+                                            if (want_keys && order_field1 > 0) {
+                                                try { m.key = trim(priv.decodeFieldFromBuffer(order_field1)); }
+                                                catch (...) { m.key.clear(); }
+                                            }
+                                            out->found.push_back(std::move(m));
+                                        }
+                                    }
+                                }
+                                priv.close();
+                            } catch (const std::exception& ex) {
+                                out->error = std::string("parallel worker failed: ") + ex.what();
+                            } catch (...) {
+                                out->error = "parallel worker failed: unknown error";
+                            }
+                        });
+                    }
+                    for (auto& t : pool) t.join();
+
+                    for (int w = 0; w < workers && scan_error.empty(); ++w) {
+                        const auto& o = outs[static_cast<std::size_t>(w)];
+                        if (!o.error.empty()) { scan_error = o.error; break; }
+                    }
+                    if (scan_error.empty()) {
+                        for (auto& o : outs) {
+                            matched_total += o.count;
+                            if (!count_star) {
+                                matches.insert(matches.end(),
+                                               std::make_move_iterator(o.found.begin()),
+                                               std::make_move_iterator(o.found.end()));
+                            }
+                        }
+                        std::cout << "SQLSEL: single-table scan access path -- parallel "
+                                  << "(workers=" << workers << ", rows=" << rec_count
+                                  << ", recno-range partitions).\n";
+                    }
+                    parallel_done = true;   // ran (or failed with a reported error)
+                }
+            }
+        }
+
         bool ok = false;
-        try { ok = area->top(); } catch (...) { ok = false; }
+        if (!parallel_done && scan_error.empty()) {
+            try { ok = area->top(); } catch (...) { ok = false; }
+        }
         if (ok) {
             const int64_t rec_count = static_cast<int64_t>(area->recCount());
+            // PERF-4: one predicate row for the whole serial scan, refilled
+            // in place per row (see tuple_builder.hpp for the contract).
+            dottalk::TupleBuildResult serial_row_holder;
+            bool serial_row_built = false;
             for (;;) {
                 const int64_t cur = static_cast<int64_t>(area->recno());
                 if (cur <= 0 || cur > rec_count) break;
 
                 bool keep = true;
                 try {
-                    if (!area->readCurrent()) break;
+                    // PERF-1c: the explicit readCurrent here was REDUNDANT --
+                    // top()/skip() call readCurrent internally, so every row
+                    // paid TWO full all-field decodes. The buffer and deleted
+                    // flag are already fresh from the navigation.
                     if (area->isDeleted()) keep = false;
                 } catch (...) { break; }
 
                 if (keep && (pred || subquery_where)) {
-                    dottalk::TupleBuildResult predicate_row =
-                        dottalk::build_tuple_from_spec(area_label + ".*", opts);
-                    if (!predicate_row.ok) {
-                        scan_error = "predicate row build failed: " + predicate_row.error;
-                        break;
+                    if (!serial_row_built) {
+                        serial_row_holder = dottalk::build_tuple_from_plan(predicate_plan);
+                        if (!serial_row_holder.ok) {
+                            scan_error = "predicate row build failed: " + serial_row_holder.error;
+                            break;
+                        }
+                        serial_row_built = true;
+                    } else {
+                        dottalk::refill_tuple_from_plan(predicate_plan, serial_row_holder.row);
                     }
-                    for (auto& column : predicate_row.row.columns) {
-                        column.name = single_table.alias + "." + column.field;
-                    }
+                    const dottalk::TupleRow& predicate_row = serial_row_holder.row;
                     if (subquery_where) {
                         PredicateState verdict = PredicateState::Error;
                         std::string predicate_error;
-                        if (!evaluate_sql_predicate(where_text, predicate_row.row,
+                        if (!evaluate_sql_predicate(where_text, predicate_row,
                                                     subquery_runtime, verdict,
                                                     predicate_error)) {
                             scan_error = "subquery predicate failed: " + predicate_error;
@@ -2892,7 +3312,7 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
                         }
                         keep = verdict == PredicateState::True;
                     } else {
-                        const auto verdict = evaluate_tuple_predicate(pred.get(), predicate_row.row);
+                        const auto verdict = evaluate_tuple_predicate(pred.get(), predicate_row, scan_view_ctx);
                         if (verdict.state == PredicateState::Error) {
                             scan_error = "predicate evaluation failed: " + verdict.error;
                             break;
@@ -2947,16 +3367,29 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
         // PASS 2: materialize typed TupleRows. DISTINCT is applied after
         // projection and before LIMIT, so it requests the complete match set.
         if (scan_error.empty() && !count_star) {
+            // PERF-1b (AIF-168): same plan treatment for the projection pass.
+            // Compiled at the exact execution point the per-row calls used, so
+            // bare-field specs resolve against the same current area they
+            // always did.
+            const dottalk::TupleBuildPlan projection_plan =
+                dottalk::compile_tuple_plan(spec, opts);
+            if (!projection_plan.ok) {
+                scan_error = "projection failed: " + projection_plan.error;
+            }
             std::size_t shown = 0;
             const long long projection_limit = select_distinct ? -1 : limit_n;
             for (const auto& m : matches) {
+                if (!scan_error.empty()) break;
                 if (projection_limit >= 0 && static_cast<long long>(shown) >= projection_limit) break;
                 try {
-                    area->gotoRec64(static_cast<std::uint64_t>(m.recno));
-                    if (!area->readCurrent()) break;
+                    // PERF-1c: raw positioning -- the plan builder decodes
+                    // only the selected columns from the buffer, so the
+                    // eager all-fields decode (twice, before this slice) is
+                    // gone from the projection loop entirely.
+                    if (!area->gotoRec64Raw(static_cast<std::uint64_t>(m.recno))) break;
                 } catch (...) { break; }
 
-                const dottalk::TupleBuildResult r = dottalk::build_tuple_from_spec(spec, opts);
+                const dottalk::TupleBuildResult r = dottalk::build_tuple_from_plan(projection_plan);
                 if (!r.ok) { scan_error = "projection failed: " + r.error; break; }
                 dottalk::TupleRow projected = r.row;
                 projected.columns = result.columns;
@@ -3856,12 +4289,13 @@ bool execute_insert_statement(const std::string& statement) {
     dottalk::tupleaugment::WorkAreaCursorRestore restore;
     dottalk::TupleRow empty_row;
     std::vector<PendingDmlRow> changes;
-    std::uint64_t next_recno = table.area->recCount64() + 1;
-    for (const auto& entry : dottalk::table::get_tb_const(cli::slot_of_area(table.area)).changes) {
-        if (entry.second.dirty_flags & dottalk::table::CHANGE_INSERT) {
-            next_recno = std::max(next_recno, entry.first + 1);
-        }
-    }
+    // THE KEY RULE MOVED, IT DID NOT CHANGE (OI-043, 2026-09-20). These four
+    // lines were the only producer of a staged-insert buffer key until the
+    // legacy bare INSERT verb became a buffered citizen. Two copies of the rule
+    // that decides record identity is the shape this tree keeps consolidating,
+    // so it is one function now and this call is the same arithmetic.
+    std::uint64_t next_recno = dottalk::table::next_insert_key(
+        cli::slot_of_area(table.area), table.area->recCount64());
     for (const auto& group : groups) {
         const auto expressions = split_csv(group);
         if (expressions.size() != fields.size()) {
@@ -3981,9 +4415,10 @@ bool execute_update_statement(const std::string& statement) {
         std::cout << "SQLSEL: UPDATE refused -- " << error << ".\n";
         return true;
     }
+    dottalk::exprglue::TupleViewContext dml_view_ctx;   // PERF-1a
     std::vector<PendingDmlRow> changes;
     for (const auto& row : rows) {
-        const auto verdict = evaluate_tuple_predicate(predicate.program.get(), row);
+        const auto verdict = evaluate_tuple_predicate(predicate.program.get(), row, dml_view_ctx);
         if (verdict.state == PredicateState::Error) {
             error = verdict.error;
             break;
@@ -4055,9 +4490,10 @@ bool execute_delete_statement(const std::string& statement) {
         std::cout << "SQLSEL: DELETE refused -- " << error << ".\n";
         return true;
     }
+    dottalk::exprglue::TupleViewContext dml_view_ctx;   // PERF-1a
     std::vector<PendingDmlRow> changes;
     for (const auto& row : rows) {
-        const auto verdict = evaluate_tuple_predicate(predicate.program.get(), row);
+        const auto verdict = evaluate_tuple_predicate(predicate.program.get(), row, dml_view_ctx);
         if (verdict.state == PredicateState::Error) {
             error = verdict.error;
             break;

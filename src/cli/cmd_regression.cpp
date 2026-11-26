@@ -25,15 +25,20 @@
 // usage:
 //   REGRESSION USAGE
 //   REGRESSION LIST
+//   REGRESSION GROUPS
+//   REGRESSION SHOW GROUP <name>
+//   REGRESSION GROUP <name> [QUIET] [LOG [<path>]]
 //   REGRESSION FIND <words...>
 //   REGRESSION SEARCH <words...>
 //   REGRESSION SHOW <name>
-//   REGRESSION RUN <name> [LOG [<path>]]
-//   REGRESSION <name> [LOG [<path>]]
-//   REGRESSION ALL [LOG [<path>]]
-//   REGRESSION TRIGGERVETO [NORMAL|SELFTEST|MULTIREP|AFTER|RECOVERY]
-//   REGRESSION GRPNATIVE
-//   REGRESSION GRPFAIL
+//   REGRESSION RUN <name> [QUIET] [LOG [<path>]]
+//   REGRESSION <name> [QUIET] [LOG [<path>]]
+//   REGRESSION CURATED SUITE [QUIET] [LOG [<path>]]
+//   REGRESSION TRIGGERVETO [NORMAL|SELFTEST|MULTIREP|AFTER|RECOVERY] [QUIET] [LOG [<path>]]
+//   REGRESSION GRPNATIVE [QUIET] [LOG [<path>]]
+//   REGRESSION GRPFAIL [QUIET] [LOG [<path>]]
+//   REGRESSION GRPMINT [QUIET] [LOG [<path>]]
+//   REGRESSION FIXTURECHECK [QUIET] [LOG [<path>]]
 //
 // examples:
 //   REGRESSION LIST
@@ -42,10 +47,13 @@
 //   REGRESSION RUN X64_METRICS
 //   REGRESSION RUN HARVEST
 //   REGRESSION CURSOR
-//   REGRESSION ALL
-//   REGRESSION ALL LOG
-//   REGRESSION ALL LOG tmp\suite_20260913.log
+//   REGRESSION CURATED SUITE
+//   REGRESSION CURATED SUITE QUIET LOG
+//   REGRESSION GROUP SQL_DML QUIET LOG "tmp/sql-dml.log"
+//   REGRESSION CURATED SUITE LOG tmp\suite_20260913.log
 //   REGRESSION RUN NULLASSERT LOG
+//   REGRESSION GRPMINT
+//   REGRESSION FIXTURECHECK
 //
 // notes:
 //   REGRESSION delegates script execution to DOTSCRIPT. Selected specs also
@@ -53,20 +61,55 @@
 //   final PASS/FAIL and canonical error status.
 //   Regression scripts are expected to bootstrap their own environment.
 //   LIST shows only curated stable entrypoints, not every historical script on disk.
-//   ALL runs the curated default suite in declared order and ends on a SUMMARY:
+//   CURATED SUITE runs the curated default suite in declared order and ends on a SUMMARY:
 //   counts, the names of anything that FAILED or went UNMEASURED, and the names
 //   of every spec that is NOT GRADED -- one that ran, printed a transcript, and
 //   was checked by nothing. The command's exit status is set from that tally.
 //   Before 2026-09-13 it was set from the isolation arms alone, and a passing
 //   spec CLEARED the recorded failure of the spec before it.
 //   NOT GRADED is reported separately and is not a pass.
-//   LOG tees the run to a file. Bare LOG writes under the TMP slot; a path
-//   overrides it, quoted if it contains spaces. Lines emitted on the ROUTED
-//   channel are NOT in the log -- they do not pass through a std::cout tee --
-//   and the log says so in its own header; per-spec routed evidence is in the
-//   .alt captures the transcript names. A log that cannot be opened REFUSES
-//   the run rather than running it unlogged, and an unrecognized tail is
-//   refused rather than ignored.
+//   ALL is retired and refuses execution; use CURATED SUITE.
+//   GROUPS lists related process chains; SHOW GROUP lists membership/setup.
+//   GROUP runs its selected tests once in registry order, with fixture detection
+//   and before/after isolation checks. Groups may share tests.
+//   QUIET and LOG apply to named tests, groups, the suite, and standalone arms.
+//   Options may appear in either order; duplicate options or extra tokens refuse.
+//   Quote log paths containing spaces. Bare LOG overwrites the stable TMP file.
+//   Log write failure sets a non-success error; a partial log is not complete.
+//   LOG captures ordinary, routed, stderr and regression-launched child output.
+//   Bare LOG writes under TMP; specify a path to retain a separate run.
+//   QUIET is optional: hide bulk output, retain progress and final summary.
+//   Without QUIET the full screen dump remains available, with or without LOG.
+//   Capture is independent of SET ALTERNATE and never replaces grader evidence.
+//   Unopenable logs and malformed options refuse execution.
+//   GRPMINT runs inside CURATED SUITE and also stands alone. It redirects the SYS path
+//   slot at a directory that DOES NOT EXIST, asserts the group catalog is
+//   ABSENT, commits a two-table group, and then asserts the directory,
+//   GROUPS.dbf and GROUPMEM.dbf were all created by that commit. The reading is
+//   ABSENT-THEN-PRESENT: a presence check alone is green on every machine that
+//   already has a catalog, which is every machine this has ever run on.
+//   AN UNGRADED SPEC IS NOW READ EVEN THOUGH IT IS NOT GRADED. Its transcript
+//   is checked for the engine's file-not-found line, and a spec that could not
+//   open its fixture reports UNMEASURED rather than "not graded" -- because a
+//   spec that RAN and asserted nothing, and a spec that never started, are two
+//   different facts that used to print the same word. FIXTURECHECK proves that
+//   detector CAN FIRE: its positive case is LIVE -- it opens a table that
+//   cannot exist and requires the detector to match what this build actually
+//   printed -- and two canned cases guard the other direction, against
+//   matching a spec that only QUOTES the words. It runs in the default suite,
+//   before the specs it guards.
+//   THE FIXTURE READ TAKES BOTH CHANNELS. The engine prints its open failure
+//   with cli::cmdout, and OutputRouter writes to the console streambuf it
+//   captured at singleton construction, so NO std::cout rdbuf swap can see it:
+//   measured 2026-09-13, when a tee-only read made FIXTURECHECK itself report
+//   UNMEASURED and would have let a missing fixture pass as "not graded". The
+//   ungraded read and FIXTURECHECK both tee std::cout AND take an ALTERNATE
+//   capture, and search the pair. FIXTURECHECK prints
+//   FD_C0_channel_that_carried_it as an OBSERVATION, not an arm -- either
+//   answer is acceptable and the line can never be the red one. If an operator
+//   SET ALTERNATE is already active the read is DEGRADED to the tee, each
+//   ungraded spec says so on one line, and FIXTURECHECK reports UNMEASURED
+//   rather than grading nothing.
 //   Dev-only warning/repro canaries should remain outside this surface unless
 //   they are intentionally promoted.
 //
@@ -114,6 +157,7 @@
 #include "xbase_error_context.hpp"
 #include "xbase/trigger_hooks.hpp"   // AIF-087 M2c: the veto arm registers a BEFORE callback
 #include "cli/output_router.hpp"     // AIF-087 M2c: catalog messages bypass std::cout
+#include "cli/group_log.hpp"         // AIF-160: GRPMINT reads the SYS group catalog
 
 using xbase::DbArea;
 
@@ -134,6 +178,7 @@ enum class RegressionValidator {
     SqlselAdvancedJoinV1,
     SqlselDmlTransactionV1,
     SqlselWorkspaceScopeV1,
+    SqlselParallelV1,
     SqlmodeSmokeV1,
     SqlselBufferVisibilityV1,
     EvaldiffV1,
@@ -143,7 +188,10 @@ enum class RegressionValidator {
     PkDurabilityV1,
     VarcharAreaResetV1,
     WorkdeskV1,
-    MetadataReportV1
+    MetadataReportV1,
+    IndexX64SmokeV1,
+    WorkspaceMarkersV1,
+    RemainingDefaultV1
 };
 
 struct RegressionSpec {
@@ -251,7 +299,7 @@ struct RegressionSpec {
 // compile error ("too many initializers"), which is the safe failure -- but it
 // is a recurring papercut: it happened when CNXLIVE was added on 2026-07-31.
 // Bump it when you add a regression.
-constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 84> kRegressionSpecs{{
     {
         "COUNT_LIST_VERBOSE",
         "count_list_verbose_regression.dts",
@@ -318,19 +366,57 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
         "Broad non-destructive shell smoke over stable command surface",
+        true,
+        false,
+        RegressionValidator::RemainingDefaultV1,
         true
     },
     {
         "INDEX_X32",
         "index_x32_inx_cnx_smoke.dts",
         "x32 INX/CNX order and attachment smoke",
-        true
+        true,
+        false,
+        RegressionValidator::RemainingDefaultV1
     },
     {
         "INDEX_X64",
         "index_v64_cdx_lmdb_smoke.dts",
-        "v64 CDX/LMDB order and attachment smoke",
-        true
+        "THE v64 INDEX RULE, ON A FIXTURE THE SPEC BUILDS ITSELF (v3, 2026-09-13). "
+        "v64 tables take their active order from CDX/LMDB, and until v3 nothing "
+        "asserted it: the spec was in the default suite with NO validator and it "
+        "opened DBF/SANDBOX/students.dbf, which does not exist on the PUBLISHED tree "
+        "because dbf/sandbox is a declared non-publish lane. MEASURED 2026-09-13 on "
+        "staging: 'Open failed: file does not exist: ...students.dbf' and every line "
+        "after it a refusal, counted as 'not graded', suite VERDICT PASS. Staging's "
+        "SANDBOX holds NINE entries against dev's ~120. THE SPEC DID NOT RUN HOLLOW, "
+        "IT DID NOT RUN AT ALL, and nothing could say so. v3 builds IDXSMOKE in "
+        "SANDBOX and erases it at both ends, so it reads identically on a fresh clone "
+        "of github/main. THE FIXTURE'S TAG ORDER IS THE EXACT REVERSE OF ITS PHYSICAL "
+        "ORDER -- NAV_NATURAL's trick and the only thing that makes the arms "
+        "discriminating, because a build ignoring the tag walks physical and reads "
+        "ROW1 where ROW6 is demanded. TEN MARKERS: three guards, seven arms, counted "
+        "as well as read (an errored marker PRINTS NOTHING rather than going red). "
+        "IX_G2 IS THE CONTROL and is the interesting guard: container attached, NO "
+        "tag, and the walk must still be PHYSICAL -- that is the v64 rule's other "
+        "half and it is what AIF-148 got wrong in the reporting layer. IX_T4 AND "
+        "IX_T5 ARE DELIBERATELY TWO CLAIMS over one REPLACE: T4 says the write "
+        "reached the record and cannot fail for index reasons, T5 says the index "
+        "learned the new key. A RED T5 WITH A GREEN T4 IS A MEASUREMENT, NOT A BROKEN "
+        "FIXTURE -- DELETE's own contract hedges direct-write index maintenance as "
+        "best-effort, so that reading is a finding about live CDX maintenance and "
+        "must be reported rather than tuned away. DROPPED FROM v2 AND NOT REPLACED, "
+        "stated rather than left implied: COPY TO / WITH SIDECARS (copying a table is "
+        "COPY's subject and it was the half that needed a shipped fixture), and FIND "
+        "and LOCATE under an active order (NAV_NATURAL owns cursor movement; this "
+        "spec owns the container). NOT CLAIMED: anything about the LMDB "
+        "environment's CONTENTS -- BUILDLMDB reporting OK is the only reading taken "
+        "and no marker in this language can open an env. Mints no catalog rows. NOT "
+        "YET RUN AT THE TIME OF WRITING: authored against the measurement in the same "
+        "session and no green is claimed for it.",
+        true,
+        false,
+        RegressionValidator::IndexX64SmokeV1
     },
     {
         "INDEX_X64_CNX",
@@ -487,12 +573,17 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
         "X64_METRICS",
         "canaries\\x64_matrix_metrics_boundary_canary.dts",
         "x64 structural boundary proof above legacy 16-bit record/header limits",
-        true
+        true,
+        false,
+        RegressionValidator::RemainingDefaultV1
     },
     {
         "LANGUAGE",
         "canaries\\language_shakedown_canary.dts",
         "Messaging-normalization locale proof: es/fr/de/it USAGE render across the localized command surface",
+        true,
+        false,
+        RegressionValidator::RemainingDefaultV1,
         true
     },
     {
@@ -511,6 +602,9 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
         "RELJOIN",
         "main\\rel_join_enum_regression.dts",
         "Relation join/enum projection regression",
+        true,
+        false,
+        RegressionValidator::RemainingDefaultV1,
         true
     },
     {
@@ -523,19 +617,25 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
         "DOTSCRIPT_EXPR",
         "dotscript\\dotscript_expr_regression.dts",
         "DotScript memvars (VAR/$name) + arrays ({}/$a[n], nested/chained) via the house expression path, with an IF literal baseline (AIF-041 M1)",
-        true
+        true,
+        false,
+        RegressionValidator::RemainingDefaultV1
     },
     {
         "DOTSCRIPT_PARITY",
         "dotscript\\predicate_memvar_parity_regression.dts",
         "Predicate parity target: $name/$a[n] in IF/WHILE/WHERE -- now GREEN via the shared house-evaluator bridge (AIF-041, landed 2026-07-21). Fixture-free, self-asserting; safe for the default suite",
-        true
+        true,
+        false,
+        RegressionValidator::RemainingDefaultV1
     },
     {
         "LEXING",
         "lexing\\comment_handling_regression.dts",
         "Canonical comment vocabulary on the script path after the AIF-037 lexer consolidation (full-line * REM # //, inline && #, single & macro survives); read-only, fixture-free",
-        true
+        true,
+        false,
+        RegressionValidator::RemainingDefaultV1
     },
     {
         "CALC",
@@ -584,7 +684,7 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
     {
         "DEF_FAMILY",
         "dotscript\\def_family_regression.dts",
-        "Runtime DEF-family testbed: DEFCMD/DEFFN/EXAMPLE define-invoke-arg-compose-list-remove, session-only, no rebuild (RUNTIME_DEF_FAMILY lane). Self-bootstrapping; opens/mutates no table or file (only the session command/function registries, which it cleans up). Permanent worked example of the AI-friendly dev-tools. IT HAD NO VALIDATOR UNTIL 2026-09-05, AND THAT IS WHY IT WAS NOT PROMOTED THAT DAY EITHER. It carried DEF-FAMILY-REGRESSION-BEGIN/-END -- the exact affordance require_exact_transcript_block consumes -- and NOTHING IN THIS FILE CONSUMED THEM, so REGRESSION RUN DEF_FAMILY printed a transcript and returned NO VERDICT: measured 2026-09-05, both L3 arms read 6/6 and this spec reported neither PASS nor FAIL nor a count. A spec that cannot go red is a permanently green line, so promoting it would have made REGRESSION ALL say something it had not checked. DefFamilyV1 is that missing instrument: a 22-line EXACT block, asserted in ORDER, on the ROUTED CHANNEL -- capture_routed_channel is true because the arm `Unknown command: PINGCMD` is cli::cmdout::print_line and a std::cout rdbuf swap cannot see it (the CLV lesson of 2026-09-04, one day old here). WHAT A GREEN DEF_FAMILY DOES NOT MEAN: that a DEFFN body can use its arguments. It cannot -- the MVP body returns stored text and ignores argv -- so the one argument arm is DEFCMD_args, about a COMMAND. PROMOTED TO THE DEFAULT SUITE 2026-09-05, IMMEDIATELY AFTER THE VALIDATOR'S FIRST GREEN AND NOT BEFORE IT. That ordering is the whole point of this entry: promoting on the strength of the runs taken while NOTHING WAS GRADING is exactly the mistake the paragraph above records, and the owner's promote instruction arrived while the spec was still in that state. THE SOAK ARGUMENT IS DELIBERATELY NOT MADE. NULLASSERT took three greens before its flag moved; this one has ONE run of its instrument, and the reason to promote anyway is the RELSCOPE2 precedent -- a MEASURED COVERAGE HOLE rather than a soak. What the default suite could not reach: not DEFCMD, not UNDEFCMD, not DEFFN, not UNDEFFN, not fn_custom, not the runtime command registry's remove path, not a custom function resolving inside `?`, and not one of the five evaluator insertion points. A whole shipped facility, four source files, behind a suite that would have stayed green through any of it breaking. THE COST IS NEAR ZERO: no catalog rows (none of the three minting verbs, and mints_catalog is false), no LMDB, no index containers, NO TABLE AND NO FILE AT ALL -- it touches only the session command and function registries and cleans both up with UNDEFCMD and UNDEFFN. It sets ECHO OFF and STOP_ON_ERROR OFF, which are session settings it does NOT restore; harmless where it sits and worth knowing if it ever moves. It takes the ROUTED CHANNEL for the length of its run, so it cannot run under an operator's own SET ALTERNATE -- AlternateCapture declines rather than clobbering, and says so. VERIFIED IN-SUITE 2026-09-05 ON THE PROMOTING BUILD (e4c3f78ea plus this flag flip; the build stamp is NOT quoted here because the run transcript began below the banner and a stamp nobody read is not a measurement). THE LISTING WAS NOT THE PROOF THIS TIME -- THE RUN WAS: the transcript begins mid-listing, so the [default] tag was not read, and what establishes the promotion took is that `REGRESSION: running DEF_FAMILY` appears in the suite sequence at all. That is a STRONGER reading than the tag, not a weaker one, and it is recorded this way rather than claiming a check that was not performed. RUN TENTH OF TWENTY-EIGHT, AND THAT POSITION IS THE POINT: every other spec promoted in this lane runs LAST, where it can only inherit. This one INHERITS FROM LEXING AND HANDS OFF TO SQLSEL_BUFFER_VIS, so it is the first here whose order-independence is tested in BOTH directions by the suite itself. The suite went 27 specs to 28. IT RETURNED THE ROUTED CHANNEL, which is the one interaction a single-spec run cannot expose: AlternateCapture took the channel mid-suite without meeting an operator's own SET ALTERNATE, and the six SQLSEL specs that follow all printed their own transcript-derived validator verdicts, so the channel was released rather than held. THE UNRESTORED SESSION SETTINGS COST NOTHING, measured rather than assumed: this spec leaves ECHO OFF and STOP_ON_ERROR OFF, and SQLSEL_BUFFER_VIS opens by setting both itself. IT MINTED NOTHING: seven specs took scratch brackets, wscat_run_305 through 311, and DEF_FAMILY was not among them; the L3 arm read six of six at both ends and the production catalog at 279 rows before and after. WHAT THIS DOES NOT SETTLE, and here it is a REAL gap rather than a formality: THE 22-LINE BLOCK HAS NEVER GONE RED. DefFamilyV1 is one day old and has seen exactly two runs, both green. Its FAIL paths -- the line-count mismatch and the line-N diff -- exist only in code, and its two declared brittlenesses (the en-US rendering of MessageId::UnknownCommand, and any added echo line in cmd_defcmd or cmd_deffn) are both UNMEASURED. A validator that has only ever passed is the exact condition this entry was written to correct one paragraph above, so it is named here rather than left for a later reader to notice.",
+        "Runtime DEF-family testbed: DEFCMD/DEFFN/EXAMPLE define-invoke-arg-compose-list-remove, session-only, no rebuild (RUNTIME_DEF_FAMILY lane). Self-bootstrapping; opens/mutates no table or file (only the session command/function registries, which it cleans up). Permanent worked example of the AI-friendly dev-tools. IT HAD NO VALIDATOR UNTIL 2026-09-05, AND THAT IS WHY IT WAS NOT PROMOTED THAT DAY EITHER. It carried DEF-FAMILY-REGRESSION-BEGIN/-END -- the exact affordance require_exact_transcript_block consumes -- and NOTHING IN THIS FILE CONSUMED THEM, so REGRESSION RUN DEF_FAMILY printed a transcript and returned NO VERDICT: measured 2026-09-05, both L3 arms read 6/6 and this spec reported neither PASS nor FAIL nor a count. A spec that cannot go red is a permanently green line, so promoting it would have made REGRESSION CURATED SUITE say something it had not checked. DefFamilyV1 is that missing instrument: a 22-line EXACT block, asserted in ORDER, on the ROUTED CHANNEL -- capture_routed_channel is true because the arm `Unknown command: PINGCMD` is cli::cmdout::print_line and a std::cout rdbuf swap cannot see it (the CLV lesson of 2026-09-04, one day old here). WHAT A GREEN DEF_FAMILY DOES NOT MEAN: that a DEFFN body can use its arguments. It cannot -- the MVP body returns stored text and ignores argv -- so the one argument arm is DEFCMD_args, about a COMMAND. PROMOTED TO THE DEFAULT SUITE 2026-09-05, IMMEDIATELY AFTER THE VALIDATOR'S FIRST GREEN AND NOT BEFORE IT. That ordering is the whole point of this entry: promoting on the strength of the runs taken while NOTHING WAS GRADING is exactly the mistake the paragraph above records, and the owner's promote instruction arrived while the spec was still in that state. THE SOAK ARGUMENT IS DELIBERATELY NOT MADE. NULLASSERT took three greens before its flag moved; this one has ONE run of its instrument, and the reason to promote anyway is the RELSCOPE2 precedent -- a MEASURED COVERAGE HOLE rather than a soak. What the default suite could not reach: not DEFCMD, not UNDEFCMD, not DEFFN, not UNDEFFN, not fn_custom, not the runtime command registry's remove path, not a custom function resolving inside `?`, and not one of the five evaluator insertion points. A whole shipped facility, four source files, behind a suite that would have stayed green through any of it breaking. THE COST IS NEAR ZERO: no catalog rows (none of the three minting verbs, and mints_catalog is false), no LMDB, no index containers, NO TABLE AND NO FILE AT ALL -- it touches only the session command and function registries and cleans both up with UNDEFCMD and UNDEFFN. It sets ECHO OFF and STOP_ON_ERROR OFF, which are session settings it does NOT restore; harmless where it sits and worth knowing if it ever moves. It takes the ROUTED CHANNEL for the length of its run, so it cannot run under an operator's own SET ALTERNATE -- AlternateCapture declines rather than clobbering, and says so. VERIFIED IN-SUITE 2026-09-05 ON THE PROMOTING BUILD (e4c3f78ea plus this flag flip; the build stamp is NOT quoted here because the run transcript began below the banner and a stamp nobody read is not a measurement). THE LISTING WAS NOT THE PROOF THIS TIME -- THE RUN WAS: the transcript begins mid-listing, so the [curated suite] tag was not read, and what establishes the promotion took is that `REGRESSION: running DEF_FAMILY` appears in the suite sequence at all. That is a STRONGER reading than the tag, not a weaker one, and it is recorded this way rather than claiming a check that was not performed. RUN TENTH OF TWENTY-EIGHT, AND THAT POSITION IS THE POINT: every other spec promoted in this lane runs LAST, where it can only inherit. This one INHERITS FROM LEXING AND HANDS OFF TO SQLSEL_BUFFER_VIS, so it is the first here whose order-independence is tested in BOTH directions by the suite itself. The suite went 27 specs to 28. IT RETURNED THE ROUTED CHANNEL, which is the one interaction a single-spec run cannot expose: AlternateCapture took the channel mid-suite without meeting an operator's own SET ALTERNATE, and the six SQLSEL specs that follow all printed their own transcript-derived validator verdicts, so the channel was released rather than held. THE UNRESTORED SESSION SETTINGS COST NOTHING, measured rather than assumed: this spec leaves ECHO OFF and STOP_ON_ERROR OFF, and SQLSEL_BUFFER_VIS opens by setting both itself. IT MINTED NOTHING: seven specs took scratch brackets, wscat_run_305 through 311, and DEF_FAMILY was not among them; the L3 arm read six of six at both ends and the production catalog at 279 rows before and after. THE LINE-N DIFF PATH WENT RED 2026-09-19 AND THE DEBT IS HALF PAID -- read which half. This entry used to end 'THE 22-LINE BLOCK HAS NEVER GONE RED ... both UNMEASURED', which was true for fourteen days and is the condition OI-032 existed to nag about. NO REBUILD WAS NEEDED, because one of the two declared brittlenesses IS a falsification: MessageId::UnknownCommand is carried in it/es/fr/de as well as en-US, so SET LANGUAGE TO it changes expected line 12 and nothing else. Build fd0bcd93 (Sep 19 2026 12:44:16), dottalkpp/data/scripts/def_family_falsify_probe.dts, PASS then FAIL then PASS in ONE process on the SAME fixtures: 'DEF FAMILY: FAIL -- DEF-FAMILY-REGRESSION line 12 mismatch / expected: Unknown command: PINGCMD / actual: Comando sconosciuto: PINGCMD', and DEF_FAMILY: FAIL rolled up. THE CONTROLS AT BOTH ENDS ARE WHAT MAKE IT EVIDENCE rather than an anecdote -- a red that does not come back green is a broken harness, not a working validator, which is the METADATA_REPORTS shape. THE BRITTLENESS IS THEREFORE CONFIRMED AND NOT MERELY DECLARED: a locale change reds this spec for something that is not a defect, so an operator who runs the suite under a non-en-US locale gets a false red here. STILL UNMEASURED, AND SAID RATHER THAN FOLDED INTO THE WIN: the LINE-COUNT mismatch path, and the second brittleness (an added echo line in cmd_defcmd or cmd_deffn). SET TALK ON was tried as the only no-rebuild lever that might add a line inside the bracket and it does NOT reach in -- it adds 'Recno: N' to the L3 isolation arm and nothing between BEGIN and END, because this spec sets its own ECHO OFF. Reaching the count path needs a rebuild that injects a line, which is exactly the brittleness's own description. One of two FAIL paths and one of two brittlenesses: half, recorded as half.",
         true,    // PROMOTED 2026-09-05 -- one green run of DefFamilyV1; the argument is the coverage hole, not a soak
         false,
         RegressionValidator::DefFamilyV1,
@@ -611,7 +711,7 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
     {
         "PHASE0_DECODE_COST",
         "pinocchio\\ticketb_phase0_decode_cost.dts",
-        "Scan-evaluator baseline benchmark (scan-evaluator optimization lane M0): self-times SUM GPA / COUNT FOR (1 term) / COUNT FOR (3 terms) over the 1,000,000-row pinocchio STUDENTS fixture via SET TIMER (now script-aware) cross-checked by fractional SECONDS(). Read-only, no mutation. Baseline floor (Alienware m16 R2 / Core Ultra 9 185H): SUM ~19.5s, DEC1 ~38.5s, DEC3 ~70.5s. NOT a pass/fail regression and long-running (~2+ min); requires the 1M-row pinocchio fixture. EXEMPT from REGRESSION ALL by design -- explicit run only, as the M1-M4 speedup floor. (scan-evaluator lane, origin AIF-043 Ticket B Phase-0 KILL)",
+        "Scan-evaluator baseline benchmark (scan-evaluator optimization lane M0): self-times SUM GPA / COUNT FOR (1 term) / COUNT FOR (3 terms) over the 1,000,000-row pinocchio STUDENTS fixture via SET TIMER (now script-aware) cross-checked by fractional SECONDS(). Read-only, no mutation. Baseline floor (Alienware m16 R2 / Core Ultra 9 185H): SUM ~19.5s, DEC1 ~38.5s, DEC3 ~70.5s. NOT a pass/fail regression and long-running (~2+ min); requires the 1M-row pinocchio fixture. EXEMPT from REGRESSION CURATED SUITE by design -- explicit run only, as the M1-M4 speedup floor. (scan-evaluator lane, origin AIF-043 Ticket B Phase-0 KILL)",
         false
     },
     {
@@ -641,8 +741,8 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
     {
         "SQLMODE_SMOKE",
         "sqlmode_smoke_regression.dts",
-        "SQLsel G2 (AIF-074): the sqlsel library target owns statement execution and session mode state; SQL mode routes SELECT to SQLSEL, blocks REL/SET RELATION and relation auto-refresh, intercepts native expression fallback, and marks the prompt. NATIVE/OTHER retain work-area SELECT, canonical SQLSEL is mode-invariant, and mode is process-local. Two SELECT/SQLSEL row sets are compared with SQLite; four behavioral mode/cursor markers and three exact refusals are required. Self-erasing SANDBOX fixtures. Explicit-run pending mutation proof, independent review, and soak.",
-        false,
+        "SQLsel G2 (AIF-074): the sqlsel library target owns statement execution and session mode state; SQL mode routes SELECT to SQLSEL, blocks REL/SET RELATION and relation auto-refresh, intercepts native expression fallback, and marks the prompt. NATIVE/OTHER retain work-area SELECT, canonical SQLSEL is mode-invariant, and mode is process-local. Two SELECT/SQLSEL row sets are compared with SQLite; four behavioral mode/cursor markers and three exact refusals are required. Self-erasing SANDBOX fixtures. Explicit-run pending mutation proof, independent review, and soak. PROMOTED TO THE DEFAULT SUITE 2026-09-23, and the explicit-run sentence above is LEFT STANDING because it was the condition at the time; all three preconditions are now discharged. MUTATION PROOF 2026-09-23, one targeted single-defect script mutation per grading class, no rebuilds (the .dts is data): oracle divergence (the SELECT-alias arm queried ID=1 while SQLite O1 kept ID=2 -> FAIL naming the pair, rows 1|ALPHA vs 2|BETA); exact-block shortfall (SET RELATION line removed -> FAIL 'SQLMODE-REFUSALS expected 2 line(s), got 1'); forced-false cursor marker (C1 asserting the wrong row -> FAIL naming the missing fragment, the .F. visible in transcript). Baseline green FIRST, tracked-bytes restore via git checkout after each -- and the baseline is itself a finding: the spec, authored in the AIF-074 era, survived the 2026-09-04 scanner retirement and the 2026-09-10 predicate retirement without rot. SOAK: two PASS runs on ONE build, both banners 'dottalk++ beta 1.b, 648a7a3e  (Sep 23 2026 04:38:55)' transcribed directly from the operator's console, back-to-back with nothing changed between them; rows in coordination/SOAK_EVIDENCE.md. THE REASON IS A MEASURED COVERAGE HOLE: no default spec asserts ANY SQL-mode ROUTING behavior. The suite's only other SQL-mode exercise is the GRPMINT arm, which covers BEGIN/COMMIT transactions and nothing else; the SELECT alias, the REL/SET RELATION block, the expression-fallback interception and the mode-restoration cursors live ONLY in this spec -- a regression quietly returning SQL-mode SELECT to native work-area SELECT (the pre-AIF-074 behavior) would leave REGRESSION CURATED SUITE green. The cost supports it: self-bootstrapping self-erasing SANDBOX fixtures, no catalog rows. INDEPENDENT REVIEW is the flip commit itself: the operator reads this package before committing it, and the review that matters is the one attached to the act. The flip needs a REBUILD (the registry is compiled in); read REGRESSION LIST for the [curated suite] tag BEFORE believing any run; the ALL headline moves 33 -> 34. VERIFIED IN-SUITE 2026-09-23 -- the first post-flip REGRESSION CURATED SUITE: specs run 34, passed 34, FAILED 0, exactly as predicted. The position bought a measurement standalone never could: this entry declares mid-registry, so in-suite it ran after DEF_FAMILY and BEFORE the entire SQLSEL family, inheriting RELJOIN's still-open x64 schema -- its USE into area 1 landed on an OPEN CLASSES table and replaced it -- and graded 8/8 identically to standalone anyway, while every SQLSEL spec downstream of its SET MODE SQL/OTHER/NATIVE round-trip and its REL clear stayed green. That is an ORDER claim for THIS registry, not an isolation proof (the 8fba98c5c ruling); a re-ordering re-opens it and the next post-reorder ALL is its measurement.",
+        true,   // PROMOTED 2026-09-23 -- soak rows in coordination/SOAK_EVIDENCE.md
         false,
         RegressionValidator::SqlmodeSmokeV1
     },
@@ -743,6 +843,15 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
         RegressionValidator::SqlselWorkspaceScopeV1
     },
     {
+        "SQLSEL_PARALLEL",
+        "sqlsel_parallel_regression.dts",
+        "SET PARALLEL differential (AIF-168 PERF-2, the registered G-P2 gate): a 2400-row self-bootstrapping SANDBOX fixture (ID == RECNO by construction) shaped so DELETED rows sit in BOTH 2-worker partitions and in a band that STRADDLES the partition seam (recno 1200/1201). Five OFF/ON pairs are pinned as EXACT blocks -- the OFF leg IS the oracle -- covering bare COUNT, char WHERE, function WHERE, a seam-straddling numeric band, and ORDER BY+LIMIT row order. The validator also pins the clamp (SET PARALLEL 6 over 2400 rows must RUN and REPORT workers=2), both declines with their exact serial answers (5-row table too small; subquery predicate, whose 5-row inner select declines again), exact occurrence counts for the workers=2 path line (6) and each decline, the fixture shape (one 100-row UPDATE, three 10-row DELETEs), two cursor restorations, and that the spec leaves PARALLEL OFF for whatever runs next. R21 is exercised structurally: every ON leg runs workers that opened PRIVATE DbAreas. The deleted-rows-per-partition probe this spec carries is the one the pinocchio diff script could not (read-only fixtures carry no deleted rows). PROMOTED TO THE DEFAULT SUITE 2026-09-22 on the NULLASSERT precedent: first red graded a real fixture defect (2370 vs 2400, RECNO-through-REPLACE), mutation proof green-red-green on build e88408bb with the arm doubling as an OFF=191/ON=190 divergence witness (0b458adab), then TWO PASS runs on ONE build -- banner 'dottalk++ beta 1.b, c559013d  (Sep 22 2026 17:46:44)' both times, rows in coordination/SOAK_EVIDENCE.md. The REASON is a measured coverage hole, not the soak alone: before this spec, REGRESSION CURATED SUITE never ran a single SET PARALLEL statement, so a partitioning defect that lost or double-counted rows at the seam would have shipped green. The flag flip needs a REBUILD (the registry is compiled in); read REGRESSION LIST for the [curated suite] tag BEFORE believing the run -- NAV_NATURAL's entry records the wasted REGRESSION CURATED SUITE that rule exists to prevent.",
+        true,
+        false,
+        RegressionValidator::SqlselParallelV1,
+        true                       // SET PARALLEL prints via cmdout::print_line: routed channel
+    },
+    {
         "EVALDIFF",
         "evaldiff_regression.dts",
         "SQLSEL evaluator differential harness (AIF-074 P4.0a/P4.0b): self-bootstraps a mixed-type X64 fixture in SANDBOX, compares classic DbArea and TupleRow-bound predicate outcomes over the same physical records, restores the cursor, and self-erases. Its validator checks the exact ordered 22-case truth/error vector, not parity alone. The 2026-09-03 repair makes valid function/logical/deleted cases verdict-parity and missing-field/type/malformed controls parity-on-failure. Promoted 2026-09-03 because no other default spec compares both evaluator paths or pins the repaired function/fail-closed truth vectors.",
@@ -783,28 +892,35 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
     {
         "WORKSPACE_SCOPE",
         "workspace_scope_regression.dts",
-        "WORKSPACE CLOSE is SCOPED to a workspace (AIF-078 stage 3, owner-directed 2026-08-22: 'close_all needs to be SCOPED to a specific workspace instead of 0-max_areas. workspaces have to know the group of areas that belong to them'). Until stage 3 the close ran for (area0 = 0; area0 < MAX_AREA; ++area0) and was correct only because exactly one workspace had ever existed; stage 2 built the membership group (14 tables opened -> 14 members -> 0 after close, measured 2026-08-22) and this is the first spec that can tell the two implementations apart. WS_T1 IS THAT DISCRIMINATOR: closing a nested workspace must leave DEFAULT's sentinel readable, which the old sweep could not do -- delete the scoping and exactly one line reds. The cost argument rides along and is not secondary: MAX_AREA is 512 for testing and the owner has stated the real ceiling is not 512 ('can you imagine how long it would take to give you a dotscript results of a 10 trillion max_area pass'), so an O(MAX_AREA) close does not survive that sentence while an O(members) close does not care. SET RECURSION ON|OFF is proven by WS_T2 and nowhere else -- owner ruling 'even with OFF we still allow multiple workspaces, just parallel', so the flag gates whether an operation DESCENDS, not whether nesting may exist; same script, same shape, one flag flipped, and the nested workspace's table is still readable afterward. WS_T4 proves CLOSE ALL reached the FILESYSTEM and not just the bookkeeping, by reopening and reading. WHAT IT DELIBERATELY DOES NOT ASSERT, stated rather than implied: that a recursively-closed workspace is EMPTY. USE_AGAIN established over three cuts that NO MARKER IN THIS LANGUAGE CAN ASSERT AN AREA IS EMPTY -- the marker evaluator binds a null area unless the area is OPEN (rhs_eval.cpp:969), which is the very thing under assertion, and an errored marker PRINTS NOTHING rather than going red, so a green count still reads full while a claim has silently left the suite. The recursive close is therefore proven by CONTRAST (WS_T2 under OFF against its absence under ON) plus the member counts in the two WORKSPACE REGISTRY blocks, read from the transcript -- external measurement, the IDXDIFF precedent. Every marker is a FIELD-VALUE comparison per the FIELDMGR_APPEND doctrine that a spec asserting SHAPE passes green on a blanked table. Two guards ride the close path in the engine and both ANNOUNCE rather than returning silently, which is the direct lesson of the relation depth cap (set_relations.cpp, hardcoded 24, twice, silent): a cycle in the workspace tree prints, and the depth cap prints what it did not close. Self-bootstrapping WSDEF/WSPAR/WSCHI in SANDBOX, self-erasing; leaves two workspaces declared and restores SET RECURSION ON. CORRECTED 2026-08-23 (AIF-078 D10.1, predicted in D10 sec 6 before the code landed): this line used to read 'two RUNTIME-ONLY workspaces declared (they hold no areas and do not survive a restart)', and the second half is now false -- WORKSPACE NEW writes a BIRTH ROW to the workspace catalog, because a workspace is born durable, so these two DO survive a restart as catalog rows. They still hold no areas. Its teardown now retires them: WORKSPACE DESTROY WSCHILD then WSPARENT -- child first, because DESTROY refuses a workspace that still has nested workspaces rather than cascading. Same principle as restoring SET RECURSION ON at the end, and for the same reason ERRORSTOP is the cautionary precedent: a spec that leaves residue poisons everything downstream of it, and rows accumulate more quietly than a flag does. Explicit-run until soaked, then promote to default. PROMOTED to the default suite 2026-08-23, WITH ITS COST STATED. Since D10.1 every WORKSPACE NEW writes a BIRTH ROW, and D10.3 retirement supersedes rather than deletes, so this spec adds catalog rows to WORKSPACES.dbf on EVERY run and a default-suite spec runs every time. Measured 2026-08-23: the catalog holds 143 rows, none deleted-flagged, 28 of them workspace-spec residue. Its teardown still retires what it declared, which is what keeps the NAMES free for the next run -- the rows are history by design (D10.3) and the growth is the price of keeping it. Named here so a future reader finds a decision rather than a surprise. SUPERSEDED 2026-08-29 BY THE L2 CATALOG BRACKET, and the clause above is LEFT STANDING because it was true when it was written. These rows no longer land in WORKSPACES.dbf at all. A spec flagged mints_catalog runs inside CatalogBracket, which re-points the WORKSPACES slot at a per-run scratch root and restores it from a destructor; it sits in run_regression_script, the ONE place any spec is run, so an EXPLICIT single-spec run is bracketed exactly as REGRESSION ALL is. MEASURED ON THE 2026-08-29 PROMOTING RUN: this spec's rows went to data/tmp/wscat_run_79, 2 of them, and the L3 isolation arm read the PRODUCTION catalog at 264 rows BOTH BEFORE AND AFTER the whole suite. THE MINT COUNT DID NOT CHANGE AND WAS NEVER WRONG -- what changed is WHERE IT LANDS, and that is the whole correction. The four bracketed default-suite specs still mint exactly TEN rows between them (WORKSPACE_SCOPE 2, WSMULTI 3, WSLADDER 3, RELSCOPE2 2), the same ten the L2 comment in this file measured as 252 -> 262 on 2026-08-28 -- so the per-spec numbers corroborate rather than contradict. What is void is every projection built on top of them: a row count per run cannot be multiplied into megabytes of a durable catalog that is not being written. The cost is a throwaway directory under the gitignored TMP slot. MWXSHAKE joined the suite the same day at 16 rows, so the suite now mints 26 per run and the production total still did not move. So 'the growth is the price of keeping it' names a price this suite has STOPPED PAYING.",
+        "WORKSPACE CLOSE is SCOPED to a workspace (AIF-078 stage 3, owner-directed 2026-08-22: 'close_all needs to be SCOPED to a specific workspace instead of 0-max_areas. workspaces have to know the group of areas that belong to them'). Until stage 3 the close ran for (area0 = 0; area0 < MAX_AREA; ++area0) and was correct only because exactly one workspace had ever existed; stage 2 built the membership group (14 tables opened -> 14 members -> 0 after close, measured 2026-08-22) and this is the first spec that can tell the two implementations apart. WS_T1 IS THAT DISCRIMINATOR: closing a nested workspace must leave DEFAULT's sentinel readable, which the old sweep could not do -- delete the scoping and exactly one line reds. The cost argument rides along and is not secondary: MAX_AREA is 512 for testing and the owner has stated the real ceiling is not 512 ('can you imagine how long it would take to give you a dotscript results of a 10 trillion max_area pass'), so an O(MAX_AREA) close does not survive that sentence while an O(members) close does not care. SET RECURSION ON|OFF is proven by WS_T2 and nowhere else -- owner ruling 'even with OFF we still allow multiple workspaces, just parallel', so the flag gates whether an operation DESCENDS, not whether nesting may exist; same script, same shape, one flag flipped, and the nested workspace's table is still readable afterward. WS_T4 proves CLOSE ALL reached the FILESYSTEM and not just the bookkeeping, by reopening and reading. WHAT IT DELIBERATELY DOES NOT ASSERT, stated rather than implied: that a recursively-closed workspace is EMPTY. USE_AGAIN established over three cuts that NO MARKER IN THIS LANGUAGE CAN ASSERT AN AREA IS EMPTY -- the marker evaluator binds a null area unless the area is OPEN (rhs_eval.cpp:969), which is the very thing under assertion, and an errored marker PRINTS NOTHING rather than going red, so a green count still reads full while a claim has silently left the suite. The recursive close is therefore proven by CONTRAST (WS_T2 under OFF against its absence under ON) plus the member counts in the two WORKSPACE REGISTRY blocks, read from the transcript -- external measurement, the IDXDIFF precedent. Every marker is a FIELD-VALUE comparison per the FIELDMGR_APPEND doctrine that a spec asserting SHAPE passes green on a blanked table. Two guards ride the close path in the engine and both ANNOUNCE rather than returning silently, which is the direct lesson of the relation depth cap (set_relations.cpp, hardcoded 24, twice, silent): a cycle in the workspace tree prints, and the depth cap prints what it did not close. Self-bootstrapping WSDEF/WSPAR/WSCHI in SANDBOX, self-erasing; leaves two workspaces declared and restores SET RECURSION ON. CORRECTED 2026-08-23 (AIF-078 D10.1, predicted in D10 sec 6 before the code landed): this line used to read 'two RUNTIME-ONLY workspaces declared (they hold no areas and do not survive a restart)', and the second half is now false -- WORKSPACE NEW writes a BIRTH ROW to the workspace catalog, because a workspace is born durable, so these two DO survive a restart as catalog rows. They still hold no areas. Its teardown now retires them: WORKSPACE DESTROY WSCHILD then WSPARENT -- child first, because DESTROY refuses a workspace that still has nested workspaces rather than cascading. Same principle as restoring SET RECURSION ON at the end, and for the same reason ERRORSTOP is the cautionary precedent: a spec that leaves residue poisons everything downstream of it, and rows accumulate more quietly than a flag does. Explicit-run until soaked, then promote to default. PROMOTED to the default suite 2026-08-23, WITH ITS COST STATED. Since D10.1 every WORKSPACE NEW writes a BIRTH ROW, and D10.3 retirement supersedes rather than deletes, so this spec adds catalog rows to WORKSPACES.dbf on EVERY run and a default-suite spec runs every time. Measured 2026-08-23: the catalog holds 143 rows, none deleted-flagged, 28 of them workspace-spec residue. Its teardown still retires what it declared, which is what keeps the NAMES free for the next run -- the rows are history by design (D10.3) and the growth is the price of keeping it. Named here so a future reader finds a decision rather than a surprise. SUPERSEDED 2026-08-29 BY THE L2 CATALOG BRACKET, and the clause above is LEFT STANDING because it was true when it was written. These rows no longer land in WORKSPACES.dbf at all. A spec flagged mints_catalog runs inside CatalogBracket, which re-points the WORKSPACES slot at a per-run scratch root and restores it from a destructor; it sits in run_regression_script, the ONE place any spec is run, so an EXPLICIT single-spec run is bracketed exactly as REGRESSION CURATED SUITE is. MEASURED ON THE 2026-08-29 PROMOTING RUN: this spec's rows went to data/tmp/wscat_run_79, 2 of them, and the L3 isolation arm read the PRODUCTION catalog at 264 rows BOTH BEFORE AND AFTER the whole suite. THE MINT COUNT DID NOT CHANGE AND WAS NEVER WRONG -- what changed is WHERE IT LANDS, and that is the whole correction. The four bracketed default-suite specs still mint exactly TEN rows between them (WORKSPACE_SCOPE 2, WSMULTI 3, WSLADDER 3, RELSCOPE2 2), the same ten the L2 comment in this file measured as 252 -> 262 on 2026-08-28 -- so the per-spec numbers corroborate rather than contradict. What is void is every projection built on top of them: a row count per run cannot be multiplied into megabytes of a durable catalog that is not being written. The cost is a throwaway directory under the gitignored TMP slot. MWXSHAKE joined the suite the same day at 16 rows, so the suite now mints 26 per run and the production total still did not move. So 'the growth is the price of keeping it' names a price this suite has STOPPED PAYING.",
         true,
-        true  // AIF-078 L2: mints catalog rows -- bracket it
+        true,  // AIF-078 L2: mints catalog rows -- bracket it
+        RegressionValidator::WorkspaceMarkersV1
     },
     {
         "USE_ARGS",
         "use_argument_validation.dts",
-        "USE refuses arguments it does not understand, and IN <n> places (AIF-121, 2026-08-22). USE parsed its tail with THREE independent NON-CONSUMING scans -- contains_noindex, contains_again, parse_alias_clause -- each saving the stream position, sweeping for its own keyword, and rewinding. Nothing ever enumerated the tail, so NO TOKEN WAS EVER UNACCOUNTED FOR: unknown arguments were not ignored by oversight, nothing was in a position to notice them. MEASURED at baada444: `USE dbf\\x64\\students` then `USE dbf\\x32\\students IN 1` printed two 'Opened' lines, WORKSPACE REGISTRY reported members 1, and AREA showed slot 0 holding the x32 table -- the second open replaced the first and said NOTHING. `IN <n>` is FoxPro-standard and documented in this tree twice (command_argchk.cpp:47-48, printed in EVERY REGRESSION ALL run, and fox_standard_catalog.cpp:78); it was swallowed, so the house's own CMDREL recipe died on 'No table is currently open.' Implementing the clause makes both doc sites TRUE rather than correcting them down to a limitation. U_T1 IS THE DISCRIMINATOR and asserts two things in one read: after `USE utgt IN 3` it reads MARK WITHOUT selecting, so a green proves the current area is still 0 (IN does not move you -- the FoxPro contract) AND still holds its occupant; under the old parser IN 3 was dropped and utgt opened over it, reding both at once. U_T4 IS THE CONTIGUITY ARM and it MOVED when the allocator was scoped on owner ruling: DEFAULT holds areas 0 and 3, a global lowest-free sweep answers 1, and the workspace-scoped allocator answers 4 -- the slot after this workspace's highest member -- because a workspace's areas stay contiguous and a global sweep can drop an area inside a NEIGHBOUR'S run once two workspaces exist. If U_T4 ever reads 1 again, IN FREE has gone back to workspace-blind. U_T5 is the gate arm and asks the answerable question (did the KNOWN OCCUPANT SURVIVE) rather than asserting a refusal, per USE_AGAIN's finding that no marker in this language can assert an area is empty and an errored marker prints nothing rather than going red. U_T7 covers the digits-only parse: std::stoll would read '3junk' as 3, the same longest-valid-prefix trap that let AIF-116 read pid=16,984 as 16. Owner rulings carried: IN FREE not IN NEXT (NEXT implies forward adjacency the allocator does not keep); AGAIN and IN compose with NO interaction rule because AGAIN carries no placement opinion (cmd_use.cpp:743, it lands in the current area -- so IN is the half AGAIN shipped without, and AGAIN is destructive today unless the caller SELECTs a free area first, which USE_AGAIN's spec does every time, which is why the property was exercised around rather than tested); IN 0 is area 0 literally, no magic zero. NOT ASSERTED, stated rather than implied: refusal WORDING (markers are field-value comparisons only, FIELDMGR_APPEND doctrine) and AGAIN+IN together (needs a memo-free duplicate-open fixture; separate arm). The message catalog's USAGE text does not yet list IN -- the help DBFs belong to the concurrent full-stack document push -- so the refusal path prints the correct syntax inline meanwhile. Self-bootstrapping UDEF/UTGT/UFRE/UBAD in SANDBOX, self-erasing. VERIFIED IN-SUITE 2026-08-23: promoted, then run inside REGRESSION ALL. This spec inherited 14 open areas from the spec before it, closed them in its own opening WORKSPACE CLOSE, and built its fixture from a clean slate -- order-independence demonstrated rather than assumed, which is what promotion actually requires. Explicit-run until soaked, then promote to default. PROMOTED to the default suite 2026-08-23. The soak was the AIF-078 slot-lane step 1 lift, which MOVED the code this spec covers -- find_free_area_for_workspace left cmd_use.cpp for workarea_util and took its engine and membership table as arguments -- and both arms read green afterward. THE REASON FOR PROMOTION IS A MEASURED COVERAGE HOLE, not the soak alone: REGRESSION ALL CANNOT REACH IN FREE. A grep of the whole .dts corpus finds the phrase in exactly two files, this one and the other of this pair, and both were explicit-run -- so a change to the free-slot allocator could pass the entire default suite and say nothing about the policy. That is what happened on 2026-08-23: ALL ran ten specs green over a commit that rewrote the allocator, and the allocator was not exercised once. U_T4 read engine area 4 after the lift -- DEFAULT holding areas 0 and 3, lowest free 1 -- so the workspace-scoped placement survived the move. If it ever reads 1 again, IN FREE has gone back to workspace-blind.",
-        true
+        "USE refuses arguments it does not understand, and IN <n> places (AIF-121, 2026-08-22). USE parsed its tail with THREE independent NON-CONSUMING scans -- contains_noindex, contains_again, parse_alias_clause -- each saving the stream position, sweeping for its own keyword, and rewinding. Nothing ever enumerated the tail, so NO TOKEN WAS EVER UNACCOUNTED FOR: unknown arguments were not ignored by oversight, nothing was in a position to notice them. MEASURED at baada444: `USE dbf\\x64\\students` then `USE dbf\\x32\\students IN 1` printed two 'Opened' lines, WORKSPACE REGISTRY reported members 1, and AREA showed slot 0 holding the x32 table -- the second open replaced the first and said NOTHING. `IN <n>` is FoxPro-standard and documented in this tree twice (command_argchk.cpp:47-48, printed in EVERY REGRESSION CURATED SUITE run, and fox_standard_catalog.cpp:78); it was swallowed, so the house's own CMDREL recipe died on 'No table is currently open.' Implementing the clause makes both doc sites TRUE rather than correcting them down to a limitation. U_T1 IS THE DISCRIMINATOR and asserts two things in one read: after `USE utgt IN 3` it reads MARK WITHOUT selecting, so a green proves the current area is still 0 (IN does not move you -- the FoxPro contract) AND still holds its occupant; under the old parser IN 3 was dropped and utgt opened over it, reding both at once. U_T4 IS THE CONTIGUITY ARM and it MOVED when the allocator was scoped on owner ruling: DEFAULT holds areas 0 and 3, a global lowest-free sweep answers 1, and the workspace-scoped allocator answers 4 -- the slot after this workspace's highest member -- because a workspace's areas stay contiguous and a global sweep can drop an area inside a NEIGHBOUR'S run once two workspaces exist. If U_T4 ever reads 1 again, IN FREE has gone back to workspace-blind. U_T5 is the gate arm and asks the answerable question (did the KNOWN OCCUPANT SURVIVE) rather than asserting a refusal, per USE_AGAIN's finding that no marker in this language can assert an area is empty and an errored marker prints nothing rather than going red. U_T7 covers the digits-only parse: std::stoll would read '3junk' as 3, the same longest-valid-prefix trap that let AIF-116 read pid=16,984 as 16. Owner rulings carried: IN FREE not IN NEXT (NEXT implies forward adjacency the allocator does not keep); AGAIN and IN compose with NO interaction rule because AGAIN carries no placement opinion (cmd_use.cpp:743, it lands in the current area -- so IN is the half AGAIN shipped without, and AGAIN is destructive today unless the caller SELECTs a free area first, which USE_AGAIN's spec does every time, which is why the property was exercised around rather than tested); IN 0 is area 0 literally, no magic zero. NOT ASSERTED, stated rather than implied: refusal WORDING (markers are field-value comparisons only, FIELDMGR_APPEND doctrine) and AGAIN+IN together (needs a memo-free duplicate-open fixture; separate arm). The message catalog's USAGE text does not yet list IN -- the help DBFs belong to the concurrent full-stack document push -- so the refusal path prints the correct syntax inline meanwhile. Self-bootstrapping UDEF/UTGT/UFRE/UBAD in SANDBOX, self-erasing. VERIFIED IN-SUITE 2026-08-23: promoted, then run inside REGRESSION CURATED SUITE. This spec inherited 14 open areas from the spec before it, closed them in its own opening WORKSPACE CLOSE, and built its fixture from a clean slate -- order-independence demonstrated rather than assumed, which is what promotion actually requires. Explicit-run until soaked, then promote to default. PROMOTED to the default suite 2026-08-23. The soak was the AIF-078 slot-lane step 1 lift, which MOVED the code this spec covers -- find_free_area_for_workspace left cmd_use.cpp for workarea_util and took its engine and membership table as arguments -- and both arms read green afterward. THE REASON FOR PROMOTION IS A MEASURED COVERAGE HOLE, not the soak alone: REGRESSION CURATED SUITE CANNOT REACH IN FREE. A grep of the whole .dts corpus finds the phrase in exactly two files, this one and the other of this pair, and both were explicit-run -- so a change to the free-slot allocator could pass the entire default suite and say nothing about the policy. That is what happened on 2026-08-23: ALL ran ten specs green over a commit that rewrote the allocator, and the allocator was not exercised once. U_T4 read engine area 4 after the lift -- DEFAULT holding areas 0 and 3, lowest free 1 -- so the workspace-scoped placement survived the move. If it ever reads 1 again, IN FREE has gone back to workspace-blind.",
+        true,
+        false,
+        RegressionValidator::RemainingDefaultV1
     },
     {
         "NAME_AMBIG",
         "rel_name_ambiguity_regression.dts",
         "NAME AMBIGUITY: the collision is already PREVENTED, and the ledger that measures it reads zero for a good reason (AIF-120 I1.3a, 2026-08-22). Two resolvers answered 'which open area is called X' and disagreed -- find_open_area_by_name_ci (workarea_util.cpp, 21 call sites) returned the FIRST match, the lowest engine slot, while build_area_by_up_name (set_relations.cpp, the recursive REL LIST tree builder) assigned unconditionally and so returned the LAST. That divergence is closed: the local map is deleted and both are built on one primitive (find_open_areas_by_name_ci, every match ascending by slot), agreeing BY CONSTRUCTION. THE SPEC'S FIRST CUT COULD NOT BUILD ITS OWN FIXTURE, and that is the finding it now carries. Two `USE ... ALIAS NAMDUP` calls were expected to put one name on two areas; the second was REFUSED. cmd_use.cpp:944-972 resolves the name BEFORE touching the target area -- an explicit alias already held is refused, a name derived from the file stem that is already held is auto-renamed to <stem>2 and ANNOUNCED -- and its own comment names this case: 'the ordinary AGAIN case, and also two same-named files from different directories.' So R112 sec 3's measurement (USE ... ALIAS assigns the logical name with NO uniqueness check) is STALE: true at 8aca9ef1b, false since USE_AGAIN's alias arm landed 2026-08-12, and R112 sec 6a scheduled as future work a within-workspace PREVENT half that a different lane had already shipped. CONSEQUENCE, and the reason this spec exists: two open areas in one workspace CANNOT share a logical name, so the ambiguity ledger is STRUCTURALLY ZERO -- not untested, unreachable -- until two workspaces can be open at once and cross-workspace names may repeat. R112 sec 6a predicted exactly this ('would record zero for the wrong reason, and a zero that means nothing was tested is exactly the false green trap-4 is about') and the instrument built under that ruling walked into it. The ledger line is therefore a TRIPWIRE for AIF-078 stage 4, not a migration counter, and it prints even at zero so that 'no collision occurred' and 'nothing is instrumented' cannot look alike (AIF-118). WHAT THE MARKERS PROVE is the two-directories case, which nothing else covers: USE_AGAIN's alias arms cover the same file opened twice and the explicit-alias refusal, never R112's actual measurement of twelve basenames shared across dbf/x64, dbf/x32 and dbf/vfp. This opens two of them read-only. N_T1 parks the first instance on record 2 while the second sits at record 1, telling two copies of the same data apart BY FIELD VALUE, and proves `SELECT students` still reaches the first holder -- but it would pass under first-wins too, so it is not the discriminator. N_T2 IS: `SELECT students2` must reach the second instance, and with no rename there is no such name, SELECT fails, the current area stays parked on Martin, and the marker READS RED rather than vanishing -- arranged that way because an errored marker prints nothing rather than going red (USE_AGAIN's finding). Read-only: no fixture is created and nothing is erased. Explicit-run until soaked, then promote to default.",
+        true,
+        false,
+        RegressionValidator::RemainingDefaultV1,
         true
     },
     {
         "WSMULTI",
         "workspace_multi_regression.dts",
-        "MULTIPLE WORKSPACES: siblings, nesting, and one FILE open in two of them (AIF-078 stage 3/4 evidence; registered 2026-08-22 under D8 sec 7 -- it existed, was mutation tested, and was UNREACHABLE BY NAME because nothing listed it here). Why it exists given workspace_scope_regression already passes: that file proves a scoped close spares DEFAULT, and DEFAULT is the ancestor of everything, so an implementation that closed 'everything except area 0' would pass it. SIBLINGS are the discriminator between 'scoped to a workspace' and 'scoped away from the root'. WSM_T1 is that arm -- WSALPHA and WSBETA are peers, WSALPHA is closed, BETA's sentinel must still read. WSM_T2 IS THE ARM THAT MATTERS MOST and it is about ONE file, not two: MWSHARE.DBF is opened in WSALPHA and again in WSBETA, so the two workspaces disagree about who owns a single handle; close WSALPHA and BETA must still read MWSHARE. If close releases by FILE rather than by workspace MEMBERSHIP, BETA loses a table it never closed -- a failure invisible in any test where each workspace holds distinct files. Every assertion is a POSITIVE READ of a sentinel that must survive: nothing here claims an area is EMPTY, because no marker in this language can (the evaluator binds a null area unless the area is OPEN, and an ERRORED MARKER PRINTS NOTHING RATHER THAN GOING RED, so a suite can lose a claim silently and still report a full green). Absence is proven only by contrast. WSM_G0..G5 are setup guards and WSM_G4 -- share actually open in ALPHA -- is the one that caught this file's own earlier FALSE GREEN, where WSM_T2 asserted a file survived that the arm had never opened; if a guard reds, treat every WSM_T* as UNPROVEN rather than passing. MUTATION TESTED 2026-08-22: WSM_T1 and WSM_T2 were both mutated to expect 'MUTANT' and the suite re-run, so the arms are demonstrated able to red and independent of one another. Prefix is WSM_ rather than WS_ so a combined run can tell these apart from the scope regression. NOTE for AIF-120 R112: this script does NOT drive the name-ambiguity ledger non-zero, and R112's measured-zero gate needs its own fixture. CORRECTED 2026-09-11, AND THE CLAUSE IT REPLACES IS WORTH READING FOR WHY. It said the reason was that 'cmd_use.cpp auto-renames a duplicate stem, so it yields MWSHARE/MWSHARE2 rather than a collision'. That was true when written and is now FALSE. cmd_use.cpp's alias probe swept every engine slot with no workspace filter, so opening MWSHARE into WSALPHA renamed it on account of DEFAULT's area 5 -- a workspace the caller was not standing in. Under R134 (2026-08-31, THE ALIAS IS THE PATH, COMPOSED NOT STORED) DEFAULT:MWSHARE and WSALPHA:MWSHARE are already distinct, so there was never a collision to resolve; the sweep was defending a bare-name uniqueness that ruling abolished. Scoped to the current workspace 2026-09-11, so all three instances are now named MWSHARE and WORKDESK reports them under 'Names open in more than one area'. THE LEDGER CLAIM SURVIVES THE CHANGE UNALTERED because the ledger records WITHIN-workspace ambiguity only, which this script still never produces -- the conclusion held while the reason under it stopped being true, which is exactly the shape a summary has to be re-measured for rather than inherited. NO ARM MOVED: every SELECT in this file addresses a SLOT NUMBER, which is absolute, so neither the alias scoping nor SELECT's own scoping the same day can reach WSM_T1, WSM_T2 or any guard. Verified by reading the .dts before the change, not after. Self-bootstrapping sentinels; teardown retires WSGAMMA, WSALPHA and WSBETA (AIF-078 D10.3, 2026-08-23 -- since D10.1 each WORKSPACE NEW writes a birth row, so without this the spec would leave three permanent catalog rows behind per run; the nested WSGAMMA goes first because DESTROY refuses a parent that still has children). Explicit-run until soaked, then promote to default. PROMOTED to the default suite 2026-08-23, WITH ITS COST STATED. Since D10.1 every WORKSPACE NEW writes a BIRTH ROW, and D10.3 retirement supersedes rather than deletes, so this spec adds catalog rows to WORKSPACES.dbf on EVERY run and a default-suite spec runs every time. Measured 2026-08-23: the catalog holds 143 rows, none deleted-flagged, 28 of them workspace-spec residue. Its teardown still retires what it declared, which is what keeps the NAMES free for the next run -- the rows are history by design (D10.3) and the growth is the price of keeping it. Named here so a future reader finds a decision rather than a surprise. SUPERSEDED 2026-08-29 BY THE L2 CATALOG BRACKET, and the clause above is LEFT STANDING because it was true when it was written. These rows no longer land in WORKSPACES.dbf at all. A spec flagged mints_catalog runs inside CatalogBracket, which re-points the WORKSPACES slot at a per-run scratch root and restores it from a destructor; it sits in run_regression_script, the ONE place any spec is run, so an EXPLICIT single-spec run is bracketed exactly as REGRESSION ALL is. MEASURED ON THE 2026-08-29 PROMOTING RUN: this spec's rows went to data/tmp/wscat_run_80, 3 of them, and the L3 isolation arm read the PRODUCTION catalog at 264 rows BOTH BEFORE AND AFTER the whole suite. THE MINT COUNT DID NOT CHANGE AND WAS NEVER WRONG -- what changed is WHERE IT LANDS, and that is the whole correction. The four bracketed default-suite specs still mint exactly TEN rows between them (WORKSPACE_SCOPE 2, WSMULTI 3, WSLADDER 3, RELSCOPE2 2), the same ten the L2 comment in this file measured as 252 -> 262 on 2026-08-28 -- so the per-spec numbers corroborate rather than contradict. What is void is every projection built on top of them: a row count per run cannot be multiplied into megabytes of a durable catalog that is not being written. The cost is a throwaway directory under the gitignored TMP slot. MWXSHAKE joined the suite the same day at 16 rows, so the suite now mints 26 per run and the production total still did not move. So 'the growth is the price of keeping it' names a price this suite has STOPPED PAYING.",
+        "MULTIPLE WORKSPACES: siblings, nesting, and one FILE open in two of them (AIF-078 stage 3/4 evidence; registered 2026-08-22 under D8 sec 7 -- it existed, was mutation tested, and was UNREACHABLE BY NAME because nothing listed it here). Why it exists given workspace_scope_regression already passes: that file proves a scoped close spares DEFAULT, and DEFAULT is the ancestor of everything, so an implementation that closed 'everything except area 0' would pass it. SIBLINGS are the discriminator between 'scoped to a workspace' and 'scoped away from the root'. WSM_T1 is that arm -- WSALPHA and WSBETA are peers, WSALPHA is closed, BETA's sentinel must still read. WSM_T2 IS THE ARM THAT MATTERS MOST and it is about ONE file, not two: MWSHARE.DBF is opened in WSALPHA and again in WSBETA, so the two workspaces disagree about who owns a single handle; close WSALPHA and BETA must still read MWSHARE. If close releases by FILE rather than by workspace MEMBERSHIP, BETA loses a table it never closed -- a failure invisible in any test where each workspace holds distinct files. Every assertion is a POSITIVE READ of a sentinel that must survive: nothing here claims an area is EMPTY, because no marker in this language can (the evaluator binds a null area unless the area is OPEN, and an ERRORED MARKER PRINTS NOTHING RATHER THAN GOING RED, so a suite can lose a claim silently and still report a full green). Absence is proven only by contrast. WSM_G0..G5 are setup guards and WSM_G4 -- share actually open in ALPHA -- is the one that caught this file's own earlier FALSE GREEN, where WSM_T2 asserted a file survived that the arm had never opened; if a guard reds, treat every WSM_T* as UNPROVEN rather than passing. MUTATION TESTED 2026-08-22: WSM_T1 and WSM_T2 were both mutated to expect 'MUTANT' and the suite re-run, so the arms are demonstrated able to red and independent of one another. Prefix is WSM_ rather than WS_ so a combined run can tell these apart from the scope regression. NOTE for AIF-120 R112: this script does NOT drive the name-ambiguity ledger non-zero, and R112's measured-zero gate needs its own fixture. CORRECTED 2026-09-11, AND THE CLAUSE IT REPLACES IS WORTH READING FOR WHY. It said the reason was that 'cmd_use.cpp auto-renames a duplicate stem, so it yields MWSHARE/MWSHARE2 rather than a collision'. That was true when written and is now FALSE. cmd_use.cpp's alias probe swept every engine slot with no workspace filter, so opening MWSHARE into WSALPHA renamed it on account of DEFAULT's area 5 -- a workspace the caller was not standing in. Under R134 (2026-08-31, THE ALIAS IS THE PATH, COMPOSED NOT STORED) DEFAULT:MWSHARE and WSALPHA:MWSHARE are already distinct, so there was never a collision to resolve; the sweep was defending a bare-name uniqueness that ruling abolished. Scoped to the current workspace 2026-09-11, so all three instances are now named MWSHARE and WORKDESK reports them under 'Names open in more than one area'. THE LEDGER CLAIM SURVIVES THE CHANGE UNALTERED because the ledger records WITHIN-workspace ambiguity only, which this script still never produces -- the conclusion held while the reason under it stopped being true, which is exactly the shape a summary has to be re-measured for rather than inherited. NO ARM MOVED: every SELECT in this file addresses a SLOT NUMBER, which is absolute, so neither the alias scoping nor SELECT's own scoping the same day can reach WSM_T1, WSM_T2 or any guard. Verified by reading the .dts before the change, not after. Self-bootstrapping sentinels; teardown retires WSGAMMA, WSALPHA and WSBETA (AIF-078 D10.3, 2026-08-23 -- since D10.1 each WORKSPACE NEW writes a birth row, so without this the spec would leave three permanent catalog rows behind per run; the nested WSGAMMA goes first because DESTROY refuses a parent that still has children). Explicit-run until soaked, then promote to default. PROMOTED to the default suite 2026-08-23, WITH ITS COST STATED. Since D10.1 every WORKSPACE NEW writes a BIRTH ROW, and D10.3 retirement supersedes rather than deletes, so this spec adds catalog rows to WORKSPACES.dbf on EVERY run and a default-suite spec runs every time. Measured 2026-08-23: the catalog holds 143 rows, none deleted-flagged, 28 of them workspace-spec residue. Its teardown still retires what it declared, which is what keeps the NAMES free for the next run -- the rows are history by design (D10.3) and the growth is the price of keeping it. Named here so a future reader finds a decision rather than a surprise. SUPERSEDED 2026-08-29 BY THE L2 CATALOG BRACKET, and the clause above is LEFT STANDING because it was true when it was written. These rows no longer land in WORKSPACES.dbf at all. A spec flagged mints_catalog runs inside CatalogBracket, which re-points the WORKSPACES slot at a per-run scratch root and restores it from a destructor; it sits in run_regression_script, the ONE place any spec is run, so an EXPLICIT single-spec run is bracketed exactly as REGRESSION CURATED SUITE is. MEASURED ON THE 2026-08-29 PROMOTING RUN: this spec's rows went to data/tmp/wscat_run_80, 3 of them, and the L3 isolation arm read the PRODUCTION catalog at 264 rows BOTH BEFORE AND AFTER the whole suite. THE MINT COUNT DID NOT CHANGE AND WAS NEVER WRONG -- what changed is WHERE IT LANDS, and that is the whole correction. The four bracketed default-suite specs still mint exactly TEN rows between them (WORKSPACE_SCOPE 2, WSMULTI 3, WSLADDER 3, RELSCOPE2 2), the same ten the L2 comment in this file measured as 252 -> 262 on 2026-08-28 -- so the per-spec numbers corroborate rather than contradict. What is void is every projection built on top of them: a row count per run cannot be multiplied into megabytes of a durable catalog that is not being written. The cost is a throwaway directory under the gitignored TMP slot. MWXSHAKE joined the suite the same day at 16 rows, so the suite now mints 26 per run and the production total still did not move. So 'the growth is the price of keeping it' names a price this suite has STOPPED PAYING.",
         true,
-        true  // AIF-078 L2: mints catalog rows -- bracket it
+        true,  // AIF-078 L2: mints catalog rows -- bracket it
+        RegressionValidator::WorkspaceMarkersV1
     },
     {
         "RELSCAN",
@@ -849,14 +965,15 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
     {
         "WSLADDER",
         "workspace_identity_ladder.dts",
-        "WORKSPACE IDENTITY LADDER: a workspace is born durable, and can die durable (AIF-078 D10.1/D10.2/D10.3, 2026-08-23). WSL_T4 IS THE DISCRIMINATOR and it is one line: destroy WSLADR1, create WSLADR1 again, and the second WS_ID must be GREATER than the first. That can only pass if retirement actually reached the catalog -- if WORKSPACE DESTROY silently no-ops, supersedes the wrong row, or writes a flag that does not stick, the name still has a live chain, the second NEW ADOPTS it, and the two ids are EQUAL. It separates a real retirement from a cheerful message, which is the defect shape this house keeps finding. ASSERTIONS READ THE CATALOG TABLE, not the console: WORKSPACES.dbf is an ordinary x64 table -- the map drawn in the same ink as the territory -- so the spec opens it and compares FIELDS, per the FIELDMGR_APPEND doctrine that a spec asserting SHAPE passes green on a blanked table. WSL_T1/T2/T3 read the birth row itself: FMT 'BIRTH 1' (self-describing rather than inferred), SIZE_B 0 (no payload), PREV_ID 0 (it IS the chain root, which is what D10.2 makes identity). WSL_T5 reads the RETIRED row and finds it still present and flagged SUPERSEDED -- retirement is supersession, not deletion, so a destroyed workspace leaves a record rather than a hole, and SUPERSEDED keeps ONE meaning ('no longer the current state of this name') whether a newer save replaced it or nothing did. WSL_T6/T7 are the refusal arms and neither claims anything is absent: USE_AGAIN established over three cuts that no marker in this language can assert emptiness and that an ERRORED marker PRINTS NOTHING rather than going red, so both ask the answerable question instead -- did the KNOWN OCCUPANT SURVIVE. T6: DEFAULT refuses destruction (invariant I1 needs it to outlive every other workspace) and its sentinel still reads. T7: a workspace still holding an area refuses, and the area is still readable -- destroy does not cascade, so it can never be the thing that silently orphaned an open area. NOT COVERED, stated rather than implied: ADOPTION ACROSS A PROCESS BOUNDARY. WORKSPACE NEW refuses a duplicate name within a session, so one process cannot ask a second NEW to adopt. It was proven by hand instead (2026-08-23, build 05:27:07: two datarun processes, 'WS_ID 110' then 'WS_ID 110' + ADOPTED), and a two-process fixture is the chartered follow-up; this spec does not claim it. GUARDS: if any WSL_G* reds, treat every WSL_T* as UNPROVEN -- the catalog predicates depend on locating the right row, and the refusal arms depend on a sentinel actually having been written. WSL_G4/G5 EXIST BECAUSE THE FIRST RUN NEEDED THEM: the fixture wrote APPEND BLANK, which this shell does not take -- BLANK falls through as an unrecognized argument, APPEND prints its usage, nothing is appended, and REPLACE reports 'no current record'. CORRECTED 2026-09-05: THIS SHELL NOW TAKES IT, and the sentence before this one is left standing because it was true of every build up to that date. cli::preprocess_for_dispatch rewrites APPEND BLANK to APPEND_BLANK, runtime-proven the same day (COUNT 0 -> APPEND BLANK -> COUNT 1, on a build 4 minutes newer than the source). WHAT DOES NOT CHANGE IS WHY G4/G5 EXIST. The lesson was never 'this shell lacks a verb' -- it was that the spec guarded its catalog reads and not its sentinel WRITES, so a fixture failure wore a verb failure's clothes and would have been a FALSE GREEN had the unwritten field compared equal. That holds for every unguarded input regardless of which verbs work. THE HAZARD ALSO RECURRED AFTER BEING WRITTEN HERE, on 2026-09-05, to an author who had read this entry: cmd_append_blank.cpp's own usage block said APPEND BLANK was 'the friendly command spelling when routed by the dispatcher' and nothing routed it -- a conditional whose condition was false, filed next to the code, out-arguing a correct warning filed here. A warning filed somewhere true does not outrank a falsehood filed somewhere obvious, and that is the transferable half of this paragraph. Both sentinel tables were created EMPTY, and WSL_T6 and WSL_T7 went RED while the verb under test had behaved perfectly, printing both refusals exactly as designed. A FIXTURE failure wearing a VERB failure's clothes -- and had the unwritten field happened to compare equal it would have been a FALSE GREEN instead. The spec had guarded its catalog reads and not its sentinel writes, the same omission WSMULTI's WSM_G4 was added to close: guard every input an arm reads, not only the interesting ones. This verb is also where xbase::workspace::destroy() finally gets a call site: defined, correct, and CALLED BY NOTHING since stage 3, the fifth AIF-079 instance this lane catalogued and the first it closed. Self-bootstrapping WSLDEF/WSLOCC in SANDBOX, erased at the end; leaves retired catalog rows behind BY DESIGN -- that is the history D10.3 keeps and what WSL_T5 reads. Explicit-run until soaked, then promote to default. PROMOTED to the default suite 2026-08-24, ON A STEWARD RULING ABOUT ITS COST AND AFTER THAT COST WAS ACTUALLY MEASURED. This spec was held back longer than any other in this lane because it carries the most catalog residue of any spec -- minting and retiring WS_IDs IS its subject matter -- and the residue question was open. It was framed as a disk question and that framing was wrong. MEASURED 2026-08-24 by parsing WORKSPACES.dbf at record boundaries: 150 rows, ZERO deleted-flagged, 132 SUPERSEDED, 18 live. SNAPSHOT is a memo field and WORKSPACES.dtx is 2.74 MB against a 104 KB table, so the worry was that each residue row drags a snapshot with it -- IT DOES NOT. 110 of 150 rows carry a memo pointer and ZERO of the 39 workspace-spec rows do. Residue is 703 bytes a row: one REGRESSION ALL costs 4,921 bytes of DBF and 0 bytes of memo, so a thousand runs is 4.7 MB. The steward accepted that cost. WHAT THE MEASUREMENT FOUND INSTEAD, and it is why this spec is safe to promote while others would not be: eighteen rows are SUPERSEDED=0, i.e. LIVE HEADS, and thirteen of those are test and probe fixtures that were never retired (goneprobe, goneprobe2, partialprobe, ls_probe, ls_idxprobe, cycle_from_ram, v3_regress, sess_regress, wm_regress, minidb_regress, minidb_sidecar, ram_hydrate_src, LADDERTEST). A spec that mints a name which already has a live row does not get a fresh workspace -- IT ADOPTS, inheriting whatever the previous run left there, which is history-dependence wearing a green suit. THIS SPEC RETIRES EVERYTHING IT MINTS and WSL_T4 is the arm that proves it: destroy WSLADR1, create it again, second WS_ID must be GREATER. That arm cannot pass if a live row survived. So the property promotion actually requires is the property this spec already asserts about itself. NOTE THE ONE ROW IT LEAVES LIVE: LADDERTEST (rec 110) is a live head in the catalog today and this spec does not create it -- it predates the lane and is listed above as one of the thirteen. It is not this spec's residue and is not this spec's to clean up; it is named here so a reader counting LADDER-ish rows does not attribute it to this file. A WORKSPACE PURGE verb was ruled in on the same day and is designed separately (claude/AIF078_DESIGN_WORKSPACE_PURGE.md); when it exists the thirteen live heads are what it should be pointed at first, NOT this spec's superseded rows, which are the history D10.3 exists to keep. VERIFIED IN-SUITE 2026-08-24, and it CORRECTS THE ARITHMETIC ABOVE. Promoted, then run inside REGRESSION ALL on the same build. All seven WSL_T* arms and all five WSL_G* guards read .T.; WSL_T4 saw WS_ID 156 retired and 157 minted, greater as required. Order-independence is demonstrated rather than assumed: this spec's own opening teardown printed 'WORKSPACE DESTROY: no such workspace: WSLADR1' -- the previous run's names had been properly retired, so it started from a clean slate INSIDE a suite that had already run fourteen specs ahead of it. THE PER-RUN COST IS NOT 7 ROWS, IT IS 10. The 4,921-byte figure above was measured BEFORE this promotion and is the pre-promotion number; this spec mints three of its own (WSLADR1 twice, because WSL_T4 destroys and re-creates it, plus WSLADR2). Measured on the promoting run: the catalog went 150 -> 160 rows, WS_IDs 151-160, of which 156/157/158 are this spec's. So one REGRESSION ALL now costs 10 rows = 7,030 bytes of DBF and still 0 bytes of memo, and a thousand runs is 6.7 MB. Recorded as a correction rather than by editing the 4,921 away, because both numbers are true of the moment they describe and a summary that silently retunes its own measurements is the defect this house keeps finding one layer up. SUPERSEDED 2026-08-29 BY THE L2 CATALOG BRACKET, and the clause above is LEFT STANDING because it was true when it was written. These rows no longer land in WORKSPACES.dbf at all. A spec flagged mints_catalog runs inside CatalogBracket, which re-points the WORKSPACES slot at a per-run scratch root and restores it from a destructor; it sits in run_regression_script, the ONE place any spec is run, so an EXPLICIT single-spec run is bracketed exactly as REGRESSION ALL is. MEASURED ON THE 2026-08-29 PROMOTING RUN: this spec's rows went to data/tmp/wscat_run_81, 3 of them -- exactly the three this entry already claims (WSLADR1 twice, WSLADR2 once) -- and the L3 isolation arm read the PRODUCTION catalog at 264 rows BOTH BEFORE AND AFTER the suite. THE MINT COUNT DID NOT CHANGE AND WAS NEVER WRONG -- what changed is WHERE IT LANDS, and that is the whole correction. The four bracketed default-suite specs still mint exactly TEN rows between them (WORKSPACE_SCOPE 2, WSMULTI 3, WSLADDER 3, RELSCOPE2 2), the same ten the L2 comment in this file measured as 252 -> 262 on 2026-08-28 -- so the per-spec numbers corroborate rather than contradict. What is void is every projection built on top of them: a row count per run cannot be multiplied into megabytes of a durable catalog that is not being written. The cost is a throwaway directory under the gitignored TMP slot. MWXSHAKE joined the suite the same day at 16 rows, so the suite now mints 26 per run and the production total still did not move. BOTH BYTE FIGURES ABOVE ARE THEREFORE VOID AS DURABLE-CATALOG COSTS: 4,921 bytes, 7,030 bytes, 4.7 MB and 6.7 MB all described growth in WORKSPACES.dbf, and WORKSPACES.dbf no longer grows on a regression run. The ROW counts they were computed from stand. Kept rather than deleted for the reason the sentence before this one gives: they are true of the moment they describe, and this is the third time this entry has been corrected by measuring instead of inheriting.",
+        "WORKSPACE IDENTITY LADDER: a workspace is born durable, and can die durable (AIF-078 D10.1/D10.2/D10.3, 2026-08-23). WSL_T4 IS THE DISCRIMINATOR and it is one line: destroy WSLADR1, create WSLADR1 again, and the second WS_ID must be GREATER than the first. That can only pass if retirement actually reached the catalog -- if WORKSPACE DESTROY silently no-ops, supersedes the wrong row, or writes a flag that does not stick, the name still has a live chain, the second NEW ADOPTS it, and the two ids are EQUAL. It separates a real retirement from a cheerful message, which is the defect shape this house keeps finding. ASSERTIONS READ THE CATALOG TABLE, not the console: WORKSPACES.dbf is an ordinary x64 table -- the map drawn in the same ink as the territory -- so the spec opens it and compares FIELDS, per the FIELDMGR_APPEND doctrine that a spec asserting SHAPE passes green on a blanked table. WSL_T1/T2/T3 read the birth row itself: FMT 'BIRTH 1' (self-describing rather than inferred), SIZE_B 0 (no payload), PREV_ID 0 (it IS the chain root, which is what D10.2 makes identity). WSL_T5 reads the RETIRED row and finds it still present and flagged SUPERSEDED -- retirement is supersession, not deletion, so a destroyed workspace leaves a record rather than a hole, and SUPERSEDED keeps ONE meaning ('no longer the current state of this name') whether a newer save replaced it or nothing did. WSL_T6/T7 are the refusal arms and neither claims anything is absent: USE_AGAIN established over three cuts that no marker in this language can assert emptiness and that an ERRORED marker PRINTS NOTHING rather than going red, so both ask the answerable question instead -- did the KNOWN OCCUPANT SURVIVE. T6: DEFAULT refuses destruction (invariant I1 needs it to outlive every other workspace) and its sentinel still reads. T7: a workspace still holding an area refuses, and the area is still readable -- destroy does not cascade, so it can never be the thing that silently orphaned an open area. NOT COVERED, stated rather than implied: ADOPTION ACROSS A PROCESS BOUNDARY. WORKSPACE NEW refuses a duplicate name within a session, so one process cannot ask a second NEW to adopt. It was proven by hand instead (2026-08-23, build 05:27:07: two datarun processes, 'WS_ID 110' then 'WS_ID 110' + ADOPTED), and a two-process fixture is the chartered follow-up; this spec does not claim it. GUARDS: if any WSL_G* reds, treat every WSL_T* as UNPROVEN -- the catalog predicates depend on locating the right row, and the refusal arms depend on a sentinel actually having been written. WSL_G4/G5 EXIST BECAUSE THE FIRST RUN NEEDED THEM: the fixture wrote APPEND BLANK, which this shell does not take -- BLANK falls through as an unrecognized argument, APPEND prints its usage, nothing is appended, and REPLACE reports 'no current record'. CORRECTED 2026-09-05: THIS SHELL NOW TAKES IT, and the sentence before this one is left standing because it was true of every build up to that date. cli::preprocess_for_dispatch rewrites APPEND BLANK to APPEND_BLANK, runtime-proven the same day (COUNT 0 -> APPEND BLANK -> COUNT 1, on a build 4 minutes newer than the source). WHAT DOES NOT CHANGE IS WHY G4/G5 EXIST. The lesson was never 'this shell lacks a verb' -- it was that the spec guarded its catalog reads and not its sentinel WRITES, so a fixture failure wore a verb failure's clothes and would have been a FALSE GREEN had the unwritten field compared equal. That holds for every unguarded input regardless of which verbs work. THE HAZARD ALSO RECURRED AFTER BEING WRITTEN HERE, on 2026-09-05, to an author who had read this entry: cmd_append_blank.cpp's own usage block said APPEND BLANK was 'the friendly command spelling when routed by the dispatcher' and nothing routed it -- a conditional whose condition was false, filed next to the code, out-arguing a correct warning filed here. A warning filed somewhere true does not outrank a falsehood filed somewhere obvious, and that is the transferable half of this paragraph. Both sentinel tables were created EMPTY, and WSL_T6 and WSL_T7 went RED while the verb under test had behaved perfectly, printing both refusals exactly as designed. A FIXTURE failure wearing a VERB failure's clothes -- and had the unwritten field happened to compare equal it would have been a FALSE GREEN instead. The spec had guarded its catalog reads and not its sentinel writes, the same omission WSMULTI's WSM_G4 was added to close: guard every input an arm reads, not only the interesting ones. This verb is also where xbase::workspace::destroy() finally gets a call site: defined, correct, and CALLED BY NOTHING since stage 3, the fifth AIF-079 instance this lane catalogued and the first it closed. Self-bootstrapping WSLDEF/WSLOCC in SANDBOX, erased at the end; leaves retired catalog rows behind BY DESIGN -- that is the history D10.3 keeps and what WSL_T5 reads. Explicit-run until soaked, then promote to default. PROMOTED to the default suite 2026-08-24, ON A STEWARD RULING ABOUT ITS COST AND AFTER THAT COST WAS ACTUALLY MEASURED. This spec was held back longer than any other in this lane because it carries the most catalog residue of any spec -- minting and retiring WS_IDs IS its subject matter -- and the residue question was open. It was framed as a disk question and that framing was wrong. MEASURED 2026-08-24 by parsing WORKSPACES.dbf at record boundaries: 150 rows, ZERO deleted-flagged, 132 SUPERSEDED, 18 live. SNAPSHOT is a memo field and WORKSPACES.dtx is 2.74 MB against a 104 KB table, so the worry was that each residue row drags a snapshot with it -- IT DOES NOT. 110 of 150 rows carry a memo pointer and ZERO of the 39 workspace-spec rows do. Residue is 703 bytes a row: one REGRESSION CURATED SUITE costs 4,921 bytes of DBF and 0 bytes of memo, so a thousand runs is 4.7 MB. The steward accepted that cost. WHAT THE MEASUREMENT FOUND INSTEAD, and it is why this spec is safe to promote while others would not be: eighteen rows are SUPERSEDED=0, i.e. LIVE HEADS, and thirteen of those are test and probe fixtures that were never retired (goneprobe, goneprobe2, partialprobe, ls_probe, ls_idxprobe, cycle_from_ram, v3_regress, sess_regress, wm_regress, minidb_regress, minidb_sidecar, ram_hydrate_src, LADDERTEST). A spec that mints a name which already has a live row does not get a fresh workspace -- IT ADOPTS, inheriting whatever the previous run left there, which is history-dependence wearing a green suit. THIS SPEC RETIRES EVERYTHING IT MINTS and WSL_T4 is the arm that proves it: destroy WSLADR1, create it again, second WS_ID must be GREATER. That arm cannot pass if a live row survived. So the property promotion actually requires is the property this spec already asserts about itself. NOTE THE ONE ROW IT LEAVES LIVE: LADDERTEST (rec 110) is a live head in the catalog today and this spec does not create it -- it predates the lane and is listed above as one of the thirteen. It is not this spec's residue and is not this spec's to clean up; it is named here so a reader counting LADDER-ish rows does not attribute it to this file. A WORKSPACE PURGE verb was ruled in on the same day and is designed separately (claude/AIF078_DESIGN_WORKSPACE_PURGE.md); when it exists the thirteen live heads are what it should be pointed at first, NOT this spec's superseded rows, which are the history D10.3 exists to keep. VERIFIED IN-SUITE 2026-08-24, and it CORRECTS THE ARITHMETIC ABOVE. Promoted, then run inside REGRESSION CURATED SUITE on the same build. All seven WSL_T* arms and all five WSL_G* guards read .T.; WSL_T4 saw WS_ID 156 retired and 157 minted, greater as required. Order-independence is demonstrated rather than assumed: this spec's own opening teardown printed 'WORKSPACE DESTROY: no such workspace: WSLADR1' -- the previous run's names had been properly retired, so it started from a clean slate INSIDE a suite that had already run fourteen specs ahead of it. THE PER-RUN COST IS NOT 7 ROWS, IT IS 10. The 4,921-byte figure above was measured BEFORE this promotion and is the pre-promotion number; this spec mints three of its own (WSLADR1 twice, because WSL_T4 destroys and re-creates it, plus WSLADR2). Measured on the promoting run: the catalog went 150 -> 160 rows, WS_IDs 151-160, of which 156/157/158 are this spec's. So one REGRESSION CURATED SUITE now costs 10 rows = 7,030 bytes of DBF and still 0 bytes of memo, and a thousand runs is 6.7 MB. Recorded as a correction rather than by editing the 4,921 away, because both numbers are true of the moment they describe and a summary that silently retunes its own measurements is the defect this house keeps finding one layer up. SUPERSEDED 2026-08-29 BY THE L2 CATALOG BRACKET, and the clause above is LEFT STANDING because it was true when it was written. These rows no longer land in WORKSPACES.dbf at all. A spec flagged mints_catalog runs inside CatalogBracket, which re-points the WORKSPACES slot at a per-run scratch root and restores it from a destructor; it sits in run_regression_script, the ONE place any spec is run, so an EXPLICIT single-spec run is bracketed exactly as REGRESSION CURATED SUITE is. MEASURED ON THE 2026-08-29 PROMOTING RUN: this spec's rows went to data/tmp/wscat_run_81, 3 of them -- exactly the three this entry already claims (WSLADR1 twice, WSLADR2 once) -- and the L3 isolation arm read the PRODUCTION catalog at 264 rows BOTH BEFORE AND AFTER the suite. THE MINT COUNT DID NOT CHANGE AND WAS NEVER WRONG -- what changed is WHERE IT LANDS, and that is the whole correction. The four bracketed default-suite specs still mint exactly TEN rows between them (WORKSPACE_SCOPE 2, WSMULTI 3, WSLADDER 3, RELSCOPE2 2), the same ten the L2 comment in this file measured as 252 -> 262 on 2026-08-28 -- so the per-spec numbers corroborate rather than contradict. What is void is every projection built on top of them: a row count per run cannot be multiplied into megabytes of a durable catalog that is not being written. The cost is a throwaway directory under the gitignored TMP slot. MWXSHAKE joined the suite the same day at 16 rows, so the suite now mints 26 per run and the production total still did not move. BOTH BYTE FIGURES ABOVE ARE THEREFORE VOID AS DURABLE-CATALOG COSTS: 4,921 bytes, 7,030 bytes, 4.7 MB and 6.7 MB all described growth in WORKSPACES.dbf, and WORKSPACES.dbf no longer grows on a regression run. The ROW counts they were computed from stand. Kept rather than deleted for the reason the sentence before this one gives: they are true of the moment they describe, and this is the third time this entry has been corrected by measuring instead of inheriting.",
         true,
-        true  // AIF-078 L2: mints catalog rows -- bracket it
+        true,  // AIF-078 L2: mints catalog rows -- bracket it
+        RegressionValidator::WorkspaceMarkersV1
     },
     {
         "WSPURGE",
         "workspace_purge_regression.dts",
-        "WORKSPACE DELETE (spelled PURGE until 2026-08-24; the alias is still accepted and PG_T5 keeps it exercised): catalog rows are FLAGGED, never packed (AIF-078, steward ruling 2026-08-24 \"A -- flag, never pack\"; design claude/AIF078_DESIGN_WORKSPACE_PURGE.md). THE VERB WAS RENAMED BECAUSE THE OWNER READ ITS OUTPUT: \"how could you ever locate a purged row, it is gone forever, delete is a flag and that means the row still exists just ignored.\" Correct -- the verb sets the delete flag and SUPERSEDED and the row stays on disk PERMANENTLY, which is the whole design since max(WS_ID)+1 needs those rows COUNTED. The name promised removal and the code guaranteed the opposite; in xBase the pair is exact, DELETE flags and PACK removes. The name misled the OWNER reading output written by its own author, which is the proof that a name reaches further than any definition beneath it. The spec file and this spec id keep the WSPURGE spelling deliberately -- a spec id is an allocated identifier with run history behind it. PG_T5 IS A FIELD-VALUE MARKER, NOT A COMMAND RUN: its first draft was the WORKSPACE PURGE line plus a comment naming itself PG_T5, asserting nothing, so a dead alias would have printed an error and left the spec all green -- the FIELDMGR_APPEND defect committed inside the arm written to prevent it, caught before it ran. PG_T1 IS THE DISCRIMINATOR and it exists because WS_ID allocation is max(WS_ID)+1 DERIVED by scanning surviving rows -- nothing persists a high-water mark. Physically remove the newest rows and the next WORKSPACE NEW re-mints an id a purged workspace already used; D10.2 makes the chain-root WS_ID the DURABLE IDENTITY, so that is two workspaces sharing one identity across time, R5 on the time axis, undetectable after the fact. The fixture arranges the trap on purpose: WSPRG1 is minted, retired, minted and retired again so its two rows are the two HIGHEST in the catalog, both are purged, and then a NEW name must mint ABOVE the highest purged id. Pack, and PG_T1 reads .F. PG_T2/PG_T3 ARE A PAIR because ruling A has two halves and a row is WORSE OFF if only one lands: the delete flag hides the row, SUPERSEDED=1 stops scan_catalog ELECTING it live -- and that scan does not filter deleted rows, it elects on WS_NAME plus SUPERSEDED alone, so a flag-only purge would leave a row invisible to the user and still adoptable by the next NEW, the AIF-118 shape exactly. PG_T2 reads the purged row with SET DELETED OFF and asserts SUPERSEDED=1. PG_T3 WAS WRITTEN TO SHOW THE ROW GOES AWAY UNDER SET DELETED ON AND INVERTED ON ITS FIRST RUN, 2026-08-24 -- which is the most valuable thing this spec has produced. LOCATE printed 'Located.' and moved the cursor onto the purged row with the shell reporting 'Deleted visibility: HIDE (ON)' one line earlier: a DELETE-FLAGGED RECORD IS STILL REACHED BY LOCATE. The flag itself landed -- purge_durable_workspace re-reads isDeleted() from the record before counting a row done and refuses to continue if it is false, and the verb reported both rows purged -- so this is LOCATE not consulting the setting, not a write that failed. WHAT IT CORRECTS: the delete flag is NOT what protects the catalog. SUPERSEDED is. The flag's value is that scan_catalog still COUNTS the row, which is exactly what preserves the high-water mark PG_T1 asserts. Hiding was assumed rather than measured, in the design and in this spec's own header, and the assumption was wrong. PG_T3 is now a TRIPWIRE recording the measured behaviour, with PG_T3B reading the protection that actually holds off the same row in the same breath; if PG_T3 ever reads .F. again, LOCATE has GAINED delete-filtering and the arm should be repointed deliberately rather than allowed to retune itself (the IDXSTALE precedent). THE TRIPWIRE FIRED THE SAME DAY AND HAS BEEN REPOINTED DELIBERATELY. AIF-123 found the cause: filter::visible() -- the ONE gate LIST, COUNT, SMARTLIST, LOCATE, FIND, SCAN, EXPORT and logical_nav all ask, twelve callers -- applied SET FILTER and FOR and NEVER consulted SET DELETED. Not a LOCATE defect at all; LOCATE was behaving like every other caller of a gate with a missing rung. The rung had been absent since 06ba79e93 (2025-08-16), which rewrote LIST, replaced its Settings::deletedOn() read with a per-command flag, and PRESERVED THE DEFAULT WHILE SEVERING THE CONTROL -- so nothing changed on the path anyone ran and nothing could go red, for fourteen months. With the rung restored LOCATE reports 'Not Located.' and PG_T3 is INVERTED to assert that. PG_T3B is REPURPOSED rather than deleted: it used to read SUPERSEDED off the row LOCATE landed on, and with no landing it was reading a stale cursor and would have gone red for a reason unrelated to its own name; it now carries the OTHER HALF, that SET DELETED OFF still reaches the row. Both-halves is the point -- 'hidden under ON' asserts nothing without 'visible under OFF' beside it, because a build that hides unconditionally passes the first and fails the second. See SDVIS, which is built entirely on that principle. PG_T4 IS THE REFUSAL ARM AND IT GUARDS A RULE THAT CHANGED BETWEEN DESIGN AND CODE: the design said PURGE would refuse any name with a LIVE catalog row and send the caller to DESTROY first, until DESTROY's dispatch was actually read -- it resolves its target through resolve_workspace_token(), the RUNTIME registry, and answers 'no such workspace' for anything not currently declared. A catalog-only live head (the thirteen the 2026-08-24 census found: goneprobe, ls_probe, wm_regress and ten others) would have been reachable by NEITHER verb. The clause would have fenced off the exact rows the verb was ruled in to deal with -- the same mistake as calling workarea_util 'a shared home' before checking the second consumer could link it. What is refused instead is a workspace DECLARED IN THIS SESSION, whose identity must not be yanked out from under it. PG_G2 DELIBERATELY DOES NOT USE RECCOUNT(): USE_AGAIN measured that RECNO()/FOUND() render EMPTY in a '?' marker, RECCOUNT() serves compile_predicate rather than the marker path, and a marker that errors prints nothing rather than going red -- so that guard would have vanished from the suite while the count still read full. Every marker is a FIELD-VALUE comparison against WORKSPACES.dbf per the FIELDMGR_APPEND doctrine. Leaves its own rows behind flagged and superseded BY DESIGN: the file never shrinks, which is what ruling A chose, and the honest cost is 4 rows per run. SUPERSEDED 2026-08-29 BY THE L2 CATALOG BRACKET, and the clause above is LEFT STANDING because it was true when it was written. These rows no longer land in WORKSPACES.dbf at all. A spec flagged mints_catalog runs inside CatalogBracket, which re-points the WORKSPACES slot at a per-run scratch root and restores it from a destructor; it sits in run_regression_script, the ONE place any spec is run, so an EXPLICIT single-spec run is bracketed exactly as REGRESSION ALL is. This spec is flagged mints_catalog and is EXPLICIT-RUN, so it is bracketed on the same code path -- but it was NOT run on 2026-08-29 and its 4 is therefore NOT RE-MEASURED, stated rather than assumed. What is established is the DESTINATION, which follows from the flag plus the bracket's placement and needs no run of this spec to be true: whatever it mints goes to a per-run scratch root, and 'the file never shrinks' now describes a throwaway file. Re-measure the 4 when this spec is next run. NOT COVERED, stated rather than implied: that a purged row is genuinely delete-FLAGGED as opposed to merely hidden -- DELETED() is a predicate-path function, not a marker-path one, so PG_T3 proves reachability rather than the flag byte; a unit fixture over DbArea::isDeleted() is the honest home for that claim. RE-PURGE IS IDEMPOTENT AND IS NOW REPORTED AS SUCH, which this spec's own SECOND run exposed: the fixture uses stable names, so run two found run one's rows still carrying WSPRG1 and re-purged them, and the verb announced 'Purged 4 row(s), WS_ID 161,162,165,166' when only 165 and 166 had moved. The outcome was correct -- setting SUPERSEDED on a superseded row and re-flagging a flagged one changes nothing -- but the COUNT was not, and left alone every run would report a larger number for the same work: 2, then 4, then 6, with nothing saying why. WORKSPACE WRITEBACK's rule pointed at a different loop -- a count is a fact about a loop until something declares what it SHOULD be. The verb now reads each row's state before touching it and reports transitioned and already-purged rows separately. NOT ASSERTED BY AN ARM, stated rather than implied: no marker reads those counts, because markers are field-value comparisons and counts are console text; the idempotence is visible in the transcript and verified by reading it, the IDXDIFF precedent. Explicit-run until soaked.",
+        "WORKSPACE DELETE (spelled PURGE until 2026-08-24; the alias is still accepted and PG_T5 keeps it exercised): catalog rows are FLAGGED, never packed (AIF-078, steward ruling 2026-08-24 \"A -- flag, never pack\"; design claude/AIF078_DESIGN_WORKSPACE_PURGE.md). THE VERB WAS RENAMED BECAUSE THE OWNER READ ITS OUTPUT: \"how could you ever locate a purged row, it is gone forever, delete is a flag and that means the row still exists just ignored.\" Correct -- the verb sets the delete flag and SUPERSEDED and the row stays on disk PERMANENTLY, which is the whole design since max(WS_ID)+1 needs those rows COUNTED. The name promised removal and the code guaranteed the opposite; in xBase the pair is exact, DELETE flags and PACK removes. The name misled the OWNER reading output written by its own author, which is the proof that a name reaches further than any definition beneath it. The spec file and this spec id keep the WSPURGE spelling deliberately -- a spec id is an allocated identifier with run history behind it. PG_T5 IS A FIELD-VALUE MARKER, NOT A COMMAND RUN: its first draft was the WORKSPACE PURGE line plus a comment naming itself PG_T5, asserting nothing, so a dead alias would have printed an error and left the spec all green -- the FIELDMGR_APPEND defect committed inside the arm written to prevent it, caught before it ran. PG_T1 IS THE DISCRIMINATOR and it exists because WS_ID allocation is max(WS_ID)+1 DERIVED by scanning surviving rows -- nothing persists a high-water mark. Physically remove the newest rows and the next WORKSPACE NEW re-mints an id a purged workspace already used; D10.2 makes the chain-root WS_ID the DURABLE IDENTITY, so that is two workspaces sharing one identity across time, R5 on the time axis, undetectable after the fact. The fixture arranges the trap on purpose: WSPRG1 is minted, retired, minted and retired again so its two rows are the two HIGHEST in the catalog, both are purged, and then a NEW name must mint ABOVE the highest purged id. Pack, and PG_T1 reads .F. PG_T2/PG_T3 ARE A PAIR because ruling A has two halves and a row is WORSE OFF if only one lands: the delete flag hides the row, SUPERSEDED=1 stops scan_catalog ELECTING it live -- and that scan does not filter deleted rows, it elects on WS_NAME plus SUPERSEDED alone, so a flag-only purge would leave a row invisible to the user and still adoptable by the next NEW, the AIF-118 shape exactly. PG_T2 reads the purged row with SET DELETED OFF and asserts SUPERSEDED=1. PG_T3 WAS WRITTEN TO SHOW THE ROW GOES AWAY UNDER SET DELETED ON AND INVERTED ON ITS FIRST RUN, 2026-08-24 -- which is the most valuable thing this spec has produced. LOCATE printed 'Located.' and moved the cursor onto the purged row with the shell reporting 'Deleted visibility: HIDE (ON)' one line earlier: a DELETE-FLAGGED RECORD IS STILL REACHED BY LOCATE. The flag itself landed -- purge_durable_workspace re-reads isDeleted() from the record before counting a row done and refuses to continue if it is false, and the verb reported both rows purged -- so this is LOCATE not consulting the setting, not a write that failed. WHAT IT CORRECTS: the delete flag is NOT what protects the catalog. SUPERSEDED is. The flag's value is that scan_catalog still COUNTS the row, which is exactly what preserves the high-water mark PG_T1 asserts. Hiding was assumed rather than measured, in the design and in this spec's own header, and the assumption was wrong. PG_T3 is now a TRIPWIRE recording the measured behaviour, with PG_T3B reading the protection that actually holds off the same row in the same breath; if PG_T3 ever reads .F. again, LOCATE has GAINED delete-filtering and the arm should be repointed deliberately rather than allowed to retune itself (the IDXSTALE precedent). THE TRIPWIRE FIRED THE SAME DAY AND HAS BEEN REPOINTED DELIBERATELY. AIF-123 found the cause: filter::visible() -- the ONE gate LIST, COUNT, SMARTLIST, LOCATE, FIND, SCAN, EXPORT and logical_nav all ask, twelve callers -- applied SET FILTER and FOR and NEVER consulted SET DELETED. Not a LOCATE defect at all; LOCATE was behaving like every other caller of a gate with a missing rung. The rung had been absent since 06ba79e93 (2025-08-16), which rewrote LIST, replaced its Settings::deletedOn() read with a per-command flag, and PRESERVED THE DEFAULT WHILE SEVERING THE CONTROL -- so nothing changed on the path anyone ran and nothing could go red, for fourteen months. With the rung restored LOCATE reports 'Not Located.' and PG_T3 is INVERTED to assert that. PG_T3B is REPURPOSED rather than deleted: it used to read SUPERSEDED off the row LOCATE landed on, and with no landing it was reading a stale cursor and would have gone red for a reason unrelated to its own name; it now carries the OTHER HALF, that SET DELETED OFF still reaches the row. Both-halves is the point -- 'hidden under ON' asserts nothing without 'visible under OFF' beside it, because a build that hides unconditionally passes the first and fails the second. See SDVIS, which is built entirely on that principle. PG_T4 IS THE REFUSAL ARM AND IT GUARDS A RULE THAT CHANGED BETWEEN DESIGN AND CODE: the design said PURGE would refuse any name with a LIVE catalog row and send the caller to DESTROY first, until DESTROY's dispatch was actually read -- it resolves its target through resolve_workspace_token(), the RUNTIME registry, and answers 'no such workspace' for anything not currently declared. A catalog-only live head (the thirteen the 2026-08-24 census found: goneprobe, ls_probe, wm_regress and ten others) would have been reachable by NEITHER verb. The clause would have fenced off the exact rows the verb was ruled in to deal with -- the same mistake as calling workarea_util 'a shared home' before checking the second consumer could link it. What is refused instead is a workspace DECLARED IN THIS SESSION, whose identity must not be yanked out from under it. PG_G2 DELIBERATELY DOES NOT USE RECCOUNT(): USE_AGAIN measured that RECNO()/FOUND() render EMPTY in a '?' marker, RECCOUNT() serves compile_predicate rather than the marker path, and a marker that errors prints nothing rather than going red -- so that guard would have vanished from the suite while the count still read full. Every marker is a FIELD-VALUE comparison against WORKSPACES.dbf per the FIELDMGR_APPEND doctrine. Leaves its own rows behind flagged and superseded BY DESIGN: the file never shrinks, which is what ruling A chose, and the honest cost is 4 rows per run. SUPERSEDED 2026-08-29 BY THE L2 CATALOG BRACKET, and the clause above is LEFT STANDING because it was true when it was written. These rows no longer land in WORKSPACES.dbf at all. A spec flagged mints_catalog runs inside CatalogBracket, which re-points the WORKSPACES slot at a per-run scratch root and restores it from a destructor; it sits in run_regression_script, the ONE place any spec is run, so an EXPLICIT single-spec run is bracketed exactly as REGRESSION CURATED SUITE is. This spec is flagged mints_catalog and is EXPLICIT-RUN, so it is bracketed on the same code path -- but it was NOT run on 2026-08-29 and its 4 is therefore NOT RE-MEASURED, stated rather than assumed. What is established is the DESTINATION, which follows from the flag plus the bracket's placement and needs no run of this spec to be true: whatever it mints goes to a per-run scratch root, and 'the file never shrinks' now describes a throwaway file. Re-measure the 4 when this spec is next run. NOT COVERED, stated rather than implied: that a purged row is genuinely delete-FLAGGED as opposed to merely hidden -- DELETED() is a predicate-path function, not a marker-path one, so PG_T3 proves reachability rather than the flag byte; a unit fixture over DbArea::isDeleted() is the honest home for that claim. RE-PURGE IS IDEMPOTENT AND IS NOW REPORTED AS SUCH, which this spec's own SECOND run exposed: the fixture uses stable names, so run two found run one's rows still carrying WSPRG1 and re-purged them, and the verb announced 'Purged 4 row(s), WS_ID 161,162,165,166' when only 165 and 166 had moved. The outcome was correct -- setting SUPERSEDED on a superseded row and re-flagging a flagged one changes nothing -- but the COUNT was not, and left alone every run would report a larger number for the same work: 2, then 4, then 6, with nothing saying why. WORKSPACE WRITEBACK's rule pointed at a different loop -- a count is a fact about a loop until something declares what it SHOULD be. The verb now reads each row's state before touching it and reports transitioned and already-purged rows separately. NOT ASSERTED BY AN ARM, stated rather than implied: no marker reads those counts, because markers are field-value comparisons and counts are console text; the idempotence is visible in the transcript and verified by reading it, the IDXDIFF precedent. Explicit-run until soaked.",
         false,
         true  // AIF-078 L2: mints catalog rows -- bracket it (NEW x6; WSPRG4 is
               // minted twice by the 2026-09-06 adopt-then-DESTROY arm, and the
@@ -871,51 +988,59 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
     {
         "RELSCOPE2",
         "relation_workspace_scope.dts",
-        "THE RELATION STORE IS WORKSPACE-SCOPED (AIF-078 I1.2, 2026-08-23). Until this landed the relation graph was ONE process-global map, and cmd_workspace.cpp said so under a comment headed 'KNOWN OVER-REACH, STATED RATHER THAN HIDDEN': a scoped close had to clear EVERY relation, because leaving an edge pointing into an area it had just emptied is the dangling-parent shape and a dangling relation is worse than an over-eager clear. It PRINTED the cost when it could bite -- 'relations are cleared GLOBALLY ... (AIF-078 stage 3 limitation)' -- and it named its own fix. Both arms here FAIL against that implementation and PASS against the partitioned store; delete the partition and both go red. RS_T1: REL CLEAR ALL issued inside RSWSA leaves RSWSB's relation driving its child. RS_T2: a SCOPED WORKSPACE CLOSE of RSWSA does the same. ASSERTED BY FIELD VALUE, never console text: a relation's observable effect is refresh-driven slaving, so each arm moves RSWSB's parent to a DIFFERENT key, refreshes, and reads the CHILD's label -- if the relation survived the child follows and the label CHANGES; if it was collateral damage the child sits still. The two arms deliberately target different rows (B_BETA then back to B_ALPHA) because a spec that re-asserts the value it already saw proves nothing. NOTHING HERE ASSERTS RSWSA'S RELATIONS ARE GONE: no marker in this language can assert absence (USE_AGAIN, three cuts) and an errored marker PRINTS NOTHING rather than going red, so absence is proven by contrast -- and survival is the half that matters anyway, because the defect was never 'clears too little'. GUARDS: RS_G0 the fixture, RS_G1 THE RELATION WAS LIVE BEFORE THE ACT UNDER TEST -- without it an arm reading an unchanged label cannot tell 'survived' from 'never worked' -- and RS_G2 the other workspace's relation was actually rebuilt before the close. If any guard reds, treat both arms as UNPROVEN. RECORDED NOT FIXED: current_parent_override() in set_relations.cpp is still ONE global rather than per workspace; it is the REL parent shorthand and not the graph, so it does not affect these arms, but it is the next workspace-blind piece of relation state and should not be found by surprise. ALSO IN I1.2 and not covered here: set_current_handle() now REJECTS 0 at the API (D9 sec 4 item 4) -- harmless against a flat map, load-bearing against a partitioned one, since a stray 0 would drop a whole workspace's relations into the reserved 'no such workspace' bucket. Self-bootstrapping RSAP/RSAC/RSBP/RSBC in SANDBOX, erased at the end; both workspaces destroyed in teardown (D10.3). CORRECTED 2026-08-23, MEASURED: the clause that used to end here read so no catalog rows accumulate, and that is FALSE. D10.3 retirement is SUPERSESSION, not deletion -- WORKSPACE DESTROY prints History kept: every row in the chain is still there and still readable, a destroyed workspace leaves a record, not a hole. What teardown guarantees is that the NAME HAS NO LIVE ROW, so a later WORKSPACE NEW mints fresh rather than adopting; the rows themselves remain and this spec adds more on every run. Measured by parsing WORKSPACES.dbf at record boundaries: 143 rows, ZERO deleted-flagged, of which 28 are workspace-spec residue (RSWSA 4, RSWSB 4, WSLADR1 8, WSCHILD 3, WSPARENT 3, WSALPHA 2, WSBETA 2, WSGAMMA 2). The claim was inherited from this summary and repeated without measuring it, which is the defect this house keeps finding one layer up. SUPERSEDED 2026-08-29 BY THE L2 CATALOG BRACKET, and the clause above is LEFT STANDING because it was true when it was written. These rows no longer land in WORKSPACES.dbf at all. A spec flagged mints_catalog runs inside CatalogBracket, which re-points the WORKSPACES slot at a per-run scratch root and restores it from a destructor; it sits in run_regression_script, the ONE place any spec is run, so an EXPLICIT single-spec run is bracketed exactly as REGRESSION ALL is. MEASURED ON THE 2026-08-29 PROMOTING RUN: this spec's rows went to data/tmp/wscat_run_82, 2 of them, and the L3 isolation arm read the PRODUCTION catalog at 264 rows BOTH BEFORE AND AFTER the suite. The residue census above (RSWSA 4, RSWSB 4, WSLADR1 8 and the rest) is therefore a HISTORICAL reading of a file these specs have stopped adding to; it is left standing as the record of what unbracketed running cost. THE MINT COUNT DID NOT CHANGE AND WAS NEVER WRONG -- what changed is WHERE IT LANDS, and that is the whole correction. The four bracketed default-suite specs still mint exactly TEN rows between them (WORKSPACE_SCOPE 2, WSMULTI 3, WSLADDER 3, RELSCOPE2 2), the same ten the L2 comment in this file measured as 252 -> 262 on 2026-08-28 -- so the per-spec numbers corroborate rather than contradict. What is void is every projection built on top of them: a row count per run cannot be multiplied into megabytes of a durable catalog that is not being written. The cost is a throwaway directory under the gitignored TMP slot. MWXSHAKE joined the suite the same day at 16 rows, so the suite now mints 26 per run and the production total still did not move. PROMOTED to the default suite 2026-08-23. The soak was the AIF-078 slot-lane step 1 lift, which MOVED the code this spec covers -- find_free_area_for_workspace left cmd_use.cpp for workarea_util and took its engine and membership table as arguments -- and both arms read green afterward. THE REASON FOR PROMOTION IS A MEASURED COVERAGE HOLE, not the soak alone: REGRESSION ALL CANNOT REACH IN FREE. A grep of the whole .dts corpus finds the phrase in exactly two files, this one and the other of this pair, and both were explicit-run -- so a change to the free-slot allocator could pass the entire default suite and say nothing about the policy. That is what happened on 2026-08-23: ALL ran ten specs green over a commit that rewrote the allocator, and the allocator was not exercised once. This is also the only spec that runs IN FREE with TWO WORKSPACES OPEN AT ONCE, which is the arrangement the scoping exists for and which USE_ARGS cannot reach: measured 2026-08-23, RSWSA took engine areas 0 and 1 and RSWSB, starting with no members and so having no run to grow, took the lowest free slot 2 and then grew contiguously to 3.",
+        "THE RELATION STORE IS WORKSPACE-SCOPED (AIF-078 I1.2, 2026-08-23). Until this landed the relation graph was ONE process-global map, and cmd_workspace.cpp said so under a comment headed 'KNOWN OVER-REACH, STATED RATHER THAN HIDDEN': a scoped close had to clear EVERY relation, because leaving an edge pointing into an area it had just emptied is the dangling-parent shape and a dangling relation is worse than an over-eager clear. It PRINTED the cost when it could bite -- 'relations are cleared GLOBALLY ... (AIF-078 stage 3 limitation)' -- and it named its own fix. Both arms here FAIL against that implementation and PASS against the partitioned store; delete the partition and both go red. RS_T1: REL CLEAR ALL issued inside RSWSA leaves RSWSB's relation driving its child. RS_T2: a SCOPED WORKSPACE CLOSE of RSWSA does the same. ASSERTED BY FIELD VALUE, never console text: a relation's observable effect is refresh-driven slaving, so each arm moves RSWSB's parent to a DIFFERENT key, refreshes, and reads the CHILD's label -- if the relation survived the child follows and the label CHANGES; if it was collateral damage the child sits still. The two arms deliberately target different rows (B_BETA then back to B_ALPHA) because a spec that re-asserts the value it already saw proves nothing. NOTHING HERE ASSERTS RSWSA'S RELATIONS ARE GONE: no marker in this language can assert absence (USE_AGAIN, three cuts) and an errored marker PRINTS NOTHING rather than going red, so absence is proven by contrast -- and survival is the half that matters anyway, because the defect was never 'clears too little'. GUARDS: RS_G0 the fixture, RS_G1 THE RELATION WAS LIVE BEFORE THE ACT UNDER TEST -- without it an arm reading an unchanged label cannot tell 'survived' from 'never worked' -- and RS_G2 the other workspace's relation was actually rebuilt before the close. If any guard reds, treat both arms as UNPROVEN. RECORDED NOT FIXED: current_parent_override() in set_relations.cpp is still ONE global rather than per workspace; it is the REL parent shorthand and not the graph, so it does not affect these arms, but it is the next workspace-blind piece of relation state and should not be found by surprise. ALSO IN I1.2 and not covered here: set_current_handle() now REJECTS 0 at the API (D9 sec 4 item 4) -- harmless against a flat map, load-bearing against a partitioned one, since a stray 0 would drop a whole workspace's relations into the reserved 'no such workspace' bucket. Self-bootstrapping RSAP/RSAC/RSBP/RSBC in SANDBOX, erased at the end; both workspaces destroyed in teardown (D10.3). CORRECTED 2026-08-23, MEASURED: the clause that used to end here read so no catalog rows accumulate, and that is FALSE. D10.3 retirement is SUPERSESSION, not deletion -- WORKSPACE DESTROY prints History kept: every row in the chain is still there and still readable, a destroyed workspace leaves a record, not a hole. What teardown guarantees is that the NAME HAS NO LIVE ROW, so a later WORKSPACE NEW mints fresh rather than adopting; the rows themselves remain and this spec adds more on every run. Measured by parsing WORKSPACES.dbf at record boundaries: 143 rows, ZERO deleted-flagged, of which 28 are workspace-spec residue (RSWSA 4, RSWSB 4, WSLADR1 8, WSCHILD 3, WSPARENT 3, WSALPHA 2, WSBETA 2, WSGAMMA 2). The claim was inherited from this summary and repeated without measuring it, which is the defect this house keeps finding one layer up. SUPERSEDED 2026-08-29 BY THE L2 CATALOG BRACKET, and the clause above is LEFT STANDING because it was true when it was written. These rows no longer land in WORKSPACES.dbf at all. A spec flagged mints_catalog runs inside CatalogBracket, which re-points the WORKSPACES slot at a per-run scratch root and restores it from a destructor; it sits in run_regression_script, the ONE place any spec is run, so an EXPLICIT single-spec run is bracketed exactly as REGRESSION CURATED SUITE is. MEASURED ON THE 2026-08-29 PROMOTING RUN: this spec's rows went to data/tmp/wscat_run_82, 2 of them, and the L3 isolation arm read the PRODUCTION catalog at 264 rows BOTH BEFORE AND AFTER the suite. The residue census above (RSWSA 4, RSWSB 4, WSLADR1 8 and the rest) is therefore a HISTORICAL reading of a file these specs have stopped adding to; it is left standing as the record of what unbracketed running cost. THE MINT COUNT DID NOT CHANGE AND WAS NEVER WRONG -- what changed is WHERE IT LANDS, and that is the whole correction. The four bracketed default-suite specs still mint exactly TEN rows between them (WORKSPACE_SCOPE 2, WSMULTI 3, WSLADDER 3, RELSCOPE2 2), the same ten the L2 comment in this file measured as 252 -> 262 on 2026-08-28 -- so the per-spec numbers corroborate rather than contradict. What is void is every projection built on top of them: a row count per run cannot be multiplied into megabytes of a durable catalog that is not being written. The cost is a throwaway directory under the gitignored TMP slot. MWXSHAKE joined the suite the same day at 16 rows, so the suite now mints 26 per run and the production total still did not move. PROMOTED to the default suite 2026-08-23. The soak was the AIF-078 slot-lane step 1 lift, which MOVED the code this spec covers -- find_free_area_for_workspace left cmd_use.cpp for workarea_util and took its engine and membership table as arguments -- and both arms read green afterward. THE REASON FOR PROMOTION IS A MEASURED COVERAGE HOLE, not the soak alone: REGRESSION CURATED SUITE CANNOT REACH IN FREE. A grep of the whole .dts corpus finds the phrase in exactly two files, this one and the other of this pair, and both were explicit-run -- so a change to the free-slot allocator could pass the entire default suite and say nothing about the policy. That is what happened on 2026-08-23: ALL ran ten specs green over a commit that rewrote the allocator, and the allocator was not exercised once. This is also the only spec that runs IN FREE with TWO WORKSPACES OPEN AT ONCE, which is the arrangement the scoping exists for and which USE_ARGS cannot reach: measured 2026-08-23, RSWSA took engine areas 0 and 1 and RSWSB, starting with no members and so having no run to grow, took the lowest free slot 2 and then grew contiguously to 3.",
         true,
-        true  // AIF-078 L2: mints catalog rows -- bracket it
+        true,  // AIF-078 L2: mints catalog rows -- bracket it
+        RegressionValidator::WorkspaceMarkersV1
     },
     {
         "MWXSHAKE",
         "workspace_minidb_multi_shakedown.dts",
         "MULTI-WORKSPACE AND MINIDB IN ONE FILE, ON PURPOSE (AIF-078 + AIF-070, written 2026-08-28). THE TWO LANES ARE NOT INDEPENDENT: a MINIDB container carries a POSTURE, a posture is a picture of a WORKSPACE, and the interesting failures live where they meet -- a container hydrated into RAM lands its tables in whatever workspace is current, at slots the posture does not control. A spec exercising either alone cannot reach that seam. THE MARKER COUNT IS DERIVED, NOT DECLARED: count the lines whose marker prefix is MWX_ (guards MWX_G*, arms MWX_T1..N contiguous) and read the run against THAT. A number written here is a SECOND DECLARATION and this one already drifted -- it said 35 / 11 guards / 24 arms while the file held 40 / 14 / 26, because section 5B was added and the count beside it was not. COUNT THEM FIRST: an errored marker prints NOTHING rather than going red, so one short of the derived count is a FAILURE wearing a clean transcript. If any MWX_G* reads .F., every arm below it is UNPROVEN rather than failing. EVERY POST-LOAD ASSERTION ADDRESSES BY NAME, NEVER BY SLOT, and that is the direct lesson of 2026-08-28: R130 makes a posture's AREA numbers KEYS rather than addresses, the load prints so, and four specs carried slot-addressed arms that produced FALSE GREENS the moment their fixtures shrank -- because a marker over a CLOSED area does not error, it prints a verdict whose polarity depends on the OPERATOR ((SID >= 1) reads .T. over nothing, (SO_ID = 6) reads .F.). See claude/FINDING_MARKER_OVER_A_CLOSED_AREA_PICKS_A_SIDE.md. MULTI-WORKSPACE COVERAGE: SWITCH-then-open membership (an area joins whichever workspace is CURRENT when it is OPENED, never open-then-assign); UNDER nesting; OPEN <dir> AS <name>, which overrides the directory leaf and is itself a MINTING form; additive re-entry proven by a PARKED CURSOR SURVIVING rather than by a count a re-open could fake; scoped CLOSE with the other workspace's area still readable as the discriminator; and ONE FILE OPEN IN TWO WORKSPACES, the case a global registry cannot represent -- MWXSHARE exists in both fixture directories under the same name with different labels, so the arm can say which copy it read. The R112 ambiguity ledger fires there by design ('open in 2 areas ... first-wins is a migration step'); that is the ledger working, not an error. THE IDENTITY LADDER: DESTROY refuses DEFAULT (invariant I1), refuses a workspace still HOLDING AREAS, and refuses a parent with a CHILD -- three refusals, none of them cascading, each read by asking whether the KNOWN OCCUPANT SURVIVED rather than by claiming absence. MWX_T9 IS THE DISCRIMINATOR and it is one line of meaning: destroy a name, create it again, second WS_ID must be GREATER. If DESTROY silently no-ops or writes a flag that does not stick, the name keeps a live chain, the second NEW ADOPTS, and the ids are EQUAL. DELETE flags and never packs -- there is deliberately no WORKSPACE PACK because max(WS_ID)+1 is DERIVED from surviving rows, so deleted rows must keep being COUNTED or the next NEW inherits a deleted workspace's identity. PURGE is a retained alias whose name is wrong (in xBase DELETE flags, PACK removes) and MWX_T12 asserts it still reaches the verb rather than assuming it. DELETE refuses a workspace DECLARED IN THIS SESSION. MINIDB COVERAGE: SAVE <name> MEMO MINIDB stores a CONTAINER whose payload IS the database, against SAVE <name> MEMO which stores a POSTURE with the tables left on disk -- MWX_T23/T24 read FMT off the catalog table to prove the two rows differ on exactly that field, which is the cheapest possible proof they are not one artifact wearing two names. MINIDB implies V3 because the embedded posture must be SELF-LOCATING to survive being re-pointed at RAM. Plain LOAD ... MEMO REFUSES a MINIDB payload BY DESIGN (its tables have no disk home, and standing up empty areas over missing files is the silent-success failure this codebase hunts) and MWX_T14 reads that the session survived the refusal. LOAD ... MEMO RAM hydrates with zero disk reads; the byte counts and per-file oracle compares in the transcript are EXTERNAL measurements and are deliberately NOT claimed by an arm (the IDXDIFF precedent) -- the arms claim the ROWS ARE THERE and the MEMO SURVIVED. A hydrated table is WRITABLE (MWX_T17), and WRITEBACK returns it to real disk where MWX_T18/T19 read it back AFTER the RAM disk is unmounted, which is the only reading that proves the return leg rather than the mount. THE SHORTFALL CONTRACT: LOAD resolves and probes declared members BEFORE closing anything, so a load that cannot complete leaves the session STANDING -- MWX_T20 proves it by reading an UNRELATED open table that must not have moved. PARTIAL opts back into permissive behaviour explicitly. A MISSING INDEX does NOT refuse (MWX_T22): indexes are derived and rebuildable and deliberately outside the probe. SELF-BOOTSTRAPPING AND SELF-ERASING in DBF/SANDBOX; the writeback directory is scratch and is removed at both ends so MWX_G4's 'really removed' reading cannot inherit a previous run's leftovers. Teardown DESTROYs every workspace it declares, so the NAME has no live row and a second run MINTS rather than ADOPTS -- the rows themselves remain, because D10.3 retirement is SUPERSESSION and a destroyed workspace leaves a record, not a hole. Residue is therefore MEASURED AT 16 CATALOG ROWS PER RUN, ALL OF THEM IN A SCRATCH CATALOG, which is why this entry is flagged mints_catalog. "
-        "Measured 2026-08-29: the three green runs of the 48-marker version each left 16 rows (wscat_run_73 and wscat_run_78 byte-identical at 12515 bytes with the identical multiset of MWX* names; wscat_run_83, the in-suite run, printing its own WORKSPACE CATALOG as '16 row(s): 6 live, 10 superseded' with every row MWX-named). THE NUMBER IS A DBF HEADER RECORD COUNT, NOT A FIELD PARSE -- an attempt to read WS_NAME out of that file by field offset produced nonsense on the first try, because the X64M metadata block sits INSIDE the descriptor area and shifts every offset after it. CORRECTED BEFORE IT WAS COMMITTED, and recorded rather than quietly retuned: this clause first said FOURTEEN, from 16 minus a 2-row 'baseline' read off wscat_run_77. THERE IS NO BASELINE TO SUBTRACT. The L2 bracket creates a FRESH scratch catalog per bracketed spec, so wscat_run_77 was a DIFFERENT spec's bracket and its 2 rows were never this one's floor -- a number arrived at by arithmetic over two things that were never the same measurement, which is the defect this house keeps finding one layer up. AND THE COST IS NOT WHERE THE OLDER ENTRIES IN THIS FILE SAY IT IS: because of the bracket, this spec adds ZERO rows to the PRODUCTION catalog. The L3 isolation arm read it at 264 rows both before and after the suite on the promoting run. What a REGRESSION ALL actually pays is a 16-row scratch catalog directory under data/tmp, which is disk in a scratch tree rather than growth in the durable one. SET ORDER SURVIVAL IS COVERED, section 5B, added and run green 2026-08-28 -- the clause here used to say it was NOT covered and that no spec in the corpus proved it, which was true for about four hours. THE TAG TRAVELS IN THE ARTIFACT: a DTSCHEMA AREA line carries tag=, so the order is part of what SAVE writes and LOAD reads, and nothing else in the corpus reads it back -- losing it would be silent. IT BORROWS A SHIPPED CDX (STUDENTS under DBF/X64) because this file's own fixtures index with INDEX ON, which writes .inx, while SET ORDER TAG wants a CDX. THE DISCRIMINATOR WAS CHOSEN BY MEASURING BOTH CANDIDATES: SID order == physical order for all 200 rows, so SET ORDER TAG SID then TOP lands exactly where an engine that IGNORED the order would land -- an arm that cannot tell two implementations apart. LNAME diverges at BOTH ends and is therefore the one used: physical rec 1 Taylor against LNAME-first Anderson (rec 21), physical rec 200 Davis against LNAME-last Wilson (rec 157). MWX_G6 reads the order LIVE BEFORE THE SAVE; MWX_T25/T26 read both ends after a MEMO V3 round trip; drop the tag anywhere between and the walk goes physical. SECTION 5C IS THAT BUILT-CDX ARM, added 2026-08-29. It builds a four-row fixture whose physical and keyed orders disagree at BOTH ends (ZULU MIKE ALPHA TANGO physical; ALPHA MIKE TANGO ZULU by CLBL), reads the physical ends BEFORE any index exists (G7a/G7b -- without them T27 landing on ALPHA could be where an order-ignoring engine would have landed anyway), then CDX CREATE / CDX ADDTAG CLBL / BUILDLMDB YES / SET ORDER TAG CLBL. THE TAG NAME IS THE KEY: ADDTAG takes a name and no key expression (cmd_cdx.cpp:324-420) and cmd_buildlmdb.cpp:468-480 resolves it later by walking area.fields() for a match. A TAG NAMING NO FIELD WAS ACCEPTED IN SILENCE AND NOW IS NOT. ADDTAG validated NOTHING AT ALL -- it took the name, wrote the tag, and left the resolution to a loop that answers `if (fld < 1) return false;`, printing nothing while only the total is reported, the count discipline again. The clause here used to say that wanted an arm of its own; it got one the same day. cmd_cdx.cpp and cmd_cnx.cpp now refuse ADDTAG on a CLOSED AREA and on a name xfg::resolve_field_index_std cannot resolve -- the STANDARD resolver, the one REPLACE already refuses on (cmd_replace.cpp:822), so ADDTAG and REPLACE now answer 'what is a field name' with the SAME code rather than two that agree by luck. DROPTAG is deliberately NOT checked: dropping a tag that names nothing is how you clean up after the old behaviour. MWX_T31 IS THAT ARM and it is two claims, not one: ADDTAG on a name no field carries is REFUSED, and the table is then READ to prove the refusal CHANGED NOTHING -- a verb that refused after damaging the container would read identically in console text. STILL NOT FIXED, stated so it is not found by surprise: BUILDLMDB and REBUILD keep their OWN private normalizers (cmd_buildlmdb.cpp:475 is a raw textio::ieq with no trim and no descriptor alias; cmd_rebuild.cpp:144 normalize_field_name has no leading trim and no alias), so that is FOUR live declarations of what a field name is, and a tag arriving by any route other than ADDTAG can still be skipped in silence. REBUILD is the worse of the two -- it rebuilds the whole container in ONE backend call and then prints the OK line once per tag and reports ok = tags.size(), so a DEAD TAG IS REPORTED OK AND COUNTED. Its own comment says 'Report once per tag, but rebuild only happened once.' Teardown is one line because ERASE <table> CONFIRM sweeps same-stem sidecars across the DBF, INDEXES and LMDB roots (cmd_erase.cpp:176-205), so table, container and LMDB environment go together and CDX CREATE -- which refuses to overwrite -- finds clean ground next run. "
-        "5C ALSO PRODUCED A FALSE GREEN ON ITS FIRST RUN AND THE FIX IS THE ARM: the table was opened to build the index and therefore belonged to DEFAULT, `USE` on a table already open in the current area is a NO-OP FOR MEMBERSHIP, so the workspace created around it held ZERO members and the scoped SAVE wrote an EMPTY posture -- warning twice in console text no marker can read -- while the arms read the copy still open in DEFAULT. Closing first makes the section self-checking: with no live copy anywhere, an empty posture leaves SELECT with nothing to select and the markers vanish, so a SHORT COUNT is the failure signal. PROMOTED TO THE DEFAULT SUITE 2026-08-29 on TWO CONSECUTIVE GREEN RUNS of the 48-marker version against the same engine (wscat_run_73 and wscat_run_78; 17 guards MWX_G0a..G7c, 31 arms MWX_T1..T31, 48 total, derived by grep -c '^? \"MWX_' and not read off the checklist). THE COST IS PAID KNOWINGLY: 16 catalog rows on every REGRESSION ALL, measured above, which makes this the most expensive spec in the default suite and is the whole reason the mints_catalog flag exists -- and all 16 land in the per-run SCRATCH catalog, not the production one. THE REASON FOR PROMOTION IS A MEASURED COVERAGE HOLE, NOT THE SOAK ALONE -- the RELSCOPE2 precedent. Before this, the default suite reached ADDTAG through exactly ONE spec (INDEX_X64, twice) and reached the WORKSPACE/MINIDB SEAM through none, so the entire class this file was written for -- a posture crossing into RAM, an index order surviving a round trip, a scoped SAVE writing an EMPTY posture while the arms read a copy still open somewhere else -- could pass REGRESSION ALL without being touched once. THE SOAK ITSELF IS THE ARGUMENT: it produced THREE FALSE GREENS in two days, each of a different shape -- a slot-addressed arm over a CLOSED area whose polarity depended on the operator, MWX_T21 reading a REAL open table the verb under test never touched, and 5C's empty posture. NONE OF THE THREE IS FINDABLE BY GREP, which is the case for paying 16 scratch rows a run rather than leaving it explicit-run. Under ALL, read the COUNT first and the verdicts second. VERIFIED IN-SUITE 2026-08-29 ON THE PROMOTING BUILD, which is what promotion actually requires and not the soak alone. Promoted, rebuilt, then run as the SIXTEENTH and last spec of REGRESSION ALL: 17 guards and 31 arms all read .T., 48 markers, full count. ORDER-INDEPENDENCE IS DEMONSTRATED RATHER THAN ASSUMED -- it inherited a session from RELSCOPE2, closed it in its own opening WORKSPACE CLOSE, and its teardown block printed 'no such workspace' for every name it destroys, so the previous run's identities had been properly retired and it started from a clean slate. THE NEW ADDTAG GUARD FIRED LIVE IN THAT RUN: 'CDX ADDTAG: field not found: MWXNOSUCH ... Nothing was added.', with MWX_T31 then reading the table to prove the refusal changed nothing. The R112 ambiguity ledger also fired once during fixture creation ('MWXSHARE is open in 2 areas (ws 1 area 1, ws 1 area 3); resolved to area 1'), which is the ledger working as this entry describes and not an error. The L3 catalog-isolation arm read the production catalog at 264 rows both BEFORE and AFTER the suite, so the bracket held over the most catalog-hungry spec now in it. RULE 4 GAINED A SECOND HALF 2026-09-10 AND THREE ARMS PAID FOR IT. This file's read rule said ASSERTIONS ADDRESS BY NAME, NEVER BY SLOT -- adopted after R130 made a posture's AREA numbers keys and four specs produced false greens the moment their fixtures shrank. BY NAME was a complete address only while a bare name was resolved by sweeping every area in the session and taking the lowest that answered. Q8 (closed 2026-08-27) rules that an unqualified name resolves inside the CURRENT workspace and R134 gives the qualified form WS:TABLE, and scoping SELECT to honour that on 2026-09-10 turned five markers here red in one run. NONE OF THE FIVE WAS A REGRESSION IN THE ENGINE. Each was an arm reaching into a workspace it was not standing in, which first-wins had been quietly completing for it. MWX_G1a, MWX_G1b, MWX_T3, MWX_T4 and MWX_T7 are now qualified -- MWXONE:MWXP, MWXTWO:MWXQ, MWXKID:MWXK -- which is a spelling change that makes each arm say what its own name already claimed, and T3 and T7 were additionally passing on RESIDUE: a refused SELECT leaves the current area untouched, so an arm whose previous SELECT happened to land well reads the right field off the wrong reason. MWX_T1 AND MWX_T2 COULD NOT BE FIXED BY SPELLING and were rebuilt. T1 read MWXQ as proof that OPEN ... AS named a workspace, but MWXQ cannot be a member of MWXAS: the directory open's re-entry guard (cmd_workspace.cpp:1509) asks whether the FILE is open ANYWHERE, MWXTWO had opened it twenty lines earlier, so MWXAS is born holding only MWXSHARE and the arm had never touched the thing it was named for. T2 carried a second, independent defect: it documented parking the cursor on a NON-DEFAULT row and then parked with GO 1 over a one-row fixture, so it could not distinguish a surviving park from a re-open. B's MWXSHARE gained a second row, T2 parks at GO 2, and both arms now read MWXAS:MWXSHARE. "
+        "Measured 2026-08-29: the three green runs of the 48-marker version each left 16 rows (wscat_run_73 and wscat_run_78 byte-identical at 12515 bytes with the identical multiset of MWX* names; wscat_run_83, the in-suite run, printing its own WORKSPACE CATALOG as '16 row(s): 6 live, 10 superseded' with every row MWX-named). THE NUMBER IS A DBF HEADER RECORD COUNT, NOT A FIELD PARSE -- an attempt to read WS_NAME out of that file by field offset produced nonsense on the first try, because the X64M metadata block sits INSIDE the descriptor area and shifts every offset after it. CORRECTED BEFORE IT WAS COMMITTED, and recorded rather than quietly retuned: this clause first said FOURTEEN, from 16 minus a 2-row 'baseline' read off wscat_run_77. THERE IS NO BASELINE TO SUBTRACT. The L2 bracket creates a FRESH scratch catalog per bracketed spec, so wscat_run_77 was a DIFFERENT spec's bracket and its 2 rows were never this one's floor -- a number arrived at by arithmetic over two things that were never the same measurement, which is the defect this house keeps finding one layer up. AND THE COST IS NOT WHERE THE OLDER ENTRIES IN THIS FILE SAY IT IS: because of the bracket, this spec adds ZERO rows to the PRODUCTION catalog. The L3 isolation arm read it at 264 rows both before and after the suite on the promoting run. What a REGRESSION CURATED SUITE actually pays is a 16-row scratch catalog directory under data/tmp, which is disk in a scratch tree rather than growth in the durable one. SET ORDER SURVIVAL IS COVERED, section 5B, added and run green 2026-08-28 -- the clause here used to say it was NOT covered and that no spec in the corpus proved it, which was true for about four hours. THE TAG TRAVELS IN THE ARTIFACT: a DTSCHEMA AREA line carries tag=, so the order is part of what SAVE writes and LOAD reads, and nothing else in the corpus reads it back -- losing it would be silent. IT BORROWS A SHIPPED CDX (STUDENTS under DBF/X64) because this file's own fixtures index with INDEX ON, which writes .inx, while SET ORDER TAG wants a CDX. THE DISCRIMINATOR WAS CHOSEN BY MEASURING BOTH CANDIDATES: SID order == physical order for all 200 rows, so SET ORDER TAG SID then TOP lands exactly where an engine that IGNORED the order would land -- an arm that cannot tell two implementations apart. LNAME diverges at BOTH ends and is therefore the one used: physical rec 1 Taylor against LNAME-first Anderson (rec 21), physical rec 200 Davis against LNAME-last Wilson (rec 157). MWX_G6 reads the order LIVE BEFORE THE SAVE; MWX_T25/T26 read both ends after a MEMO V3 round trip; drop the tag anywhere between and the walk goes physical. SECTION 5C IS THAT BUILT-CDX ARM, added 2026-08-29. It builds a four-row fixture whose physical and keyed orders disagree at BOTH ends (ZULU MIKE ALPHA TANGO physical; ALPHA MIKE TANGO ZULU by CLBL), reads the physical ends BEFORE any index exists (G7a/G7b -- without them T27 landing on ALPHA could be where an order-ignoring engine would have landed anyway), then CDX CREATE / CDX ADDTAG CLBL / BUILDLMDB YES / SET ORDER TAG CLBL. THE TAG NAME IS THE KEY: ADDTAG takes a name and no key expression (cmd_cdx.cpp:324-420) and cmd_buildlmdb.cpp:468-480 resolves it later by walking area.fields() for a match. A TAG NAMING NO FIELD WAS ACCEPTED IN SILENCE AND NOW IS NOT. ADDTAG validated NOTHING AT ALL -- it took the name, wrote the tag, and left the resolution to a loop that answers `if (fld < 1) return false;`, printing nothing while only the total is reported, the count discipline again. The clause here used to say that wanted an arm of its own; it got one the same day. cmd_cdx.cpp and cmd_cnx.cpp now refuse ADDTAG on a CLOSED AREA and on a name xfg::resolve_field_index_std cannot resolve -- the STANDARD resolver, the one REPLACE already refuses on (cmd_replace.cpp:822), so ADDTAG and REPLACE now answer 'what is a field name' with the SAME code rather than two that agree by luck. DROPTAG is deliberately NOT checked: dropping a tag that names nothing is how you clean up after the old behaviour. MWX_T31 IS THAT ARM and it is two claims, not one: ADDTAG on a name no field carries is REFUSED, and the table is then READ to prove the refusal CHANGED NOTHING -- a verb that refused after damaging the container would read identically in console text. STILL NOT FIXED, stated so it is not found by surprise: BUILDLMDB and REBUILD keep their OWN private normalizers (cmd_buildlmdb.cpp:475 is a raw textio::ieq with no trim and no descriptor alias; cmd_rebuild.cpp:144 normalize_field_name has no leading trim and no alias), so that is FOUR live declarations of what a field name is, and a tag arriving by any route other than ADDTAG can still be skipped in silence. REBUILD is the worse of the two -- it rebuilds the whole container in ONE backend call and then prints the OK line once per tag and reports ok = tags.size(), so a DEAD TAG IS REPORTED OK AND COUNTED. Its own comment says 'Report once per tag, but rebuild only happened once.' Teardown is one line because ERASE <table> CONFIRM sweeps same-stem sidecars across the DBF, INDEXES and LMDB roots (cmd_erase.cpp:176-205), so table, container and LMDB environment go together and CDX CREATE -- which refuses to overwrite -- finds clean ground next run. "
+        "5C ALSO PRODUCED A FALSE GREEN ON ITS FIRST RUN AND THE FIX IS THE ARM: the table was opened to build the index and therefore belonged to DEFAULT, `USE` on a table already open in the current area is a NO-OP FOR MEMBERSHIP, so the workspace created around it held ZERO members and the scoped SAVE wrote an EMPTY posture -- warning twice in console text no marker can read -- while the arms read the copy still open in DEFAULT. Closing first makes the section self-checking: with no live copy anywhere, an empty posture leaves SELECT with nothing to select and the markers vanish, so a SHORT COUNT is the failure signal. PROMOTED TO THE DEFAULT SUITE 2026-08-29 on TWO CONSECUTIVE GREEN RUNS of the 48-marker version against the same engine (wscat_run_73 and wscat_run_78; 17 guards MWX_G0a..G7c, 31 arms MWX_T1..T31, 48 total, derived by grep -c '^? \"MWX_' and not read off the checklist). THE COST IS PAID KNOWINGLY: 16 catalog rows on every REGRESSION CURATED SUITE, measured above, which makes this the most expensive spec in the default suite and is the whole reason the mints_catalog flag exists -- and all 16 land in the per-run SCRATCH catalog, not the production one. THE REASON FOR PROMOTION IS A MEASURED COVERAGE HOLE, NOT THE SOAK ALONE -- the RELSCOPE2 precedent. Before this, the default suite reached ADDTAG through exactly ONE spec (INDEX_X64, twice) and reached the WORKSPACE/MINIDB SEAM through none, so the entire class this file was written for -- a posture crossing into RAM, an index order surviving a round trip, a scoped SAVE writing an EMPTY posture while the arms read a copy still open somewhere else -- could pass REGRESSION CURATED SUITE without being touched once. THE SOAK ITSELF IS THE ARGUMENT: it produced THREE FALSE GREENS in two days, each of a different shape -- a slot-addressed arm over a CLOSED area whose polarity depended on the operator, MWX_T21 reading a REAL open table the verb under test never touched, and 5C's empty posture. NONE OF THE THREE IS FINDABLE BY GREP, which is the case for paying 16 scratch rows a run rather than leaving it explicit-run. Under ALL, read the COUNT first and the verdicts second. VERIFIED IN-SUITE 2026-08-29 ON THE PROMOTING BUILD, which is what promotion actually requires and not the soak alone. Promoted, rebuilt, then run as the SIXTEENTH and last spec of REGRESSION CURATED SUITE: 17 guards and 31 arms all read .T., 48 markers, full count. ORDER-INDEPENDENCE IS DEMONSTRATED RATHER THAN ASSUMED -- it inherited a session from RELSCOPE2, closed it in its own opening WORKSPACE CLOSE, and its teardown block printed 'no such workspace' for every name it destroys, so the previous run's identities had been properly retired and it started from a clean slate. THE NEW ADDTAG GUARD FIRED LIVE IN THAT RUN: 'CDX ADDTAG: field not found: MWXNOSUCH ... Nothing was added.', with MWX_T31 then reading the table to prove the refusal changed nothing. The R112 ambiguity ledger also fired once during fixture creation ('MWXSHARE is open in 2 areas (ws 1 area 1, ws 1 area 3); resolved to area 1'), which is the ledger working as this entry describes and not an error. The L3 catalog-isolation arm read the production catalog at 264 rows both BEFORE and AFTER the suite, so the bracket held over the most catalog-hungry spec now in it. RULE 4 GAINED A SECOND HALF 2026-09-10 AND THREE ARMS PAID FOR IT. This file's read rule said ASSERTIONS ADDRESS BY NAME, NEVER BY SLOT -- adopted after R130 made a posture's AREA numbers keys and four specs produced false greens the moment their fixtures shrank. BY NAME was a complete address only while a bare name was resolved by sweeping every area in the session and taking the lowest that answered. Q8 (closed 2026-08-27) rules that an unqualified name resolves inside the CURRENT workspace and R134 gives the qualified form WS:TABLE, and scoping SELECT to honour that on 2026-09-10 turned five markers here red in one run. NONE OF THE FIVE WAS A REGRESSION IN THE ENGINE. Each was an arm reaching into a workspace it was not standing in, which first-wins had been quietly completing for it. MWX_G1a, MWX_G1b, MWX_T3, MWX_T4 and MWX_T7 are now qualified -- MWXONE:MWXP, MWXTWO:MWXQ, MWXKID:MWXK -- which is a spelling change that makes each arm say what its own name already claimed, and T3 and T7 were additionally passing on RESIDUE: a refused SELECT leaves the current area untouched, so an arm whose previous SELECT happened to land well reads the right field off the wrong reason. MWX_T1 AND MWX_T2 COULD NOT BE FIXED BY SPELLING and were rebuilt. T1 read MWXQ as proof that OPEN ... AS named a workspace, but MWXQ cannot be a member of MWXAS: the directory open's re-entry guard (cmd_workspace.cpp:1509) asks whether the FILE is open ANYWHERE, MWXTWO had opened it twenty lines earlier, so MWXAS is born holding only MWXSHARE and the arm had never touched the thing it was named for. T2 carried a second, independent defect: it documented parking the cursor on a NON-DEFAULT row and then parked with GO 1 over a one-row fixture, so it could not distinguish a surviving park from a re-open. B's MWXSHARE gained a second row, T2 parks at GO 2, and both arms now read MWXAS:MWXSHARE. "
         "MWX_T5 IS LEFT UNCHANGED AND IS ANNOTATED AS UNPROVEN, deliberately, because it needs a ruling and not an edit: its premise is that A's copy of MWXSHARE is already open when B's is added, and this script never opens A's copy at all, while WORKSPACE ADD (cmd_workspace.cpp:5946) searches EVERY area for the path, finds the copy T1 opened into MWXAS, SELECTS it and returns -- so the arm reports .T. for precisely the behaviour it was written to rule out. The duplicate-open guard is GLOBAL in all three verbs that have one (WORKSPACE OPEN, WORKSPACE ADD, USE) and all three were written when there was one workspace. Whether it becomes per-workspace is open and rides with the USE duplicate-open item. THE HEADER MARKER COUNT WAS STALE A FOURTH TIME, reading 40/14/26 against an artifact of 48/17/31 -- this entry has recorded 48 since the 2026-08-29 promotion, so the two declarations had disagreed in the tree for twelve days and the count that is CHECKED was the correct one throughout.",
         true,   // PROMOTED 2026-08-29 -- two green runs of the 48-marker version
-        true  // AIF-078 L2: mints catalog rows -- bracket it (NEW, OPEN..AS, SAVE)
+        true,  // AIF-078 L2: mints catalog rows -- bracket it (NEW, OPEN..AS, SAVE)
+        RegressionValidator::WorkspaceMarkersV1
     },
     {
         "NAV_NATURAL",
         "nav_order_natural_regression.dts",
-        "AN ATTACHED CONTAINER IS NOT AN ACTIVE ORDER (AIF-148, written 2026-08-29). orderstate::hasOrder() returns `st && !st->container.empty()` -- it answers IS A CONTAINER ATTACHED. Six sites on the traversal path read it as IS AN ORDER ACTIVE. WORKSPACE OPEN attaches a .cdx to every table it lands and selects NO TAG, so the predicate said true for a table sitting in natural order, and every verb that trusted it went looking for a tag, found none, and returned failure. MEASURED on MCC STUDENTS (200 rows, CDX attached, no tag): TOP, BOTTOM, GO TOP, GO BOTTOM, GO FIRST and GO LAST all printed failed; SKIP printed 'SKIP: at end.' on record 1 and did not move; GO 5 worked. GO <n> survived because R121 already ruled addressing absolute and traversal filtered. SKIP IS THE SEVERITY AND IS WHY THIS SPEC EXISTS: the other six REFUSED, which is a wrong answer a reader can see in a transcript, and SKIP ANSWERED. WHY SIXTY REGISTERED SPECS SAID NOTHING, measured the same day and the more useful half of this entry: (a) 345 markers across the tracked corpus and NOT ONE mentions RECNO -- not laziness, a LANGUAGE LIMIT this house has already recorded four times (cnx_persist_proof, cnx_realtime_buffer_proof, cnx_realtime_index_proof, index_maintenance_failure_proof all say RECNO() RENDERS EMPTY IN A '?' MARKER and STR() does not rescue it), so NO ARM IN THE TREE CAN SAY 'the cursor is at 1'; (b) every navigation line in the corpus is followed by a marker that reads a FIELD, and USE/SELECT/CREATE have already parked the cursor on record 1, so a failed TOP and a working TOP READ IDENTICALLY -- workspace_load_shortfall.dts:149 is the shape exactly, USE STUDENTS / TOP / ? 'L_T4...' + (SID >= 1), green from record 1 and green from record 400; (c) STOP_ON_ERROR is opt-in, so a printed refusal sits above green markers and the run continues. THE COUNTERMEASURE IS STRUCTURAL, NOT DILIGENCE: every arm here PARKS THE CURSOR SOMEWHERE ELSE FIRST with GO <n> and then reads MARK, because an arm that reads row 1 on a table already standing on row 1 cannot fail. NAV_G1 is the load-bearing guard -- it asserts the PARK moved, on a row that is neither first nor last; if GO does not move, every arm below it is meaningless rather than green. THE FIXTURE SORTS BACKWARDS ON PURPOSE: ID descends as the physical order ascends, so natural order and tag order name DIFFERENT rows (natural TOP is ROW1, tag-ascending TOP is ROW6). NAV_T7/T8 ARE THE COUNTERWEIGHT and are the reason that matters -- a fix that forced natural ALWAYS would pass all six failing arms and be exactly as wrong as refusing, so two arms assert the opposite direction on the same fixture. Six arms cover TOP, BOTTOM, SKIP forward, SKIP backward, GO TOP and GO BOTTOM; GO TOP and GO BOTTOM are armed SEPARATELY from bare TOP/BOTTOM because they route differently and failed as their own line in the transcript. MINTS NOTHING, and that is deliberate: the attached-no-tag state is reached with SET INDEX TO (cmd_setindex.cpp:237-239 sets the container and then setActiveTag(A, \"\")), which is the identical state attach_workspace_index leaves behind (cmd_workspace.cpp:1123-1130) without needing a workspace to produce it -- so no catalog bracket is required. SMARTLIST for every transcript dump, never LIST (owner ruling 2026-08-29: 'list is my tool, use smartlist for tests'). NOT COVERED, stated rather than implied: the report sites that read the container predicate where they make an ordering claim -- console text, and no marker in this language can assert it. THOSE FOUR WERE CLOSED LATER THE SAME DAY and one of them was MIS-CLASSIFIED when this sentence was first written: db_tuple_stream.cpp:267 is not a report, it is a NAVIGATION MODE SELECTOR that entered OrderVector mode on the container predicate and was saved only by an empty-vector fallback downstream -- correctness by luck rather than by the predicate. Still unasserted by any arm: the corrected sites are console text or a GUI-side stream, and this language has no marker that reads either; GO FIRST / GO LAST, which failed alongside GO TOP in the same transcript and are BELIEVED to share the path, and believed is not measured; a FILTERED view, since cmd_skip.cpp pairs the order question with view_is_filtered() deliberately (R121) and this exercises the unfiltered half; and CNX, which container_supports_tag() treats identically and which is therefore expected to behave the same -- untested, unclaimed. Self-bootstrapping NAVTAG in SANDBOX, self-erasing. NOT YET RUN AT THE TIME OF WRITING -- the spec was authored against the fix in the same session and no green is claimed for it; it is explicit-run until it has been run twice, then promote. RUN AND PROMOTED 2026-08-29, build d0406cee (Aug 29 2026 12:19:47), TWO GREEN RUNS of that binary: all twelve markers .T. both times -- NAV_G0/G1/G2/G3 and NAV_T1 through T8 -- and the clause above is LEFT STANDING because it was true when it was written. THE TRANSCRIPT CORROBORATES MORE THAN THE GREENS DO, and that is the part worth keeping: the engine itself printed 'SET INDEX: CDX attached ... Use SET ORDER TO TAG <tag>' and then STATUS read 'Order: NATURAL / Index file: ...navtag.cdx / Active tag: (none)', which is the state under test SAYING ITS OWN NAME rather than being assumed; and the tag-order SMARTLIST came back RECNO 6,5,4,3,2,1, exactly inverted from physical, so the six natural arms and the two tag arms CANNOT BOTH PASS BY ACCIDENT. The mints-nothing claim was PROVEN rather than asserted: the L3 isolation arm read the production catalog at 268 rows before and after on both runs, so the suite total stays at 26 rows per run with this spec in it. The fixture worry recorded before the first run -- CDX CREATE on a CREATE X64 table under the SANDBOX index and LMDB slots, the one thing no other spec does -- was unfounded: the container built, BUILDLMDB reported OK=1, and cleanup erased all three artifacts including the .cdx.d environment. STILL NOT MEASURED, and this is the honest gap in the promotion: THE ARMS HAVE NOT BEEN RUN AGAINST THE PRE-FIX BINARY. WAO_T1 and MWXSHAKE both insist a discriminator is checked against the old build rather than reasoned about, and what exists here is the failing behaviour measured live on MCC STUDENTS in this state plus arms constructed so a cursor that does not move reads the parked MARK -- a strong argument, not a measurement. Anyone stashing the AIF-148 fix should see NAV_T1 through T6 go red while NAV_G0 through G3 stay green; if the guards red too, the fixture broke and the arms prove nothing either way. IN-SUITE VERIFICATION IS THE NEXT STEP AND HAS NOT HAPPENED: both green runs were EXPLICIT single-spec runs, which prove the spec works from a clean session and say nothing about order-independence when it inherits open areas from the spec before it -- the property MWXSHAKE's own promotion had to demonstrate rather than assume. VERIFIED IN-SUITE 2026-08-29 ON THE PROMOTING BUILD (7f5f0789, Aug 29 2026 12:54:43), and the clause above is LEFT STANDING because it was true when it was written. Run as the SEVENTEENTH and last spec of REGRESSION ALL: twelve markers, all .T., full count. ORDER-INDEPENDENCE IS DEMONSTRATED RATHER THAN ASSUMED -- it inherited MWXSHAKE's session with the DBF, INDEXES and LMDB slots left on x64, re-pointed all three to SANDBOX in its own opening lines, and its WORKSPACE CLOSE reported ZERO areas because MWXSHAKE's teardown had already left a clean slate, so the fixture was built from nothing. THE FLAG FLIP NEEDS A REBUILD AND THAT COST A RUN: the promotion commit was made and REGRESSION ALL run without rebuilding, so the suite ran SIXTEEN specs against a binary whose compiled-in registry still carried false. The suite was green and the spec was simply absent -- a full green over a spec that never executed, which is this file's own subject matter arriving as a process error rather than a code one. It was caught by the curated listing NONDESTRUCTIVE prints, where NAV_NATURAL still showed WITHOUT its [default] tag. A LMDB-SLOT WORRY RECORDED BEFORE THE RUN IS WITHDRAWN ON MEASUREMENT: BUILDLMDB wrote to LMDB\\SANDBOX\\NAVTAG.cdx.d, following the slot exactly. MWXSHAKE section 5C lands its env in LMDB\\x64 in the same run because THAT spec sets only the DBF and INDEXES slots, which is a fixture omission there and not an engine defect here. PRE-CHANGE BINARY RUN, 2026-08-30 -- THE DEBT IS PAID AND THE PREDICTION HELD EXACTLY. Built 0655860b, the immediate parent of the fix, in an isolated worktree; confirmed pre-change FROM SOURCE rather than from a hash, isNaturalOrder being absent from the tree entirely. MEASURED: NAV_T1 through T6 all .F., NAV_G0 through G3 all .T., NAV_T7 and T8 .T. Twelve markers, and the six reds are the fix's absence rather than a broken fixture because the guards held. THE TRANSCRIPT SAYS MORE THAN THE MARKERS, as this entry always argued it would: 'TOP: failed.', 'BOTTOM: failed.' and 'GO: failed.' twice are refusals a reader can see, and 'SKIP: at end.' printed ON RECORD 1 OF 6, twice, is the wrong ANSWER that is this spec's whole reason for existing. The tag-ordered SMARTLIST came back 6,5,4,3,2,1, exactly inverted from physical, so the six natural arms and the two tag arms cannot both be passing by accident. AN UNPLANNED SECOND MEASUREMENT FELL OUT OF THE SAME RUN: the STATUS block on that binary reads 'Order       : ASCEND' beside 'Active tag  : (none)', the REPORT half of AIF-148 caught against a pre-change build without anyone setting out to catch it. On the current build the same line reads NATURAL. So this run discriminates two fixes. CATALOG FIGURE CORRECTED: the production catalog is 271 rows, not the 268 recorded above -- see the WSENV entry for the cause, which was a steward error on 2026-08-30 and not a defect.",
-        true   // PROMOTED 2026-08-29 -- two green runs, twelve markers each; VERIFIED IN-SUITE (see description)
+        "AN ATTACHED CONTAINER IS NOT AN ACTIVE ORDER (AIF-148, written 2026-08-29). orderstate::hasOrder() returns `st && !st->container.empty()` -- it answers IS A CONTAINER ATTACHED. Six sites on the traversal path read it as IS AN ORDER ACTIVE. WORKSPACE OPEN attaches a .cdx to every table it lands and selects NO TAG, so the predicate said true for a table sitting in natural order, and every verb that trusted it went looking for a tag, found none, and returned failure. MEASURED on MCC STUDENTS (200 rows, CDX attached, no tag): TOP, BOTTOM, GO TOP, GO BOTTOM, GO FIRST and GO LAST all printed failed; SKIP printed 'SKIP: at end.' on record 1 and did not move; GO 5 worked. GO <n> survived because R121 already ruled addressing absolute and traversal filtered. SKIP IS THE SEVERITY AND IS WHY THIS SPEC EXISTS: the other six REFUSED, which is a wrong answer a reader can see in a transcript, and SKIP ANSWERED. WHY SIXTY REGISTERED SPECS SAID NOTHING, measured the same day and the more useful half of this entry: (a) 345 markers across the tracked corpus and NOT ONE mentions RECNO -- not laziness, a LANGUAGE LIMIT this house has already recorded four times (cnx_persist_proof, cnx_realtime_buffer_proof, cnx_realtime_index_proof, index_maintenance_failure_proof all say RECNO() RENDERS EMPTY IN A '?' MARKER and STR() does not rescue it), so NO ARM IN THE TREE CAN SAY 'the cursor is at 1'; (b) every navigation line in the corpus is followed by a marker that reads a FIELD, and USE/SELECT/CREATE have already parked the cursor on record 1, so a failed TOP and a working TOP READ IDENTICALLY -- workspace_load_shortfall.dts:149 is the shape exactly, USE STUDENTS / TOP / ? 'L_T4...' + (SID >= 1), green from record 1 and green from record 400; (c) STOP_ON_ERROR is opt-in, so a printed refusal sits above green markers and the run continues. THE COUNTERMEASURE IS STRUCTURAL, NOT DILIGENCE: every arm here PARKS THE CURSOR SOMEWHERE ELSE FIRST with GO <n> and then reads MARK, because an arm that reads row 1 on a table already standing on row 1 cannot fail. NAV_G1 is the load-bearing guard -- it asserts the PARK moved, on a row that is neither first nor last; if GO does not move, every arm below it is meaningless rather than green. THE FIXTURE SORTS BACKWARDS ON PURPOSE: ID descends as the physical order ascends, so natural order and tag order name DIFFERENT rows (natural TOP is ROW1, tag-ascending TOP is ROW6). NAV_T7/T8 ARE THE COUNTERWEIGHT and are the reason that matters -- a fix that forced natural ALWAYS would pass all six failing arms and be exactly as wrong as refusing, so two arms assert the opposite direction on the same fixture. Six arms cover TOP, BOTTOM, SKIP forward, SKIP backward, GO TOP and GO BOTTOM; GO TOP and GO BOTTOM are armed SEPARATELY from bare TOP/BOTTOM because they route differently and failed as their own line in the transcript. MINTS NOTHING, and that is deliberate: the attached-no-tag state is reached with SET INDEX TO (cmd_setindex.cpp:237-239 sets the container and then setActiveTag(A, \"\")), which is the identical state attach_workspace_index leaves behind (cmd_workspace.cpp:1123-1130) without needing a workspace to produce it -- so no catalog bracket is required. SMARTLIST for every transcript dump, never LIST (owner ruling 2026-08-29: 'list is my tool, use smartlist for tests'). NOT COVERED, stated rather than implied: the report sites that read the container predicate where they make an ordering claim -- console text, and no marker in this language can assert it. THOSE FOUR WERE CLOSED LATER THE SAME DAY and one of them was MIS-CLASSIFIED when this sentence was first written: db_tuple_stream.cpp:267 is not a report, it is a NAVIGATION MODE SELECTOR that entered OrderVector mode on the container predicate and was saved only by an empty-vector fallback downstream -- correctness by luck rather than by the predicate. Still unasserted by any arm: the corrected sites are console text or a GUI-side stream, and this language has no marker that reads either; GO FIRST / GO LAST, which failed alongside GO TOP in the same transcript and are BELIEVED to share the path, and believed is not measured; a FILTERED view, since cmd_skip.cpp pairs the order question with view_is_filtered() deliberately (R121) and this exercises the unfiltered half; and CNX, which container_supports_tag() treats identically and which is therefore expected to behave the same -- untested, unclaimed. Self-bootstrapping NAVTAG in SANDBOX, self-erasing. NOT YET RUN AT THE TIME OF WRITING -- the spec was authored against the fix in the same session and no green is claimed for it; it is explicit-run until it has been run twice, then promote. RUN AND PROMOTED 2026-08-29, build d0406cee (Aug 29 2026 12:19:47), TWO GREEN RUNS of that binary: all twelve markers .T. both times -- NAV_G0/G1/G2/G3 and NAV_T1 through T8 -- and the clause above is LEFT STANDING because it was true when it was written. THE TRANSCRIPT CORROBORATES MORE THAN THE GREENS DO, and that is the part worth keeping: the engine itself printed 'SET INDEX: CDX attached ... Use SET ORDER TO TAG <tag>' and then STATUS read 'Order: NATURAL / Index file: ...navtag.cdx / Active tag: (none)', which is the state under test SAYING ITS OWN NAME rather than being assumed; and the tag-order SMARTLIST came back RECNO 6,5,4,3,2,1, exactly inverted from physical, so the six natural arms and the two tag arms CANNOT BOTH PASS BY ACCIDENT. The mints-nothing claim was PROVEN rather than asserted: the L3 isolation arm read the production catalog at 268 rows before and after on both runs, so the suite total stays at 26 rows per run with this spec in it. The fixture worry recorded before the first run -- CDX CREATE on a CREATE X64 table under the SANDBOX index and LMDB slots, the one thing no other spec does -- was unfounded: the container built, BUILDLMDB reported OK=1, and cleanup erased all three artifacts including the .cdx.d environment. STILL NOT MEASURED, and this is the honest gap in the promotion: THE ARMS HAVE NOT BEEN RUN AGAINST THE PRE-FIX BINARY. WAO_T1 and MWXSHAKE both insist a discriminator is checked against the old build rather than reasoned about, and what exists here is the failing behaviour measured live on MCC STUDENTS in this state plus arms constructed so a cursor that does not move reads the parked MARK -- a strong argument, not a measurement. Anyone stashing the AIF-148 fix should see NAV_T1 through T6 go red while NAV_G0 through G3 stay green; if the guards red too, the fixture broke and the arms prove nothing either way. IN-SUITE VERIFICATION IS THE NEXT STEP AND HAS NOT HAPPENED: both green runs were EXPLICIT single-spec runs, which prove the spec works from a clean session and say nothing about order-independence when it inherits open areas from the spec before it -- the property MWXSHAKE's own promotion had to demonstrate rather than assume. VERIFIED IN-SUITE 2026-08-29 ON THE PROMOTING BUILD (7f5f0789, Aug 29 2026 12:54:43), and the clause above is LEFT STANDING because it was true when it was written. Run as the SEVENTEENTH and last spec of REGRESSION CURATED SUITE: twelve markers, all .T., full count. ORDER-INDEPENDENCE IS DEMONSTRATED RATHER THAN ASSUMED -- it inherited MWXSHAKE's session with the DBF, INDEXES and LMDB slots left on x64, re-pointed all three to SANDBOX in its own opening lines, and its WORKSPACE CLOSE reported ZERO areas because MWXSHAKE's teardown had already left a clean slate, so the fixture was built from nothing. THE FLAG FLIP NEEDS A REBUILD AND THAT COST A RUN: the promotion commit was made and REGRESSION CURATED SUITE run without rebuilding, so the suite ran SIXTEEN specs against a binary whose compiled-in registry still carried false. The suite was green and the spec was simply absent -- a full green over a spec that never executed, which is this file's own subject matter arriving as a process error rather than a code one. It was caught by the curated listing NONDESTRUCTIVE prints, where NAV_NATURAL still showed WITHOUT its [curated suite] tag. A LMDB-SLOT WORRY RECORDED BEFORE THE RUN IS WITHDRAWN ON MEASUREMENT: BUILDLMDB wrote to LMDB\\SANDBOX\\NAVTAG.cdx.d, following the slot exactly. MWXSHAKE section 5C lands its env in LMDB\\x64 in the same run because THAT spec sets only the DBF and INDEXES slots, which is a fixture omission there and not an engine defect here. PRE-CHANGE BINARY RUN, 2026-08-30 -- THE DEBT IS PAID AND THE PREDICTION HELD EXACTLY. Built 0655860b, the immediate parent of the fix, in an isolated worktree; confirmed pre-change FROM SOURCE rather than from a hash, isNaturalOrder being absent from the tree entirely. MEASURED: NAV_T1 through T6 all .F., NAV_G0 through G3 all .T., NAV_T7 and T8 .T. Twelve markers, and the six reds are the fix's absence rather than a broken fixture because the guards held. THE TRANSCRIPT SAYS MORE THAN THE MARKERS, as this entry always argued it would: 'TOP: failed.', 'BOTTOM: failed.' and 'GO: failed.' twice are refusals a reader can see, and 'SKIP: at end.' printed ON RECORD 1 OF 6, twice, is the wrong ANSWER that is this spec's whole reason for existing. The tag-ordered SMARTLIST came back 6,5,4,3,2,1, exactly inverted from physical, so the six natural arms and the two tag arms cannot both be passing by accident. AN UNPLANNED SECOND MEASUREMENT FELL OUT OF THE SAME RUN: the STATUS block on that binary reads 'Order       : ASCEND' beside 'Active tag  : (none)', the REPORT half of AIF-148 caught against a pre-change build without anyone setting out to catch it. On the current build the same line reads NATURAL. So this run discriminates two fixes. CATALOG FIGURE CORRECTED: the production catalog is 271 rows, not the 268 recorded above -- see the WSENV entry for the cause, which was a steward error on 2026-08-30 and not a defect.",
+        true,  // PROMOTED 2026-08-29 -- two green runs, twelve markers each; VERIFIED IN-SUITE (see description)
+        false,
+        RegressionValidator::RemainingDefaultV1
     },
     {
         "OPENJOIN",
         "workspace_open_joins_current.dts",
-        "WORKSPACE OPEN LANDS IN THE CURRENT WORKSPACE (R131, owner ruling 2026-08-29; supersedes the leaf-naming half of R128). A bare `WORKSPACE OPEN <dir>` used to derive a workspace name from the RESOLVED DIRECTORY LEAF, mint or adopt that workspace, switch into it, and open there -- so it walked OUT of the workspace the person was standing in, which is why the sanctioned R131 sequence NEW / SWITCH / SET PATH / OPEN never worked. MEASURED 2026-08-29 IN A LIVE SESSION: the one typed command `workspace open dbf` produced a workspace named `dbf` under the default slots and a workspace named `x64` after `SET PATH DBF ...\\DBF\\x64` -- same command, different name, because the NAME WAS A FUNCTION OF THE PATH SLOTS. R131 rules that a workspace owns its environment; leaf naming ran that dependency backwards. The same run also showed `workspace new mcc_x64` / `switch mcc_x64` / `workspace open dbf` leaving mcc_x64 with ZERO MEMBERS while thirteen areas opened in a workspace nobody named. R128 IS NOT REPEALED: \"we can also open two dir into two workspaces too\" (owner, 2026-08-26) survives verbatim as the AS form, together with its re-entry rule and its cross-root refusal; only the IMPLICIT name is withdrawn. WHY THIS NEEDED A SPEC AT ALL, and the part worth reading: THE DEFECT IS INVISIBLE TO AREA CONTENT. Under BOTH builds the opened table lands at the same slot holding the same value, because the allocator is asked for a free area of whatever workspace is CURRENT -- and under the old build OPEN had just made that a different workspace. So every arm that reads the opened table reads GREEN on both binaries, which is the AIF-148 shape -- a failed verb and a working verb reading identically -- arriving in a different subsystem three hours later. The discriminator has to ask WHICH WORKSPACE OWNS THE AREA, and the only instrument in this language that answers it is a SCOPED SAVE: save the workspace the person made, close, reload, and see how many areas come back. That is WAO_T5's shape, reused deliberately rather than reinvented. OJC_T1 IS THE DISCRIMINATOR and it prints a real .F. rather than a silence: under the fix OJCWS carries TWO areas, the reload fills 0 and 1, the ADD lands at 2 and slot 1 reads BBB; under the old build OJCWS carries ONE, the reload fills 0, the ADD lands at 1 and slot 1 reads CCC. OJC_T2 is the placement half and is WEAKER BY CONSTRUCTION, stated rather than implied: under the old build area 2 is never opened, so it may print NOTHING rather than .F. and arrive as a missing marker instead of a red one -- still a failure, but a different kind, and a reader should not count it as the same evidence as T1. OJC_T3 IS THE COUNTERWEIGHT and is the reason the fix cannot overshoot: a change that made EVERY open join the current workspace would pass T1 and T2 and be exactly as wrong as the defect, so T3 asserts the opposite direction on the same fixtures -- `AS <name>` must still put the opened table in a workspace of its own, so OJCWS2 comes back carrying ONE area and slot 1 reads CCC. T3 is GREEN ON BOTH BUILDS; it discriminates the OVERSHOOT, not the defect. OJC_G3 is likewise green on both and is NOT a discriminator -- it is there so a run where OPEN did nothing at all cannot be mistaken for a run where OPEN landed in the wrong workspace. WHAT THIS SPEC DOES NOT COVER, stated rather than implied: (a) THE ROOTS. R131 also wants the workspace to RECORD the directory it was opened from, and that is Q3 and still unruled -- WORKSPACES.dbf declares DBF_ROOT and IDX_ROOT only and has NO LMDB COLUMN AT ALL, so a durable answer for the third slot has nowhere to go. No arm here asserts a root, because nothing writes one. (b) DEFAULT HAS NO CATALOG IDENTITY. A bare OPEN now mints nothing, so the durable row that bare OPEN used to write is GONE for the thirteen tracked specs that use the bare form; they land in DEFAULT, which reports WS_ID (none yet). That is the trade R131 took knowingly and it is not tested here because no marker in this language can read a WS_ID. (c) the cross-root collision refusal, inherited untested from workspace_additive_open.dts. FIXTURE FRAGILITY, DISCLOSED: DBF/SANDBOX/OJCA, OJCB and OJCC are EMPTY DIRECTORIES and git does not track those, so a fresh clone will not have them -- the same standing gap WAOA/WAOB/WAOC, PKA/PKB and RPCA/RPCB already carry, inherited rather than introduced. NOT YET RUN AT THE TIME OF WRITING -- authored against the change in the same session, no green claimed; explicit-run until run twice, then promote. NOT YET RUN AGAINST THE PRE-CHANGE BINARY EITHER, which is the honest gap: WAO_T1 and MWXSHAKE both insist a discriminator is measured against the old build rather than reasoned about, and what exists here is the failing behaviour measured live plus an instrument borrowed from an arm that WAS measured both ways. Anyone stashing the R131 change should see OJC_T1 go red while OJC_G0/G1/G2/G3 and OJC_T3 stay green; if the guards red too, the fixture broke and the arms prove nothing either way. RUN AND PROMOTED 2026-08-29 ON TWO GREEN RUNS, and the clause above is LEFT STANDING because it was true when it was written. All SEVEN markers .T. both times -- OJC_G0/G1/G2/G3 and OJC_T1/T2/T3 -- with the L3 isolation arm reading six of six before and after and the production catalog at 269 rows on every read, so the spec minted nothing outside its bracket. THE TWO RUNS WERE OF TWO DIFFERENT BINARIES, cdc00895 dirty (Aug 29 2026 13:36:21) and 4fc51717 dirty (Aug 29 2026 14:05:53), which DIVERGES FROM NAV_NATURAL'S PRECEDENT of two runs of one binary and is stated rather than glossed: it is stronger evidence for stability across a rebuild and WEAKER evidence for run-to-run repeatability of one build, and a reader should know which of the two they are being handed. THE TRANSCRIPT CORROBORATES MORE THAN THE MARKERS DO. `WORKSPACE SWITCH: current handle 4 (OJCWS), depth 0, members 2` after the open is the ruling stated by the engine in its own words -- the workspace the person made COUNTING the opened table as its own -- and under the old build that line reads members 1. In the T3 half the counterweight says it as plainly from the other side: `WORKSPACE SAVE: workspace 5 (OJCWS2) ... 1 area(s). NOT saved: 1 open area(s) in other workspaces.` -- direct evidence that the AS-opened table sat somewhere else, which is stronger than the marker that infers it from where the reload puts the next ADD. IN-SUITE VERIFICATION HAS NOT HAPPENED AND IS THE NEXT STEP: both greens were EXPLICIT single-spec runs, which prove the spec works from a clean session and say nothing about order-independence when it inherits open areas and path slots from the spec before it. NAV_NATURAL had to demonstrate that rather than assume it, and so does this. NOTE FOR WHOEVER RUNS IT: this spec re-points only the DBF slot and inherits INDEXES and LMDB, which is safe today because it builds no containers -- but it is the same fixture omission recorded against MWXSHAKE section 5C, and it will stop being safe the moment an arm here needs an index. VERIFIED IN-SUITE 2026-08-29 ON THE PROMOTING BUILD (af6e9ea0 dirty, Aug 29 2026 14:12:25), and the clause above is LEFT STANDING because it was true when it was written. Run as the EIGHTEENTH and last spec of REGRESSION ALL: seven markers, all .T., full count, with the L3 isolation arm reading six of six at both ends and the production catalog at 269 rows before and after. ORDER-INDEPENDENCE IS DEMONSTRATED RATHER THAN ASSUMED -- it inherited NAV_NATURAL's session with the DBF, INDEXES and LMDB slots left on SANDBOX rather than the x64 they carry from a clean start, re-pointed only DBF in its own opening lines, and built its fixtures from a slate NAV_NATURAL's teardown had already cleared. THE SUITE-WIDE EFFECT OF R131 WAS MEASURED IN THE SAME RUN AND IS THE MORE USEFUL HALF: the new bare-OPEN message printed inside INDEX_X32 and RELJOIN -- 'WORKSPACE OPEN: opening into the CURRENT workspace 1 (DEFAULT)' -- which is the thirteen-spec blast radius this entry predicted, observed rather than argued, and both specs read green. So bare OPEN landing in DEFAULT costs those specs nothing they were asserting. PRE-CHANGE BINARY RUN, 2026-08-30 -- THE DEBT IS PAID AND THIS ENTRY'S OWN HEDGE TURNED OUT TOO PESSIMISTIC. Built cdc00895, the immediate parent of the change, in an isolated worktree; confirmed pre-change FROM SOURCE, the 'opening into the CURRENT workspace' message being absent from that tree. MEASURED: OJC_G0 through G3 .T., OJC_T1 .F., OJC_T2 .F., OJC_T3 .T. OJC_T2 WAS PREDICTED ABOVE TO ARRIVE AS A MISSING MARKER RATHER THAN A RED ONE, on the grounds that area 2 is never opened under the old build. It printed a real .F. -- SELECT 2 landed on an area with no file and ALLTRIM(MARK) = \"CCC\" still evaluated false. The hedge was the right thing to write and the outcome was better than it; both halves are worth keeping, because a spec author who never hedges is not being careful and one whose hedges are never tested is not being measured. THE TRANSCRIPT CARRIES THE THREE LINES THIS ENTRY PREDICTED IT WOULD. 'WORKSPACE OPEN: workspace 3  name OJCB  WS_ID 2  <- DBF/SANDBOX/OJCB' is THE LEAF NAMING CAUGHT IN THE ACT, a workspace named for the directory it was opened from, which is R131's thesis running backwards. 'WORKSPACE SWITCH: current handle 2 (OJCWS), depth 0, members 1' is the members-1-versus-members-2 discriminator this entry named in advance. And 'NOT saved: 1 open area(s) in other workspaces.' -- cited above as evidence in the T3/AS half -- fires in the T1 half too on this build, which is the defect stating itself from the other side: the bare OPEN also put the table somewhere else. CATALOG FIGURE CORRECTED: the production catalog is 271 rows, not the 269 recorded above -- see the WSENV entry.",
+        "WORKSPACE OPEN LANDS IN THE CURRENT WORKSPACE (R131, owner ruling 2026-08-29; supersedes the leaf-naming half of R128). A bare `WORKSPACE OPEN <dir>` used to derive a workspace name from the RESOLVED DIRECTORY LEAF, mint or adopt that workspace, switch into it, and open there -- so it walked OUT of the workspace the person was standing in, which is why the sanctioned R131 sequence NEW / SWITCH / SET PATH / OPEN never worked. MEASURED 2026-08-29 IN A LIVE SESSION: the one typed command `workspace open dbf` produced a workspace named `dbf` under the default slots and a workspace named `x64` after `SET PATH DBF ...\\DBF\\x64` -- same command, different name, because the NAME WAS A FUNCTION OF THE PATH SLOTS. R131 rules that a workspace owns its environment; leaf naming ran that dependency backwards. The same run also showed `workspace new mcc_x64` / `switch mcc_x64` / `workspace open dbf` leaving mcc_x64 with ZERO MEMBERS while thirteen areas opened in a workspace nobody named. R128 IS NOT REPEALED: \"we can also open two dir into two workspaces too\" (owner, 2026-08-26) survives verbatim as the AS form, together with its re-entry rule and its cross-root refusal; only the IMPLICIT name is withdrawn. WHY THIS NEEDED A SPEC AT ALL, and the part worth reading: THE DEFECT IS INVISIBLE TO AREA CONTENT. Under BOTH builds the opened table lands at the same slot holding the same value, because the allocator is asked for a free area of whatever workspace is CURRENT -- and under the old build OPEN had just made that a different workspace. So every arm that reads the opened table reads GREEN on both binaries, which is the AIF-148 shape -- a failed verb and a working verb reading identically -- arriving in a different subsystem three hours later. The discriminator has to ask WHICH WORKSPACE OWNS THE AREA, and the only instrument in this language that answers it is a SCOPED SAVE: save the workspace the person made, close, reload, and see how many areas come back. That is WAO_T5's shape, reused deliberately rather than reinvented. OJC_T1 IS THE DISCRIMINATOR and it prints a real .F. rather than a silence: under the fix OJCWS carries TWO areas, the reload fills 0 and 1, the ADD lands at 2 and slot 1 reads BBB; under the old build OJCWS carries ONE, the reload fills 0, the ADD lands at 1 and slot 1 reads CCC. OJC_T2 is the placement half and is WEAKER BY CONSTRUCTION, stated rather than implied: under the old build area 2 is never opened, so it may print NOTHING rather than .F. and arrive as a missing marker instead of a red one -- still a failure, but a different kind, and a reader should not count it as the same evidence as T1. OJC_T3 IS THE COUNTERWEIGHT and is the reason the fix cannot overshoot: a change that made EVERY open join the current workspace would pass T1 and T2 and be exactly as wrong as the defect, so T3 asserts the opposite direction on the same fixtures -- `AS <name>` must still put the opened table in a workspace of its own, so OJCWS2 comes back carrying ONE area and slot 1 reads CCC. T3 is GREEN ON BOTH BUILDS; it discriminates the OVERSHOOT, not the defect. OJC_G3 is likewise green on both and is NOT a discriminator -- it is there so a run where OPEN did nothing at all cannot be mistaken for a run where OPEN landed in the wrong workspace. WHAT THIS SPEC DOES NOT COVER, stated rather than implied: (a) THE ROOTS. R131 also wants the workspace to RECORD the directory it was opened from, and that is Q3 and still unruled -- WORKSPACES.dbf declares DBF_ROOT and IDX_ROOT only and has NO LMDB COLUMN AT ALL, so a durable answer for the third slot has nowhere to go. No arm here asserts a root, because nothing writes one. (b) DEFAULT HAS NO CATALOG IDENTITY. A bare OPEN now mints nothing, so the durable row that bare OPEN used to write is GONE for the thirteen tracked specs that use the bare form; they land in DEFAULT, which reports WS_ID (none yet). That is the trade R131 took knowingly and it is not tested here because no marker in this language can read a WS_ID. (c) the cross-root collision refusal, inherited untested from workspace_additive_open.dts. FIXTURE FRAGILITY, DISCLOSED: DBF/SANDBOX/OJCA, OJCB and OJCC are EMPTY DIRECTORIES and git does not track those, so a fresh clone will not have them -- the same standing gap WAOA/WAOB/WAOC, PKA/PKB and RPCA/RPCB already carry, inherited rather than introduced. NOT YET RUN AT THE TIME OF WRITING -- authored against the change in the same session, no green claimed; explicit-run until run twice, then promote. NOT YET RUN AGAINST THE PRE-CHANGE BINARY EITHER, which is the honest gap: WAO_T1 and MWXSHAKE both insist a discriminator is measured against the old build rather than reasoned about, and what exists here is the failing behaviour measured live plus an instrument borrowed from an arm that WAS measured both ways. Anyone stashing the R131 change should see OJC_T1 go red while OJC_G0/G1/G2/G3 and OJC_T3 stay green; if the guards red too, the fixture broke and the arms prove nothing either way. RUN AND PROMOTED 2026-08-29 ON TWO GREEN RUNS, and the clause above is LEFT STANDING because it was true when it was written. All SEVEN markers .T. both times -- OJC_G0/G1/G2/G3 and OJC_T1/T2/T3 -- with the L3 isolation arm reading six of six before and after and the production catalog at 269 rows on every read, so the spec minted nothing outside its bracket. THE TWO RUNS WERE OF TWO DIFFERENT BINARIES, cdc00895 dirty (Aug 29 2026 13:36:21) and 4fc51717 dirty (Aug 29 2026 14:05:53), which DIVERGES FROM NAV_NATURAL'S PRECEDENT of two runs of one binary and is stated rather than glossed: it is stronger evidence for stability across a rebuild and WEAKER evidence for run-to-run repeatability of one build, and a reader should know which of the two they are being handed. THE TRANSCRIPT CORROBORATES MORE THAN THE MARKERS DO. `WORKSPACE SWITCH: current handle 4 (OJCWS), depth 0, members 2` after the open is the ruling stated by the engine in its own words -- the workspace the person made COUNTING the opened table as its own -- and under the old build that line reads members 1. In the T3 half the counterweight says it as plainly from the other side: `WORKSPACE SAVE: workspace 5 (OJCWS2) ... 1 area(s). NOT saved: 1 open area(s) in other workspaces.` -- direct evidence that the AS-opened table sat somewhere else, which is stronger than the marker that infers it from where the reload puts the next ADD. IN-SUITE VERIFICATION HAS NOT HAPPENED AND IS THE NEXT STEP: both greens were EXPLICIT single-spec runs, which prove the spec works from a clean session and say nothing about order-independence when it inherits open areas and path slots from the spec before it. NAV_NATURAL had to demonstrate that rather than assume it, and so does this. NOTE FOR WHOEVER RUNS IT: this spec re-points only the DBF slot and inherits INDEXES and LMDB, which is safe today because it builds no containers -- but it is the same fixture omission recorded against MWXSHAKE section 5C, and it will stop being safe the moment an arm here needs an index. VERIFIED IN-SUITE 2026-08-29 ON THE PROMOTING BUILD (af6e9ea0 dirty, Aug 29 2026 14:12:25), and the clause above is LEFT STANDING because it was true when it was written. Run as the EIGHTEENTH and last spec of REGRESSION CURATED SUITE: seven markers, all .T., full count, with the L3 isolation arm reading six of six at both ends and the production catalog at 269 rows before and after. ORDER-INDEPENDENCE IS DEMONSTRATED RATHER THAN ASSUMED -- it inherited NAV_NATURAL's session with the DBF, INDEXES and LMDB slots left on SANDBOX rather than the x64 they carry from a clean start, re-pointed only DBF in its own opening lines, and built its fixtures from a slate NAV_NATURAL's teardown had already cleared. THE SUITE-WIDE EFFECT OF R131 WAS MEASURED IN THE SAME RUN AND IS THE MORE USEFUL HALF: the new bare-OPEN message printed inside INDEX_X32 and RELJOIN -- 'WORKSPACE OPEN: opening into the CURRENT workspace 1 (DEFAULT)' -- which is the thirteen-spec blast radius this entry predicted, observed rather than argued, and both specs read green. So bare OPEN landing in DEFAULT costs those specs nothing they were asserting. PRE-CHANGE BINARY RUN, 2026-08-30 -- THE DEBT IS PAID AND THIS ENTRY'S OWN HEDGE TURNED OUT TOO PESSIMISTIC. Built cdc00895, the immediate parent of the change, in an isolated worktree; confirmed pre-change FROM SOURCE, the 'opening into the CURRENT workspace' message being absent from that tree. MEASURED: OJC_G0 through G3 .T., OJC_T1 .F., OJC_T2 .F., OJC_T3 .T. OJC_T2 WAS PREDICTED ABOVE TO ARRIVE AS A MISSING MARKER RATHER THAN A RED ONE, on the grounds that area 2 is never opened under the old build. It printed a real .F. -- SELECT 2 landed on an area with no file and ALLTRIM(MARK) = \"CCC\" still evaluated false. The hedge was the right thing to write and the outcome was better than it; both halves are worth keeping, because a spec author who never hedges is not being careful and one whose hedges are never tested is not being measured. THE TRANSCRIPT CARRIES THE THREE LINES THIS ENTRY PREDICTED IT WOULD. 'WORKSPACE OPEN: workspace 3  name OJCB  WS_ID 2  <- DBF/SANDBOX/OJCB' is THE LEAF NAMING CAUGHT IN THE ACT, a workspace named for the directory it was opened from, which is R131's thesis running backwards. 'WORKSPACE SWITCH: current handle 2 (OJCWS), depth 0, members 1' is the members-1-versus-members-2 discriminator this entry named in advance. And 'NOT saved: 1 open area(s) in other workspaces.' -- cited above as evidence in the T3/AS half -- fires in the T1 half too on this build, which is the defect stating itself from the other side: the bare OPEN also put the table somewhere else. CATALOG FIGURE CORRECTED: the production catalog is 271 rows, not the 269 recorded above -- see the WSENV entry.",
         true,   // PROMOTED 2026-08-29 -- two green runs, seven markers each, on two different binaries; VERIFIED IN-SUITE (see description)
-        true  // mints: NEW x2, OPEN..AS, SAVE x2 -- bracket it
+        true,  // mints: NEW x2, OPEN..AS, SAVE x2 -- bracket it
+        RegressionValidator::WorkspaceMarkersV1
     },
     {
         "WSENV",
         "workspace_owns_its_environment.dts",
-        "A WORKSPACE OWNS ITS ENVIRONMENT (R131, owner ruling 2026-08-29; sections 1, 7 and 11). The three path slots DBF, INDEXES and LMDB were GLOBAL and WORKSPACE SWITCH moved MEMBERSHIP without moving them, so with two systems open a table in one resolved its container under the other. MEASURED 2026-08-29 and it is R131's founding defect: MCC's STUDENTS answered `openCdx: LMDB env missing: ...SYSTEMS\\CASCADE_ERP\\LMDB\\STUDENTS.cdx.d` because Cascade had been opened last -- both systems stayed READABLE, and what broke was anything that had to RESOLVE a container or an LMDB env. The slots are now STAMPED on the workspace and SWITCH restores them. THE FIXTURE IS TWO TABLES WITH THE SAME NAME IN TWO ROOTS, DIFFERENT CONTENT, AND THAT IS THE WHOLE TRICK. An arm that opens a table present in only one directory CANNOT GO RED when the slot is wrong: the open fails, the area is empty, and a marker over a closed area PRINTS NOTHING rather than a verdict -- USE_AGAIN established that over three cuts and it is the single most repeated trap in this file. With RSPT.dbf in BOTH roots a wrong slot opens the WRONG TABLE and the marker reads .F. A failure has to be able to speak. RSE_T1 IS THE DISCRIMINATOR: build A and B by the owner's sanctioned sequence (NEW / SWITCH / SET PATH / OPEN), switch back to A, and open WITHOUT setting the path again. Under the fix A's slots are restored and RSPT reads AAA; before it the DBF slot is still B's and the same filename opens out of the wrong root. RSE_T2 IS THE COUNTERWEIGHT and is the reason the fix cannot overshoot -- a change that simply PINNED the slots to the first workspace would pass T1 and be exactly as wrong, so T2 asserts the opposite direction on the same fixtures. RSE_T3/T4 COVER Q1'S EXPLICIT CLAUSE, `SET PATH <slot> <value> IN <ws-or-handle>`, and they are TWO CLAIMS BECAUSE ONE IS NOT ENOUGH: the session must NOT move (T3, read by opening in the workspace you are standing in) and the binding must have LANDED on the named workspace (T4, proven by switching to it and opening with no SET PATH). An implementation that silently did nothing would pass T3 alone. RSE_T5 IS THE MISORDERING HAZARD R131 sec 7 exists to answer -- NEW then SET PATH then SWITCH binds the OLD workspace, and the remedy is to NAME the target rather than rely on standing in it. `IN` IS ALREADY THE HOUSE WORD for targeting something other than current (SET ORDER TAG ... IN <alias>, USE ... IN <n>); both of those take AREAS, and after SET PATH it can only mean a workspace because a path has no per-area meaning. WHAT THIS SPEC DOES NOT COVER, stated rather than implied: (a) THE DURABLE HALF. Whether a workspace's roots are written through to WORKSPACES.dbf is R131 sec 11.8 and is UNRULED, so nothing here reads the catalog and this spec asserts only the LIVE stamp. DBF_ROOT and IDX_ROOT are still written from the SESSION slot at birth and at SAVE, exactly as before. (b) INDEXES AND LMDB. All three slots move as a set -- there is deliberately no per-slot setter on the membership table, because a half-stamped workspace resolves tables under one system and indexes under another, which IS the founding defect -- but every arm here reads through the DBF slot, because a marker is a field-value comparison and this language has no marker that can read where a container resolved. The other two are covered by construction and not by assertion. (c) LMDB IS DERIVED (owner, 2026-08-29: 'lmdb is not used in v32, it is not used in vdisks, when we do need lmdb files we can regenerate them'), so it has NO durable column and never will; it rides the live stamp only. (d) DEFAULT. It is stamped LAZILY, on the way OUT of it, because it is built inside xbase before any command runs -- and the ORDER is load-bearing: stamping it as a TARGET instead would capture whatever the workspace being LEFT had set, so DEFAULT would inherit a foreign environment the first time anyone switched back. No arm asserts that; it is argued in the source at the SWITCH branch. SWITCH ANNOUNCES EVERY SLOT IT MOVES, deliberately: this is the one part of R131 that can change what an EXISTING script does, and a run where a spec breaks because its slots moved under it should say so in its own transcript rather than leave a reader inferring it from a failed open three screens later. FIXTURE FRAGILITY, DISCLOSED: DBF/SANDBOX/R131A and R131B are EMPTY DIRECTORIES and git does not track those, so a fresh clone will not have them -- the same standing gap WAOA/WAOB, OJCA/OJCB, PKA/PKB and RPCA/RPCB already carry, inherited rather than introduced. NOT YET RUN AT THE TIME OF WRITING, and NOT YET RUN AGAINST THE PRE-CHANGE BINARY: authored against the change in the same session, no green claimed. Anyone stashing R131 should see RSE_T1, T2, T4 and T5 go red while RSE_G0 through G3 stay green; if the guards red too, the fixture broke and the arms prove nothing either way. PROMOTED TO THE DEFAULT SUITE 2026-08-29, AND THE FIRST TWO OF ITS THREE GREEN RUNS DID NOT COUNT. RSE_T3 WAS BLIND. It was the only USE in the file not preceded by a SWITCH or a CLOSE, so T2's open was still sitting in area 0 and the USE answered 'already open in current area 0' -- the marker then read BBB off a cursor the IN clause had never touched, and would have printed .T. whether or not the clause wrongly moved the session slot. TWO GREENS OVER AN ARM THAT COULD NOT GO RED. That is the AIF-148 shape (a failed open and a working open reading identically) inside the spec whose own header warns that a failure has to be able to speak; the fixture design was sound and the SEQUENCING defeated it in one place. Remedy is one CLOSE, and the transcript now reads 'Closed.' then 'Opened RSPT' at T3. THE TRANSFERABLE RULE: A USE NOT PRECEDED BY A SWITCH OR A CLOSE IS NOT AN OPEN -- the other eight arms were checked against it rather than assumed, and all eight print 'Opened'. QUALIFYING RUNS ARE THE THREE AFTER THAT FIX: wscat_run_110, 111 and 112, all 9/9, over TWO PROCESS STARTS (110 its own, 111 and 112 sequential in one session -- three runs but two cold starts, said plainly because a repeat inside one process is the weaker of the two readings). L3 read the production catalog at 269 rows before and after every one. THE REASON FOR PROMOTION IS A MEASURED COVERAGE HOLE, NOT THE SOAK ALONE -- the RELSCOPE2 precedent. Q1's explicit clause, SET PATH <slot> <path> IN <ws-or-handle>, appears in EXACTLY ONE FILE in the whole .dts corpus and that file is this one (measured 2026-08-29 by grepping the corpus for the form; one hit). While this spec stayed explicit-run, the entire IN branch of cmd_setpath_command.cpp -- resolve the token, compute touches_session, fill a half-stamped Entry from the session before writing one slot, set_roots -- could be rewritten and pass all eighteen default specs in silence. The RESTORE half is nearly as thin: the R131 announce fired FOUR TIMES inside MWXSHAKE on the 2026-08-29 suite run, so the behaviour is OBSERVED in the default suite and ASSERTED NOWHERE IN IT -- MWXSHAKE addresses tables by name and claims nothing about the slots. THE COST, STATED: 2 catalog rows per run, both into the per-run SCRATCH catalog under the gitignored TMP slot because this entry is flagged mints_catalog, so the suite goes 26 to 28 scratch rows a run and ZERO rows to the production catalog. Cheapest bracketed spec in the suite; MWXSHAKE alone is 16. STILL OWED AND NOT CLAIMED: this spec has never been run against a PRE-CHANGE binary. The paragraph above predicts RSE_T1/T2/T4/T5 red with the guards green, and that prediction is still a prediction. VERIFIED IN-SUITE 2026-08-29 ON THE PROMOTING BUILD (dffbf8af dirty, Aug 29 2026 16:47:40), and every clause above is LEFT STANDING because it was true when it was written. Run as the NINETEENTH and last spec of REGRESSION ALL: nine markers, all .T., full count -- RSE_G0 through G3 and RSE_T1 through T5 -- with the L3 isolation arm reading six of six at both ends and the production catalog at 269 rows before and after, so the spec minted nothing outside its bracket. Its scratch catalog was wscat_run_119; the suite's brackets ran 113 through 119. THE BLIND ARM WAS RE-READ IN-SUITE RATHER THAN ASSUMED FIXED, because that is the whole reason this entry needed a third reading: T3 printed `bound to workspace 29 (RSEWSA); the session's own slots are unchanged.` then `Closed.` then `Opened RSPT (v64) : Record count 1` -- a real close and a real open, in the suite, at the one place where two earlier greens came off a cursor nothing had touched. ORDER-INDEPENDENCE IS DEMONSTRATED RATHER THAN ASSUMED, which is the only thing an in-suite run can prove that a single-spec run cannot: WSENV inherited OPENJOIN's session with the DBF slot left on DBF/SANDBOX/OJCC rather than the x64 it carries from a clean start, re-pointed only DBF in its own opening lines, and its closing WORKSPACE CLOSE reported zero areas -- so it neither depended on what it inherited nor left anything for the next spec, and the single-slot re-pointing noted against MWXSHAKE section 5C is confirmed harmless HERE while remaining the same standing fixture omission everywhere. MWXSHAKE'S R131 ANNOUNCE LINES FIRED AGAIN and MWXSHAKE stayed green. The COUNT DIFFERS from the four recorded earlier in this entry -- three switch points this run -- and it is REPORTED RATHER THAN RECONCILED, because nothing asserts that number and I have not measured why it moved. A count is a fact about a loop until something declares what it should be. WHAT THIS RUN STILL DOES NOT SETTLE, unchanged and restated so the promotion does not read as closure: this spec has never been run against a PRE-CHANGE binary, so RSE_T1/T2/T4/T5 going red with the guards green is STILL A PREDICTION. In-suite green on the promoting build is evidence the spec is stable and order-independent; it is not evidence that it can fail. PRE-CHANGE BINARY RUN, 2026-08-30. THE DEBT THIS ENTRY RECORDED AS STILL OWED IS PAID, AND IT COST THIS ENTRY ONE OF ITS OWN CLAIMS. Built ae8fbc9d -- the immediate parent of the change -- in a detached worktree under tmp/ with its own build dir and its own data tree, so nothing here could reach the production catalog. PRE-CHANGE WAS CONFIRMED FROM SOURCE RATHER THAN FROM A COMMIT HASH: workspace_roots_bind_from_slots/_apply_to_slots are absent from workarea_util.cpp and cmd_setpath_command.cpp has no IN branch at all on that tree. THE PREDICTION ABOVE SAYS T1, T2, T4 AND T5 GO RED. MEASURED: T1 .F., T2 .T., T3 .F., T4 .F., T5 .F., G0 through G3 all .T. T2 CAME BACK GREEN. THE ENTRY CONTRADICTED ITSELF AND THE MEASUREMENT SETTLED IT. Read up: 'RSE_T2 IS THE COUNTERWEIGHT and is the reason the fix cannot overshoot.' Read down: T2 listed among the four expected reds. Both sentences are in this entry and they cannot both be right. The counterweight reading is the correct one, and the reason is structural rather than incidental: on the pre-change build the global DBF slot is simply left wherever it was last set, which is B, and B is exactly what T2 expects. T2 IS GREEN ON BOTH BUILDS BY CONSTRUCTION -- it discriminates the OVERSHOOT, a fix that pinned the slots to the first workspace, and never the defect. Same species as OJC_T3, which its own entry labels correctly. So this spec has THREE discriminators (T1, T4, T5), not four. WORSE, AND THE PART WORTH READING: T1 AND T2 WERE BOTH BLIND ON THAT BUILD. Each answered 'already open in current area 0' and NOTHING OPENED. T1 still printed .F., but by reading the stale cursor G3 left in area 0 -- not by opening out of the wrong root, which is what the T1 paragraph above describes. A RED FOR THE WRONG REASON IS NOT THE EVIDENCE AN ENTRY CLAIMS IT IS. THE TRANSFERABLE RULE WRITTEN ONE DAY EARLIER WAS TOO LOOSE, AND THIS IS THE THIRD RECURRENCE OF THE SAME SHAPE. It said A USE NOT PRECEDED BY A SWITCH OR A CLOSE IS NOT AN OPEN, and on that reading T3 was the only offender because T1/T2/T4/T5 all follow a SWITCH. On the pre-change binary all four were blind anyway. A SWITCH THAT MOVES NO SLOT CHANGES NOTHING ABOUT WHAT THE NAME RESOLVES TO. The rule in its real form: A SWITCH ONLY COUNTS AS AN OPEN WHEN IT CHANGES WHAT THE NAME RESOLVES TO, AND A SPEC CANNOT ASSUME THE BUILD UNDER TEST IS ONE WHERE IT DOES. Note how the first version failed: the other eight arms WERE checked against it, honestly and deliberately, and all eight printed 'Opened' -- ON THE FIXED BINARY, the one build where a SWITCH does move the slot. THE RULE WAS VERIFIED ON THE ONLY BUILD WHERE IT HAPPENS TO HOLD. REMEDY, AND IT IS STRUCTURAL RATHER THAN A RULE TO REMEMBER: every USE in T1 through T5 is now preceded by a CLOSE, which a reader checks by inspection. G2 and G3 are the two deliberate exceptions and are safe on any build because each is preceded by an EXPLICIT SET PATH, which changes resolution regardless of what SWITCH does. RE-MEASURED WITH THE AMENDED SPEC, SAME PRE-CHANGE BINARY: T1 .F. now printing 'Closed.' then 'Opened RSPT (v64) : Record count 1' before the marker -- A REAL OPEN OF THE WRONG TABLE, the mechanism this entry has always described and never until now performed. T2 .T. off a real open rather than a stale cursor. T3/T4/T5 .F., guards green. AND ON THE FIXED BINARY the amended spec still reads 9/9 with the four added CLOSEs visible in the transcript and no arm moved, so the change buys evidence on the old build and costs nothing on the new one. ONE STEWARD MISPREDICTION RECORDED: T3 was predicted GREEN-FOR-THE-WRONG-REASON on the theory that the old parser would reject the IN clause and so leave the session alone. It went RED, because the old SET PATH SWALLOWED 'IN RSEWSA' INTO THE PATH STRING -- 'SETPATH: DBF = ...\\R131A IN RSEWSA' with nothing but 'warning: path does not exist' -- a silent misparse rather than a usage error. A HOUSE DOCTRINE NARROWED BY THE SAME RUNS: 'a marker over a closed area PRINTS NOTHING rather than a verdict' (USE_AGAIN, three cuts) is quoted in this spec's own header as the reason for the two-tables-same-name fixture. Four counter-examples were measured on 2026-08-30 -- OJC_T2 over an empty area 2, and RSE_T3/T4/T5 each after 'USE: nothing was opened, and area 0 is untouched' -- all four printing .F. The fixture design is still right, because a wrong slot opening the WRONG TABLE beats an open that merely fails; the stated reason for it is narrower than the header claims. CATALOG FIGURE CORRECTED: the production catalog is 271 rows, not the 269 recorded above. On 2026-08-30 this spec was run against the main tree through DOTSCRIPT rather than REGRESSION WSENV -- DOTSCRIPT IS NOT BRACKETED, because CatalogBracket is a suite facility -- and minted WS_ID 270 and 271, both immediately destroyed and so SUPERSEDED with no live head left behind. The mints-nothing-outside-its-bracket claim is unaffected and the figure a future L3 arm will read is not. Steward error, recorded rather than quietly corrected.",
+        "A WORKSPACE OWNS ITS ENVIRONMENT (R131, owner ruling 2026-08-29; sections 1, 7 and 11). The three path slots DBF, INDEXES and LMDB were GLOBAL and WORKSPACE SWITCH moved MEMBERSHIP without moving them, so with two systems open a table in one resolved its container under the other. MEASURED 2026-08-29 and it is R131's founding defect: MCC's STUDENTS answered `openCdx: LMDB env missing: ...SYSTEMS\\CASCADE_ERP\\LMDB\\STUDENTS.cdx.d` because Cascade had been opened last -- both systems stayed READABLE, and what broke was anything that had to RESOLVE a container or an LMDB env. The slots are now STAMPED on the workspace and SWITCH restores them. THE FIXTURE IS TWO TABLES WITH THE SAME NAME IN TWO ROOTS, DIFFERENT CONTENT, AND THAT IS THE WHOLE TRICK. An arm that opens a table present in only one directory CANNOT GO RED when the slot is wrong: the open fails, the area is empty, and a marker over a closed area PRINTS NOTHING rather than a verdict -- USE_AGAIN established that over three cuts and it is the single most repeated trap in this file. With RSPT.dbf in BOTH roots a wrong slot opens the WRONG TABLE and the marker reads .F. A failure has to be able to speak. RSE_T1 IS THE DISCRIMINATOR: build A and B by the owner's sanctioned sequence (NEW / SWITCH / SET PATH / OPEN), switch back to A, and open WITHOUT setting the path again. Under the fix A's slots are restored and RSPT reads AAA; before it the DBF slot is still B's and the same filename opens out of the wrong root. RSE_T2 IS THE COUNTERWEIGHT and is the reason the fix cannot overshoot -- a change that simply PINNED the slots to the first workspace would pass T1 and be exactly as wrong, so T2 asserts the opposite direction on the same fixtures. RSE_T3/T4 COVER Q1'S EXPLICIT CLAUSE, `SET PATH <slot> <value> IN <ws-or-handle>`, and they are TWO CLAIMS BECAUSE ONE IS NOT ENOUGH: the session must NOT move (T3, read by opening in the workspace you are standing in) and the binding must have LANDED on the named workspace (T4, proven by switching to it and opening with no SET PATH). An implementation that silently did nothing would pass T3 alone. RSE_T5 IS THE MISORDERING HAZARD R131 sec 7 exists to answer -- NEW then SET PATH then SWITCH binds the OLD workspace, and the remedy is to NAME the target rather than rely on standing in it. `IN` IS ALREADY THE HOUSE WORD for targeting something other than current (SET ORDER TAG ... IN <alias>, USE ... IN <n>); both of those take AREAS, and after SET PATH it can only mean a workspace because a path has no per-area meaning. WHAT THIS SPEC DOES NOT COVER, stated rather than implied: (a) THE DURABLE HALF. Whether a workspace's roots are written through to WORKSPACES.dbf is R131 sec 11.8 and is UNRULED, so nothing here reads the catalog and this spec asserts only the LIVE stamp. DBF_ROOT and IDX_ROOT are still written from the SESSION slot at birth and at SAVE, exactly as before. (b) INDEXES AND LMDB. All three slots move as a set -- there is deliberately no per-slot setter on the membership table, because a half-stamped workspace resolves tables under one system and indexes under another, which IS the founding defect -- but every arm here reads through the DBF slot, because a marker is a field-value comparison and this language has no marker that can read where a container resolved. The other two are covered by construction and not by assertion. (c) LMDB IS DERIVED (owner, 2026-08-29: 'lmdb is not used in v32, it is not used in vdisks, when we do need lmdb files we can regenerate them'), so it has NO durable column and never will; it rides the live stamp only. (d) DEFAULT. It is stamped LAZILY, on the way OUT of it, because it is built inside xbase before any command runs -- and the ORDER is load-bearing: stamping it as a TARGET instead would capture whatever the workspace being LEFT had set, so DEFAULT would inherit a foreign environment the first time anyone switched back. No arm asserts that; it is argued in the source at the SWITCH branch. SWITCH ANNOUNCES EVERY SLOT IT MOVES, deliberately: this is the one part of R131 that can change what an EXISTING script does, and a run where a spec breaks because its slots moved under it should say so in its own transcript rather than leave a reader inferring it from a failed open three screens later. FIXTURE FRAGILITY, DISCLOSED: DBF/SANDBOX/R131A and R131B are EMPTY DIRECTORIES and git does not track those, so a fresh clone will not have them -- the same standing gap WAOA/WAOB, OJCA/OJCB, PKA/PKB and RPCA/RPCB already carry, inherited rather than introduced. NOT YET RUN AT THE TIME OF WRITING, and NOT YET RUN AGAINST THE PRE-CHANGE BINARY: authored against the change in the same session, no green claimed. Anyone stashing R131 should see RSE_T1, T2, T4 and T5 go red while RSE_G0 through G3 stay green; if the guards red too, the fixture broke and the arms prove nothing either way. PROMOTED TO THE DEFAULT SUITE 2026-08-29, AND THE FIRST TWO OF ITS THREE GREEN RUNS DID NOT COUNT. RSE_T3 WAS BLIND. It was the only USE in the file not preceded by a SWITCH or a CLOSE, so T2's open was still sitting in area 0 and the USE answered 'already open in current area 0' -- the marker then read BBB off a cursor the IN clause had never touched, and would have printed .T. whether or not the clause wrongly moved the session slot. TWO GREENS OVER AN ARM THAT COULD NOT GO RED. That is the AIF-148 shape (a failed open and a working open reading identically) inside the spec whose own header warns that a failure has to be able to speak; the fixture design was sound and the SEQUENCING defeated it in one place. Remedy is one CLOSE, and the transcript now reads 'Closed.' then 'Opened RSPT' at T3. THE TRANSFERABLE RULE: A USE NOT PRECEDED BY A SWITCH OR A CLOSE IS NOT AN OPEN -- the other eight arms were checked against it rather than assumed, and all eight print 'Opened'. QUALIFYING RUNS ARE THE THREE AFTER THAT FIX: wscat_run_110, 111 and 112, all 9/9, over TWO PROCESS STARTS (110 its own, 111 and 112 sequential in one session -- three runs but two cold starts, said plainly because a repeat inside one process is the weaker of the two readings). L3 read the production catalog at 269 rows before and after every one. THE REASON FOR PROMOTION IS A MEASURED COVERAGE HOLE, NOT THE SOAK ALONE -- the RELSCOPE2 precedent. Q1's explicit clause, SET PATH <slot> <path> IN <ws-or-handle>, appears in EXACTLY ONE FILE in the whole .dts corpus and that file is this one (measured 2026-08-29 by grepping the corpus for the form; one hit). While this spec stayed explicit-run, the entire IN branch of cmd_setpath_command.cpp -- resolve the token, compute touches_session, fill a half-stamped Entry from the session before writing one slot, set_roots -- could be rewritten and pass all eighteen default specs in silence. The RESTORE half is nearly as thin: the R131 announce fired FOUR TIMES inside MWXSHAKE on the 2026-08-29 suite run, so the behaviour is OBSERVED in the default suite and ASSERTED NOWHERE IN IT -- MWXSHAKE addresses tables by name and claims nothing about the slots. THE COST, STATED: 2 catalog rows per run, both into the per-run SCRATCH catalog under the gitignored TMP slot because this entry is flagged mints_catalog, so the suite goes 26 to 28 scratch rows a run and ZERO rows to the production catalog. Cheapest bracketed spec in the suite; MWXSHAKE alone is 16. STILL OWED AND NOT CLAIMED: this spec has never been run against a PRE-CHANGE binary. The paragraph above predicts RSE_T1/T2/T4/T5 red with the guards green, and that prediction is still a prediction. VERIFIED IN-SUITE 2026-08-29 ON THE PROMOTING BUILD (dffbf8af dirty, Aug 29 2026 16:47:40), and every clause above is LEFT STANDING because it was true when it was written. Run as the NINETEENTH and last spec of REGRESSION CURATED SUITE: nine markers, all .T., full count -- RSE_G0 through G3 and RSE_T1 through T5 -- with the L3 isolation arm reading six of six at both ends and the production catalog at 269 rows before and after, so the spec minted nothing outside its bracket. Its scratch catalog was wscat_run_119; the suite's brackets ran 113 through 119. THE BLIND ARM WAS RE-READ IN-SUITE RATHER THAN ASSUMED FIXED, because that is the whole reason this entry needed a third reading: T3 printed `bound to workspace 29 (RSEWSA); the session's own slots are unchanged.` then `Closed.` then `Opened RSPT (v64) : Record count 1` -- a real close and a real open, in the suite, at the one place where two earlier greens came off a cursor nothing had touched. ORDER-INDEPENDENCE IS DEMONSTRATED RATHER THAN ASSUMED, which is the only thing an in-suite run can prove that a single-spec run cannot: WSENV inherited OPENJOIN's session with the DBF slot left on DBF/SANDBOX/OJCC rather than the x64 it carries from a clean start, re-pointed only DBF in its own opening lines, and its closing WORKSPACE CLOSE reported zero areas -- so it neither depended on what it inherited nor left anything for the next spec, and the single-slot re-pointing noted against MWXSHAKE section 5C is confirmed harmless HERE while remaining the same standing fixture omission everywhere. MWXSHAKE'S R131 ANNOUNCE LINES FIRED AGAIN and MWXSHAKE stayed green. The COUNT DIFFERS from the four recorded earlier in this entry -- three switch points this run -- and it is REPORTED RATHER THAN RECONCILED, because nothing asserts that number and I have not measured why it moved. A count is a fact about a loop until something declares what it should be. WHAT THIS RUN STILL DOES NOT SETTLE, unchanged and restated so the promotion does not read as closure: this spec has never been run against a PRE-CHANGE binary, so RSE_T1/T2/T4/T5 going red with the guards green is STILL A PREDICTION. In-suite green on the promoting build is evidence the spec is stable and order-independent; it is not evidence that it can fail. PRE-CHANGE BINARY RUN, 2026-08-30. THE DEBT THIS ENTRY RECORDED AS STILL OWED IS PAID, AND IT COST THIS ENTRY ONE OF ITS OWN CLAIMS. Built ae8fbc9d -- the immediate parent of the change -- in a detached worktree under tmp/ with its own build dir and its own data tree, so nothing here could reach the production catalog. PRE-CHANGE WAS CONFIRMED FROM SOURCE RATHER THAN FROM A COMMIT HASH: workspace_roots_bind_from_slots/_apply_to_slots are absent from workarea_util.cpp and cmd_setpath_command.cpp has no IN branch at all on that tree. THE PREDICTION ABOVE SAYS T1, T2, T4 AND T5 GO RED. MEASURED: T1 .F., T2 .T., T3 .F., T4 .F., T5 .F., G0 through G3 all .T. T2 CAME BACK GREEN. THE ENTRY CONTRADICTED ITSELF AND THE MEASUREMENT SETTLED IT. Read up: 'RSE_T2 IS THE COUNTERWEIGHT and is the reason the fix cannot overshoot.' Read down: T2 listed among the four expected reds. Both sentences are in this entry and they cannot both be right. The counterweight reading is the correct one, and the reason is structural rather than incidental: on the pre-change build the global DBF slot is simply left wherever it was last set, which is B, and B is exactly what T2 expects. T2 IS GREEN ON BOTH BUILDS BY CONSTRUCTION -- it discriminates the OVERSHOOT, a fix that pinned the slots to the first workspace, and never the defect. Same species as OJC_T3, which its own entry labels correctly. So this spec has THREE discriminators (T1, T4, T5), not four. WORSE, AND THE PART WORTH READING: T1 AND T2 WERE BOTH BLIND ON THAT BUILD. Each answered 'already open in current area 0' and NOTHING OPENED. T1 still printed .F., but by reading the stale cursor G3 left in area 0 -- not by opening out of the wrong root, which is what the T1 paragraph above describes. A RED FOR THE WRONG REASON IS NOT THE EVIDENCE AN ENTRY CLAIMS IT IS. THE TRANSFERABLE RULE WRITTEN ONE DAY EARLIER WAS TOO LOOSE, AND THIS IS THE THIRD RECURRENCE OF THE SAME SHAPE. It said A USE NOT PRECEDED BY A SWITCH OR A CLOSE IS NOT AN OPEN, and on that reading T3 was the only offender because T1/T2/T4/T5 all follow a SWITCH. On the pre-change binary all four were blind anyway. A SWITCH THAT MOVES NO SLOT CHANGES NOTHING ABOUT WHAT THE NAME RESOLVES TO. The rule in its real form: A SWITCH ONLY COUNTS AS AN OPEN WHEN IT CHANGES WHAT THE NAME RESOLVES TO, AND A SPEC CANNOT ASSUME THE BUILD UNDER TEST IS ONE WHERE IT DOES. Note how the first version failed: the other eight arms WERE checked against it, honestly and deliberately, and all eight printed 'Opened' -- ON THE FIXED BINARY, the one build where a SWITCH does move the slot. THE RULE WAS VERIFIED ON THE ONLY BUILD WHERE IT HAPPENS TO HOLD. REMEDY, AND IT IS STRUCTURAL RATHER THAN A RULE TO REMEMBER: every USE in T1 through T5 is now preceded by a CLOSE, which a reader checks by inspection. G2 and G3 are the two deliberate exceptions and are safe on any build because each is preceded by an EXPLICIT SET PATH, which changes resolution regardless of what SWITCH does. RE-MEASURED WITH THE AMENDED SPEC, SAME PRE-CHANGE BINARY: T1 .F. now printing 'Closed.' then 'Opened RSPT (v64) : Record count 1' before the marker -- A REAL OPEN OF THE WRONG TABLE, the mechanism this entry has always described and never until now performed. T2 .T. off a real open rather than a stale cursor. T3/T4/T5 .F., guards green. AND ON THE FIXED BINARY the amended spec still reads 9/9 with the four added CLOSEs visible in the transcript and no arm moved, so the change buys evidence on the old build and costs nothing on the new one. ONE STEWARD MISPREDICTION RECORDED: T3 was predicted GREEN-FOR-THE-WRONG-REASON on the theory that the old parser would reject the IN clause and so leave the session alone. It went RED, because the old SET PATH SWALLOWED 'IN RSEWSA' INTO THE PATH STRING -- 'SETPATH: DBF = ...\\R131A IN RSEWSA' with nothing but 'warning: path does not exist' -- a silent misparse rather than a usage error. A HOUSE DOCTRINE NARROWED BY THE SAME RUNS: 'a marker over a closed area PRINTS NOTHING rather than a verdict' (USE_AGAIN, three cuts) is quoted in this spec's own header as the reason for the two-tables-same-name fixture. Four counter-examples were measured on 2026-08-30 -- OJC_T2 over an empty area 2, and RSE_T3/T4/T5 each after 'USE: nothing was opened, and area 0 is untouched' -- all four printing .F. The fixture design is still right, because a wrong slot opening the WRONG TABLE beats an open that merely fails; the stated reason for it is narrower than the header claims. CATALOG FIGURE CORRECTED: the production catalog is 271 rows, not the 269 recorded above. On 2026-08-30 this spec was run against the main tree through DOTSCRIPT rather than REGRESSION WSENV -- DOTSCRIPT IS NOT BRACKETED, because CatalogBracket is a suite facility -- and minted WS_ID 270 and 271, both immediately destroyed and so SUPERSEDED with no live head left behind. The mints-nothing-outside-its-bracket claim is unaffected and the figure a future L3 arm will read is not. Steward error, recorded rather than quietly corrected.",
         true,   // PROMOTED 2026-08-29 -- three post-fix green runs (110/111/112), two process starts; VERIFIED IN-SUITE (see description)
-        true  // mints: NEW x2 -- bracket it
+        true,  // mints: NEW x2 -- bracket it
+        RegressionValidator::WorkspaceMarkersV1
     },
     {
         "NULLASSERT",
         "vfp_null_assertions.dts",
-        "NULL IS ASSERTABLE (AIF-091, 2026-09-05). The lane could CREATE a nullable VFP table, write a null, read it, display it and filter on it -- every leg graded against bytes Visual FoxPro wrote -- and REGRESSION ALL could reach NONE of it, because no .dts asserted a null. THIS SPEC'S FIRST RUN WAS 17/21 AND THE FOUR REDS WERE ONE DEFECT: a value write stored the value AND re-committed the null bit (DbArea::set() never touched _fd_null; storeFieldsToBuffer() recomputes the bitmap FROM _fd_null), so REPLACE VNAME WITH \"restored\" left a cell that read `restored` to `?` and `.NULL.` to LIST, and survived a close and reopen. Fixed in 22c748381; the four arms are the regression. NL_T1 IS THE DISCRIMINATOR AND THE FIXTURE IS ORDERED FOR IT: rec 2's VNAME is BLANK AND NOT NULL and sits AHEAD of the nulled rec 3, and LOCATE takes the first match from the top, so a build that answers ISNULL from emptiness lands on rec 2 and reads `blankvn`. NL_T5/T6 state the problem out loud -- the nulled cell and the blank cell BOTH read empty by value, which is why ISNULL has to exist and why its argument is never evaluated. NL_T11 is the strongest single arm: with rec 3 cleared, LOCATE FOR ISNULL(VNAME) must find REC 5, which proves three things at once -- rec 3's bit actually cleared rather than being overwritten in the value area, rec 5's bit was set by the DOTTED `.NULL.` spelling, and the two rows' bits are independent. WHY NO ARM USES `? \"NAME:\" + ISNULL(f)`, WHICH WAS THE PLAN: `?` is a SHORTCUT FOR FORMULA (shortcut_resolver.hpp), FORMULA calls eval_rhs, and eval_rhs tries its OWN scalar parser first -- which is where `+` string concatenation lives and whose four builtin tables do not contain ISNULL. Only the fallback (eval_any -> compile_where_program) knows it, and in THAT AST `+` is Arith and Arith::evalString returns a NUMBER. PREDICTED FROM THE CODE, THEN MEASURED by the spec's own NL_P2 probe, which printed a bare `0` AND SWALLOWED THE LABEL -- so a spec written that way would have emitted one anonymous zero per arm and the marker-count discipline could not have seen it. This is a property of the whole FunctionCategory::Cursor category, not of one function; the catalogue already files the same note one entry above ISNULL's, about RECNO. So every marker here is a FIELD-VALUE comparison and the nulls are asserted through LOCATE FOR ISNULL(<field>), the FOR-predicate path the feature was built for. COVERAGE: bit index (T2 -- ID and VNAME do not own adjacent bits, because a Varchar owns a varlength bit too; two commits in this lane exist because that order was got wrong); field and row isolation (T3, T4, T7); the write reached DISK (T8, T9, T12 -- close and reopen, the only question a suite can ask that a staged row cannot answer for itself); the bit CLEARS (T10, T11); refusal on a non-nullable field (T13, T14); refusal under TABLE BUFFER (T15, T16, run LAST because they touch a session setting, and buffering is restored OFF). Neither refusal arm claims a MESSAGE appeared -- console text is unreadable by a marker -- so both ask the answerable questions instead: did the value survive, and did the refusal leave the rest of the bitmap alone. NOT CLAIMED, stated rather than implied: that no OTHER row is null (no marker in this language can assert an absence, and an errored marker PRINTS NOTHING rather than going red); that LIST prints `.NULL.` (true, proven by hand in 11b40895a, and console text); anything about null ORDERING (opened NOINDEX throughout, and what a CDX/CNX/LMDB backend makes of a null key is unclaimed by this lane); ISNULL over a JOINED or TupleRow source; what VFP's own APPEND BLANK writes into a bitmap. 21 GRADED MARKERS -- 5 NL_G* guards, 16 NL_T* arms -- plus 3 UNGRADED NL_P* probes that are not part of the 21. COUNT THEM: a transcript with 20 is a spec that lost a claim, not a spec that passed. If any NL_G* reds, treat every NL_T* as UNPROVEN; the arms read fields of rows the guards establish. Disposable table, rebuilt every run, mints no catalog rows. Explicit-run until soaked: TWO GREEN 21/21 RUNS, 2026-09-05, the second on a build nobody had changed anything on -- the first proved the fix, the second proves the spec. PROMOTED TO THE DEFAULT SUITE 2026-09-05. THREE GREEN 21/21 RUNS BEFORE THE FLAG MOVED: two by DOTSCRIPT (the second on a build nobody had changed anything on -- the first proved the fix, the second proves the spec) and one by REGRESSION RUN NULLASSERT, which is a DIFFERENT measurement and was treated as one: it exercises the bracketed path and the L3 isolation arm, machinery a bare DOTSCRIPT never touches (L3 6/6 before, 21/21, L3 6/6 after, production catalog 279 rows on both reads). THE REASON FOR PROMOTION IS A MEASURED COVERAGE HOLE, NOT THE SOAK ALONE -- the RELSCOPE2 precedent. REGRESSION ALL COULD NOT REACH ONE INCH OF THIS LANE: not CREATE VFP with NULL, not REPLACE ... WITH NULL, not the .NULL. spelling, not ISNULL in a predicate, not the clear path, not either refusal. Six commits of engine work behind a suite that would have stayed green through all of it. THE COST IS THE CHEAPEST IN THE SUITE: no catalog rows (none of the three minting verbs), no LMDB, no index containers, one disposable VFP table rebuilt and overwritten every run in DBF/SANDBOX -- the SDVIS pattern. IT RUNS LAST BY DECLARATION ORDER AND THAT IS THE SAFE POSITION: it re-points the DBF slot to SANDBOX and does NOT restore it (SDVIS does the same), and nothing in the suite runs after it except the L3 AFTER arm, which sets its own slots. It restores TABLE BUFFER to OFF, which is the only session setting it touches. It inherits INDEXES and LMDB rather than re-pointing them -- the same standing fixture omission recorded against MWXSHAKE section 5C and OPENJOIN, harmless here because this spec builds no containers, and it will stop being harmless the moment an arm needs an index. NOT YET VERIFIED IN-SUITE at the time of writing, which is the property a single-spec run cannot prove: order-independence when it inherits WSENV's open areas and path slots. VERIFIED IN-SUITE 2026-09-05 ON THE PROMOTING BUILD (c1678d167 plus this uncommitted registry edit; build/src/Release/dottalkpp.exe stamped Sep 5 2026 17:39), and every clause above is LEFT STANDING because it was true when it was written. THE LISTING WAS READ BEFORE THE RUN, which is the check the sentence below demands and the one NAV_NATURAL's entry records a wasted REGRESSION ALL for: REGRESSION LIST showed NULLASSERT [default], so the rebuild took and the entry was live rather than merely edited. Run as the TWENTY-SEVENTH AND LAST spec of REGRESSION ALL: 21 of 21, full count, five NL_G* guards and sixteen NL_T* arms, with the two ungraded probes behaving exactly as this entry predicts -- NL_P1 printing .T., and NL_P2 printing a bare anonymous `0` with its label swallowed, so the `+` finding above is now reproduced INSIDE THE SUITE and not only in a single-spec run. IT MINTED NOTHING, measured rather than assumed: seven specs took scratch brackets this run, wscat_run_298 through 304, and NULLASSERT WAS NOT AMONG THEM; the L3 isolation arm read six of six at both ends and the production catalog at 279 rows before and after. ORDER-INDEPENDENCE IS DEMONSTRATED RATHER THAN ASSUMED, which is the one thing this run adds over the three that preceded it: it inherited WSENV's session with the DBF slot left on the bare data/DBF root rather than the DBF/SANDBOX its earlier greens started from, re-pointed ONLY DBF in its own opening line, and built its fixture from a slate WSENV's teardown had cleared -- so it depended on nothing it inherited, and the single-slot re-pointing noted against MWXSHAKE section 5C is confirmed harmless HERE while remaining the same standing omission everywhere. WHAT THIS RUN STILL DOES NOT SETTLE -- AND THIS PARAGRAPH IS A CORRECTION, because the sentence first committed here (a46fa95c9) said something THE SPEC'S OWN HEADER REFUTES ON LINE 171. IT IS NOT TRUE that NULLASSERT has never run against a pre-fix binary. Its FIRST RUN -- 2026-09-05, build Sep 05 2026 08:29:36 (11b40895 dirty) -- was 17 OF 21, with exactly NL_T11, NL_T12, NL_T14 and NL_T16 red and all five guards green, which is the prediction element for element; and the header records that the four arms were DELIBERATELY NOT RETUNED afterwards, so the markers that went red are the markers that ship. The four reds are a MEASUREMENT. This spec is known to be capable of failing, and it failed for the reason the fix addresses. THE REAL REMAINING GAP IS NARROWER, AND IT IS THE ONE THAT MATTERS FOR A PROMOTED SPEC: that 17/21 was taken by DOTSCRIPT. THE BRACKETED REGRESSION PATH -- the grader REGRESSION ALL actually runs through, with its L3 isolation arm and its pass/fail rollup -- HAS ONLY EVER SEEN THIS SPEC GREEN. Nothing here shows the SUITE REPORTS the failure rather than merely containing a spec that can fail; that would take one REGRESSION RUN NULLASSERT against a binary with 22c748381 backed out. That debt is smaller than the one first written here and it is still open. THE ERROR IS WORTH KEEPING RATHER THAN ERASING: it is the sixth AIF-079 instance in this lane and the same shape as the others -- a claim asserted about a file without reading the file, when the file being described contained the disproof. THE FLAG FLIP NEEDS A REBUILD -- the registry is compiled in, and NAV_NATURAL's entry records a whole REGRESSION ALL wasted on exactly that mistake, a full green over a spec that never executed, caught only because the curated listing showed it without its [default] tag. Read REGRESSION LIST for the tag before believing the run. CORRECTED 2026-09-08, AND THE CORRECTED CLAUSE IS THE ONE THIS ENTRY ARGUED HARDEST FOR: \"IT RUNS LAST BY DECLARATION ORDER AND THAT IS THE SAFE POSITION\" IS FALSE. RUNNING LAST IS ONLY SAFE IF NOTHING RUNS AFTER, and an operator running an explicit spec afterward -- REGRESSION ALL then REGRESSION PKPOLICY, which is an ordinary thing to type -- is exactly that. Measured 2026-09-08: that sequence turned four PKPOLICY markers red while PKPOLICY alone read 15 of 15, reproduced down to REGRESSION NULLASSERT then REGRESSION PKPOLICY (481 lines), then to a bare DOTSCRIPT of this spec's own file (365), then to LINES 1-278 OF IT (318) -- a cut of 23 executable lines in which NOT ONE NULL IS WRITTEN. AND THE RISK THIS ENTRY NAMED WAS THE WRONG ONE. The unrestored DBF slot was INNOCENT: it points at DBF/SANDBOX, which is where PKPOLICY builds its own fixtures anyway, and PKPOLICY re-points all three slots itself. What actually leaked was DbArea::_null_layout -- assigned in ONE place (partitionTrailingSystemField) and reset in NONE, because clearFields() and DbArea::close() are two hand-maintained teardown lists over the same members and BOTH skipped it. So this spec's CREATE VFP NULLSPEC left a VARCHAR bit layout in area 1; the next table opened there had isVarlengthField_() answer from it and storeFieldsToBuffer() write a LENGTH BYTE into the last byte of a plain C() field, on disk, with nothing refused and nothing printed. Fixed in 5e54df79e. THE LESSON FOR THIS ENTRY IS NOT THAT THE SLOT ANALYSIS WAS SLOPPY -- it was careful, and it enumerated what this spec re-points and does not restore. It is that a spec can leak state NOBODY HAS THOUGHT TO ENUMERATE, so \"it runs last\" is a statement about ORDER and never a proof of ISOLATION. VARCHARRESET (8885ab999) is the arm that now asserts the thing this paragraph could only assume: that closing a varchar table leaves its area clean.",
-        true    // PROMOTED 2026-09-05 -- three green 21/21 runs before the flag moved (two DOTSCRIPT, one REGRESSION RUN), then VERIFIED IN-SUITE the same day, 27th and last in REGRESSION ALL; see the summary for the coverage argument and for what the run still does not settle
+        "NULL IS ASSERTABLE (AIF-091, 2026-09-05). The lane could CREATE a nullable VFP table, write a null, read it, display it and filter on it -- every leg graded against bytes Visual FoxPro wrote -- and REGRESSION CURATED SUITE could reach NONE of it, because no .dts asserted a null. THIS SPEC'S FIRST RUN WAS 17/21 AND THE FOUR REDS WERE ONE DEFECT: a value write stored the value AND re-committed the null bit (DbArea::set() never touched _fd_null; storeFieldsToBuffer() recomputes the bitmap FROM _fd_null), so REPLACE VNAME WITH \"restored\" left a cell that read `restored` to `?` and `.NULL.` to LIST, and survived a close and reopen. Fixed in 22c748381; the four arms are the regression. NL_T1 IS THE DISCRIMINATOR AND THE FIXTURE IS ORDERED FOR IT: rec 2's VNAME is BLANK AND NOT NULL and sits AHEAD of the nulled rec 3, and LOCATE takes the first match from the top, so a build that answers ISNULL from emptiness lands on rec 2 and reads `blankvn`. NL_T5/T6 state the problem out loud -- the nulled cell and the blank cell BOTH read empty by value, which is why ISNULL has to exist and why its argument is never evaluated. NL_T11 is the strongest single arm: with rec 3 cleared, LOCATE FOR ISNULL(VNAME) must find REC 5, which proves three things at once -- rec 3's bit actually cleared rather than being overwritten in the value area, rec 5's bit was set by the DOTTED `.NULL.` spelling, and the two rows' bits are independent. WHY NO ARM USES `? \"NAME:\" + ISNULL(f)`, WHICH WAS THE PLAN: `?` is a SHORTCUT FOR FORMULA (shortcut_resolver.hpp), FORMULA calls eval_rhs, and eval_rhs tries its OWN scalar parser first -- which is where `+` string concatenation lives and whose four builtin tables do not contain ISNULL. Only the fallback (eval_any -> compile_where_program) knows it, and in THAT AST `+` is Arith and Arith::evalString returns a NUMBER. PREDICTED FROM THE CODE, THEN MEASURED by the spec's own NL_P2 probe, which printed a bare `0` AND SWALLOWED THE LABEL -- so a spec written that way would have emitted one anonymous zero per arm and the marker-count discipline could not have seen it. This is a property of the whole FunctionCategory::Cursor category, not of one function; the catalogue already files the same note one entry above ISNULL's, about RECNO. So every marker here is a FIELD-VALUE comparison and the nulls are asserted through LOCATE FOR ISNULL(<field>), the FOR-predicate path the feature was built for. COVERAGE: bit index (T2 -- ID and VNAME do not own adjacent bits, because a Varchar owns a varlength bit too; two commits in this lane exist because that order was got wrong); field and row isolation (T3, T4, T7); the write reached DISK (T8, T9, T12 -- close and reopen, the only question a suite can ask that a staged row cannot answer for itself); the bit CLEARS (T10, T11); refusal on a non-nullable field (T13, T14); refusal under TABLE BUFFER (T15, T16, run LAST because they touch a session setting, and buffering is restored OFF). Neither refusal arm claims a MESSAGE appeared -- console text is unreadable by a marker -- so both ask the answerable questions instead: did the value survive, and did the refusal leave the rest of the bitmap alone. NOT CLAIMED, stated rather than implied: that no OTHER row is null (no marker in this language can assert an absence, and an errored marker PRINTS NOTHING rather than going red); that LIST prints `.NULL.` (true, proven by hand in 11b40895a, and console text); anything about null ORDERING (opened NOINDEX throughout, and what a CDX/CNX/LMDB backend makes of a null key is unclaimed by this lane); ISNULL over a JOINED or TupleRow source; what VFP's own APPEND BLANK writes into a bitmap. 21 GRADED MARKERS -- 5 NL_G* guards, 16 NL_T* arms -- plus 3 UNGRADED NL_P* probes that are not part of the 21. COUNT THEM: a transcript with 20 is a spec that lost a claim, not a spec that passed. If any NL_G* reds, treat every NL_T* as UNPROVEN; the arms read fields of rows the guards establish. Disposable table, rebuilt every run, mints no catalog rows. Explicit-run until soaked: TWO GREEN 21/21 RUNS, 2026-09-05, the second on a build nobody had changed anything on -- the first proved the fix, the second proves the spec. PROMOTED TO THE DEFAULT SUITE 2026-09-05. THREE GREEN 21/21 RUNS BEFORE THE FLAG MOVED: two by DOTSCRIPT (the second on a build nobody had changed anything on -- the first proved the fix, the second proves the spec) and one by REGRESSION RUN NULLASSERT, which is a DIFFERENT measurement and was treated as one: it exercises the bracketed path and the L3 isolation arm, machinery a bare DOTSCRIPT never touches (L3 6/6 before, 21/21, L3 6/6 after, production catalog 279 rows on both reads). THE REASON FOR PROMOTION IS A MEASURED COVERAGE HOLE, NOT THE SOAK ALONE -- the RELSCOPE2 precedent. REGRESSION CURATED SUITE COULD NOT REACH ONE INCH OF THIS LANE: not CREATE VFP with NULL, not REPLACE ... WITH NULL, not the .NULL. spelling, not ISNULL in a predicate, not the clear path, not either refusal. Six commits of engine work behind a suite that would have stayed green through all of it. THE COST IS THE CHEAPEST IN THE SUITE: no catalog rows (none of the three minting verbs), no LMDB, no index containers, one disposable VFP table rebuilt and overwritten every run in DBF/SANDBOX -- the SDVIS pattern. IT RUNS LAST BY DECLARATION ORDER AND THAT IS THE SAFE POSITION: it re-points the DBF slot to SANDBOX and does NOT restore it (SDVIS does the same), and nothing in the suite runs after it except the L3 AFTER arm, which sets its own slots. It restores TABLE BUFFER to OFF, which is the only session setting it touches. It inherits INDEXES and LMDB rather than re-pointing them -- the same standing fixture omission recorded against MWXSHAKE section 5C and OPENJOIN, harmless here because this spec builds no containers, and it will stop being harmless the moment an arm needs an index. NOT YET VERIFIED IN-SUITE at the time of writing, which is the property a single-spec run cannot prove: order-independence when it inherits WSENV's open areas and path slots. VERIFIED IN-SUITE 2026-09-05 ON THE PROMOTING BUILD (c1678d167 plus this uncommitted registry edit; build/src/Release/dottalkpp.exe stamped Sep 5 2026 17:39), and every clause above is LEFT STANDING because it was true when it was written. THE LISTING WAS READ BEFORE THE RUN, which is the check the sentence below demands and the one NAV_NATURAL's entry records a wasted REGRESSION CURATED SUITE for: REGRESSION LIST showed NULLASSERT [curated suite], so the rebuild took and the entry was live rather than merely edited. Run as the TWENTY-SEVENTH AND LAST spec of REGRESSION CURATED SUITE: 21 of 21, full count, five NL_G* guards and sixteen NL_T* arms, with the two ungraded probes behaving exactly as this entry predicts -- NL_P1 printing .T., and NL_P2 printing a bare anonymous `0` with its label swallowed, so the `+` finding above is now reproduced INSIDE THE SUITE and not only in a single-spec run. IT MINTED NOTHING, measured rather than assumed: seven specs took scratch brackets this run, wscat_run_298 through 304, and NULLASSERT WAS NOT AMONG THEM; the L3 isolation arm read six of six at both ends and the production catalog at 279 rows before and after. ORDER-INDEPENDENCE IS DEMONSTRATED RATHER THAN ASSUMED, which is the one thing this run adds over the three that preceded it: it inherited WSENV's session with the DBF slot left on the bare data/DBF root rather than the DBF/SANDBOX its earlier greens started from, re-pointed ONLY DBF in its own opening line, and built its fixture from a slate WSENV's teardown had cleared -- so it depended on nothing it inherited, and the single-slot re-pointing noted against MWXSHAKE section 5C is confirmed harmless HERE while remaining the same standing omission everywhere. WHAT THIS RUN STILL DOES NOT SETTLE -- AND THIS PARAGRAPH IS A CORRECTION, because the sentence first committed here (a46fa95c9) said something THE SPEC'S OWN HEADER REFUTES ON LINE 171. IT IS NOT TRUE that NULLASSERT has never run against a pre-fix binary. Its FIRST RUN -- 2026-09-05, build Sep 05 2026 08:29:36 (11b40895 dirty) -- was 17 OF 21, with exactly NL_T11, NL_T12, NL_T14 and NL_T16 red and all five guards green, which is the prediction element for element; and the header records that the four arms were DELIBERATELY NOT RETUNED afterwards, so the markers that went red are the markers that ship. The four reds are a MEASUREMENT. This spec is known to be capable of failing, and it failed for the reason the fix addresses. THE REAL REMAINING GAP IS NARROWER, AND IT IS THE ONE THAT MATTERS FOR A PROMOTED SPEC: that 17/21 was taken by DOTSCRIPT. THE BRACKETED REGRESSION PATH -- the grader REGRESSION CURATED SUITE actually runs through, with its L3 isolation arm and its pass/fail rollup -- HAS ONLY EVER SEEN THIS SPEC GREEN. THAT DEBT WAS PAID 2026-09-19 AND THE BRACKETED PATH REPORTS. Two builds, FAIL then PASS, tree restored byte-identical between them. BACKED OUT (Sep 19 2026 13:18:38): NL_T11, NL_T12, NL_T14 and NL_T16 read .F., all five NL_G* guards read .T., the grader printed 'NULLASSERT: FAIL -- marker 16 mismatch' naming NL_T11 with both sides quoted, the rollup printed 'NULLASSERT: FAIL', and the L3 isolation arm read six of six at BOTH ends. RESTORED (13:21:03): all 21 markers .T., 'PASS -- 21 exact marker(s), all true and in order', rollup PASS, L3 six of six again. The four reds are the 2026-09-05 prediction element for element, on the path that had only ever seen this spec green. THE BACK-OUT WAS SIX LINES AND NOT A FILE RESTORE, which is the half worth copying. 22c748381 touched four files but only src/xbase/dbarea.cpp is the engine half, and that file has MOVED since -- 377 lines at the parent, 425 at the fix, 475 at HEAD. Restoring the parent's whole file would have backed out the fix PLUS roughly fifty lines of unrelated later work, and a red could then have been caused by either. HEAD's file was used with exactly one lambda reverted, diffed and shown to differ by those six lines and nothing else BEFORE the harness was written. The .dts was NOT touched: its four arms were deliberately never retuned after the 17/21, so restoring the spec would change what is being measured. THE GRADER FAILS FAST AND DOES NOT PRINT A COUNT ON FAILURE -- it returns at the FIRST mismatch, so the expectation of '17 of 21' was wrong about the SHAPE while right about the arms. The four reds are read off the marker LINES; the verdict off the rollup. Same property MetadataReportV1 records, second grader, and it means the arms behind the first red stay unmeasured in a failing run. AND THE HARNESS'S FIRST ATTEMPT PRODUCED A FALSE RESULT THAT READ LIKE A FINDING. Phase 2 reported FAIL too. It had not rebuilt: Copy-Item PRESERVES THE SOURCE'S LastWriteTime, the restored file came back older than the .obj phase 1 had just produced, MSBuild skipped the compile, and phase 2 re-measured the BACKED-OUT binary. Both phases stamped 13:07:33, identical. IT WAS CAUGHT BY THE BUILD-STAMP PRINT ADDED FOR THE BANNER TRAP -- an instrument for one hazard catching another -- and the stamp is now a HARD GATE that refuses to report phase 2 when the binary has not moved. A second defect in the same script: an unassigned build pipeline joined the function's output stream and polluted its return value, which is why the trap's own lines printed empty. THE BANNER TRAP REPRODUCED, SECOND INSTANCE. Both builds carry the SAME commit and the SAME dirty flag because the commit did not move and the tree is modified either way; only the TIMESTAMP separates them. tools/staging/check_soak_evidence.py proves two runs shared one build by comparing BANNERS, so it would read these two as one. METADATA_REPORTS recorded that on 2026-09-10 and this run is the corroboration. Harness: tmp/oi031/run_oi031.ps1 with dottalkpp/data/scripts/oi031_nullassert_bracketed.dts. THE ERROR IS WORTH KEEPING RATHER THAN ERASING: it is the sixth AIF-079 instance in this lane and the same shape as the others -- a claim asserted about a file without reading the file, when the file being described contained the disproof. THE FLAG FLIP NEEDS A REBUILD -- the registry is compiled in, and NAV_NATURAL's entry records a whole REGRESSION CURATED SUITE wasted on exactly that mistake, a full green over a spec that never executed, caught only because the curated listing showed it without its [curated suite] tag. Read REGRESSION LIST for the tag before believing the run. CORRECTED 2026-09-08, AND THE CORRECTED CLAUSE IS THE ONE THIS ENTRY ARGUED HARDEST FOR: \"IT RUNS LAST BY DECLARATION ORDER AND THAT IS THE SAFE POSITION\" IS FALSE. RUNNING LAST IS ONLY SAFE IF NOTHING RUNS AFTER, and an operator running an explicit spec afterward -- REGRESSION CURATED SUITE then REGRESSION PKPOLICY, which is an ordinary thing to type -- is exactly that. Measured 2026-09-08: that sequence turned four PKPOLICY markers red while PKPOLICY alone read 15 of 15, reproduced down to REGRESSION NULLASSERT then REGRESSION PKPOLICY (481 lines), then to a bare DOTSCRIPT of this spec's own file (365), then to LINES 1-278 OF IT (318) -- a cut of 23 executable lines in which NOT ONE NULL IS WRITTEN. AND THE RISK THIS ENTRY NAMED WAS THE WRONG ONE. The unrestored DBF slot was INNOCENT: it points at DBF/SANDBOX, which is where PKPOLICY builds its own fixtures anyway, and PKPOLICY re-points all three slots itself. What actually leaked was DbArea::_null_layout -- assigned in ONE place (partitionTrailingSystemField) and reset in NONE, because clearFields() and DbArea::close() are two hand-maintained teardown lists over the same members and BOTH skipped it. So this spec's CREATE VFP NULLSPEC left a VARCHAR bit layout in area 1; the next table opened there had isVarlengthField_() answer from it and storeFieldsToBuffer() write a LENGTH BYTE into the last byte of a plain C() field, on disk, with nothing refused and nothing printed. Fixed in 5e54df79e. THE LESSON FOR THIS ENTRY IS NOT THAT THE SLOT ANALYSIS WAS SLOPPY -- it was careful, and it enumerated what this spec re-points and does not restore. It is that a spec can leak state NOBODY HAS THOUGHT TO ENUMERATE, so \"it runs last\" is a statement about ORDER and never a proof of ISOLATION. VARCHARRESET (8885ab999) is the arm that now asserts the thing this paragraph could only assume: that closing a varchar table leaves its area clean.",
+        true,   // PROMOTED 2026-09-05 -- three green 21/21 runs before the flag moved (two DOTSCRIPT, one REGRESSION RUN), then VERIFIED IN-SUITE the same day, 27th and last in REGRESSION CURATED SUITE; see the summary for the coverage argument and for what the run still does not settle
+        false,
+        RegressionValidator::RemainingDefaultV1
     }
     ,
     {
         "PKPOLICY",
         "pk_policy_regression.dts",
-        "PRIMARY KEY POLICY: WHAT HOLDS TODAY, AND WHAT THE POLICY WORK MUST MAKE HOLD (AIF-156, 2026-09-06). x64base DECLARES a primary key (SET UNIQUE FIELD <f> PRIMARY), GENERATES it on APPEND into a BLANK key field inside try_lock_table/unlock_table so max+1 is taken by one writer at a time, and RESERVES a deleted row's key until PACK because a deleted row can be RECALLed -- all three deliberate, all three worth keeping, and NONE of them enforcement. IT ENFORCED THE KEY NOWHERE, MEASURED 2026-09-06 on build Sep 05 2026 21:18:51: a native REPLACE wrote a duplicate over a PRIMARY key and it SURVIVED A CLOSE AND REOPEN, and SQLSEL INSERT committed a second duplicate through the table buffer and WAL. ALL THREE OF THE ARMS THAT EXISTED THAT DAY WENT GREEN, RE-MEASURED 2026-09-07 on build Sep 07 2026 09:20:18: SQLSEL INSERT and SQLSEL UPDATE are refused at validate_field_constraint_for_store, which both reach through evaluate_store_expression, and native REPLACE now writes through xbase::cli::replaceFieldStored() -- the field-write funnel declared in include/xbase_cli.hpp on 2026-07-30 and never defined until AIF-156 built it. AND THREE OF THREE WAS NOT AN ENFORCED KEY: this spec has never asked about CALCWRITE, REPLACE_MULTI, BROWSE or RECORDVIEW editing, COPY, SORT or IMPORTSQL, and a crude count found roughly 86 candidate direct-write call sites across 21 files -- CORRECTED 2026-09-07 TO 28 SITES IN 19 FILES, 27 after CALCWRITE was routed. The 86 was a crude grep that counted comments, counted these very registry summaries (which discuss replaceFieldStored at length inside string literals), and counted name-keyed wrapper calls like w.set(\"ID\", ...) that are not field writes. tools/staging/check_field_write_callers.py is the measurement -- CORRECTED 2026-09-07 TO 28 SITES IN 19 FILES, 27 after CALCWRITE was routed. The 86 was a crude grep that counted comments, counted these very registry summaries (which discuss replaceFieldStored at length inside string literals), and counted name-keyed wrapper calls like w.set(\"ID\", ...) that are not field writes. tools/staging/check_field_write_callers.py is the measurement. What closes that gap is a STATIC gate over the callers, because no runtime marker can enumerate a call site. VALIDATE UNIQUE then found what it was built to find. FIFTEEN GRADED MARKERS, DERIVED NOT DECLARED: seven guards PKP_G1..G7 and eight arms PKP_T1..T8, contiguous -- count them, because an errored marker in this language PRINTS NOTHING rather than going red and a transcript with fourteen is a spec that lost a claim. PKP_G5 EXISTS BECAUSE THE FIRST RUN OF THIS SPEC WAS BLIND ON PART B: Part A closes PKPOL to build the dirty fixture, a bare SELECT 1 then selected an area with NO FILE OPEN, and T4/T5/T6 printed .F. because NOTHING RAN -- the value this spec expects today, so it PASSED. The right answer for the wrong reason, and a ratchet that could never have fired when enforcement arrived. G5 reopens the table and is a HARD GATE on the acceptance count. A CLOSE FOLLOWED BY A SELECT IS NOT AN OPEN, which is the USE_AGAIN/WSENV/MWXSHAKE-5C shape arriving for the fifth recorded time, in a spec whose own header warns about it. THE HALVES ARE GRADED DIFFERENTLY AND THAT IS THE DESIGN. PART A (G1..G4, T1..T3) is green today and locks in what already works; PKP_T1 deletes record 3 and requires the next APPEND to issue 4, PKP_T2 recalls record 3 and requires it to still read 3, which is the pair that would red if the generator ever stopped scanning deleted rows -- the exact trap an index-backed fast path falls into, and the reason compute_next_numeric() is still an O(n) scan on purpose. PART B (T4..T8) is the ACCEPTANCE CRITERION for write-time refusal and is GREEN AS OF 2026-09-07, asserted as FIVE SEPARATE ARMS rather than one because native REPLACE, SQLSEL INSERT, SQLSEL UPDATE and the two legacy verbs each reach a field write by their own path and a fix wired into one is not evidence about the other -- which is exactly what happened: the first increment turned T5 and T6 green and left T4 untouched, and had this been one arm instead of three that transcript would have read as a win. THE SAME LESSON THEN ARRIVED ONE LEVEL UP: three arms is itself too few for the native side, which has at least five doors across three files, and the answer was to CONSOLIDATE THE ROUTE rather than mint arms -- one funnel, plus a static gate proving nobody goes around it. THE VALIDATOR IS A RATCHET THAT FAILS IN BOTH DIRECTIONS: kPkAcceptanceExpected records how many Part B arms were green when this spec was last reviewed, so enforcement ARRIVING fails the spec until a human bumps the constant deliberately, and enforcement REGRESSING fails it too. Without that, a permanently-red half is DEF_FAMILY's mistake repeated -- markers with no grader, green by construction. NOT CLAIMED, stated rather than implied: PERSISTENCE ACROSS A RESTART (the declaration lives in a process-local map that unique_registry.cpp calls 'not persistent schema metadata'; a .dts runs in ONE process so no marker here can ask the question, and a two-run harness is step 1 of the lane); CONCURRENCY (one writer cannot exercise the table lock); REFERENTIAL INTEGRITY (out of scope, nothing here declares a foreign key). EVERY ANSWER IS A FIELD READ, never console text: if the cell still holds its original value the write was refused, if it holds the new one it was not. EXPLICIT-RUN AND IT MUST STAY THAT WAY WHILE PART B IS RED -- a partially-red spec must not enter REGRESSION ALL. Promote on the NULLASSERT precedent only after Part B is green and soaked: two green runs on a build nobody changed anything on, then the flag moves, then a REBUILD, then read REGRESSION LIST for the [default] tag BEFORE believing the run. SECOND INCREMENT 2026-09-07, RATCHET 3 -> 5: PKP_T7 and PKP_T8 measure the LEGACY bare INSERT and UPDATE verbs -- cmd_sql_insert.cpp and cmd_sql_update.cpp, registered at shell_commands.cpp:458-459. THEY ARE A SECOND DOOR AND T5/T6 NEVER TOUCHED IT: those two measure SQLSEL INSERT and SQLSEL UPDATE, which are different files reached by a different registration, so 'three of three' had described an enforced key for a day while a bare INSERT could still write a duplicate primary key. PKP_G6 AND PKP_G7 SHIPPED WITH THEM AND ARE THE MORE INTERESTING HALF: T7 and T8 both read 'refused' from a write NOT HAPPENING, and a verb that did nothing at all -- unregistered, unparsed, or a WHERE matching no row -- reads identically. G6 proves the INSERT verb appends, G7 proves the UPDATE verb's WHERE reaches record 3, and both write a NON-KEY field so neither is a second measurement of the policy. That is PKP_G5's lesson for the sixth recorded time in this tree and the first time it was designed in rather than discovered after. T7 ALSO ASKS WHETHER THE REFUSAL LEFT A BLANK ROW: the legacy INSERT appends first and writes second, so a gate before the field write rather than before appendBlank() would refuse the duplicate and still grow the table, which is why the arm reads LNAME = 'EPS' and not LNAME <> 'DUP7'. REPLACE_MULTI WAS GATED THE SAME DAY AND IS STILL UNASSERTED HERE, named rather than counted, because multirep_buffering_regression.dts was retired to _to_delete/ on 2026-09-04 and nothing replaced it -- a fix with no arm, recorded as one. AND THIS SPEC'S OWN ERASE FOUND A SEPARATE DEFECT ON 2026-09-07: it reported 'FAILED: PKPOL.dbf.tbj (used by another process)', which was the process's own leaked handle. enlist_sql_transaction opens the write-ahead journal before any change exists, cmd_ROLLBACK calls journal_note_rollback only inside `if (!tb.empty())`, and a transaction the primary-key gate refuses never buffers a change -- so an EMPTY transaction leaked the FILE* for the life of the process and orphaned a header-only .tbj. Fixed by closing the journal in release_sql_transaction, the pair of the enlist that opened it. IT WAS ONLY VISIBLE BECAUSE ERASE HAD JUST LEARNED TO SWEEP .tbj: the orphan had been landing silently for as long as the journal has existed, and an older one with a WSL-era path was sitting in the same directory. Disposable PKPOL/PKPDIRTY tables in DBF/SANDBOX, erased at both ends; mints no catalog rows.",
+        "PRIMARY KEY POLICY: WHAT HOLDS TODAY, AND WHAT THE POLICY WORK MUST MAKE HOLD (AIF-156, 2026-09-06). x64base DECLARES a primary key (SET UNIQUE FIELD <f> PRIMARY), GENERATES it on APPEND into a BLANK key field inside try_lock_table/unlock_table so max+1 is taken by one writer at a time, and RESERVES a deleted row's key until PACK because a deleted row can be RECALLed -- all three deliberate, all three worth keeping, and NONE of them enforcement. IT ENFORCED THE KEY NOWHERE, MEASURED 2026-09-06 on build Sep 05 2026 21:18:51: a native REPLACE wrote a duplicate over a PRIMARY key and it SURVIVED A CLOSE AND REOPEN, and SQLSEL INSERT committed a second duplicate through the table buffer and WAL. ALL THREE OF THE ARMS THAT EXISTED THAT DAY WENT GREEN, RE-MEASURED 2026-09-07 on build Sep 07 2026 09:20:18: SQLSEL INSERT and SQLSEL UPDATE are refused at validate_field_constraint_for_store, which both reach through evaluate_store_expression, and native REPLACE now writes through xbase::cli::replaceFieldStored() -- the field-write funnel declared in include/xbase_cli.hpp on 2026-07-30 and never defined until AIF-156 built it. AND THREE OF THREE WAS NOT AN ENFORCED KEY: this spec has never asked about CALCWRITE, REPLACE_MULTI, BROWSE or RECORDVIEW editing, COPY, SORT or IMPORTSQL, and a crude count found roughly 86 candidate direct-write call sites across 21 files -- CORRECTED 2026-09-07 TO 28 SITES IN 19 FILES, 27 after CALCWRITE was routed. The 86 was a crude grep that counted comments, counted these very registry summaries (which discuss replaceFieldStored at length inside string literals), and counted name-keyed wrapper calls like w.set(\"ID\", ...) that are not field writes. tools/staging/check_field_write_callers.py is the measurement -- CORRECTED 2026-09-07 TO 28 SITES IN 19 FILES, 27 after CALCWRITE was routed. The 86 was a crude grep that counted comments, counted these very registry summaries (which discuss replaceFieldStored at length inside string literals), and counted name-keyed wrapper calls like w.set(\"ID\", ...) that are not field writes. tools/staging/check_field_write_callers.py is the measurement. What closes that gap is a STATIC gate over the callers, because no runtime marker can enumerate a call site. VALIDATE UNIQUE then found what it was built to find. FIFTEEN GRADED MARKERS, DERIVED NOT DECLARED: seven guards PKP_G1..G7 and eight arms PKP_T1..T8, contiguous -- count them, because an errored marker in this language PRINTS NOTHING rather than going red and a transcript with fourteen is a spec that lost a claim. PKP_G5 EXISTS BECAUSE THE FIRST RUN OF THIS SPEC WAS BLIND ON PART B: Part A closes PKPOL to build the dirty fixture, a bare SELECT 1 then selected an area with NO FILE OPEN, and T4/T5/T6 printed .F. because NOTHING RAN -- the value this spec expects today, so it PASSED. The right answer for the wrong reason, and a ratchet that could never have fired when enforcement arrived. G5 reopens the table and is a HARD GATE on the acceptance count. A CLOSE FOLLOWED BY A SELECT IS NOT AN OPEN, which is the USE_AGAIN/WSENV/MWXSHAKE-5C shape arriving for the fifth recorded time, in a spec whose own header warns about it. THE HALVES ARE GRADED DIFFERENTLY AND THAT IS THE DESIGN. PART A (G1..G4, T1..T3) is green today and locks in what already works; PKP_T1 deletes record 3 and requires the next APPEND to issue 4, PKP_T2 recalls record 3 and requires it to still read 3, which is the pair that would red if the generator ever stopped scanning deleted rows -- the exact trap an index-backed fast path falls into, and the reason compute_next_numeric() is still an O(n) scan on purpose. PART B (T4..T8) is the ACCEPTANCE CRITERION for write-time refusal and is GREEN AS OF 2026-09-07, asserted as FIVE SEPARATE ARMS rather than one because native REPLACE, SQLSEL INSERT, SQLSEL UPDATE and the two legacy verbs each reach a field write by their own path and a fix wired into one is not evidence about the other -- which is exactly what happened: the first increment turned T5 and T6 green and left T4 untouched, and had this been one arm instead of three that transcript would have read as a win. THE SAME LESSON THEN ARRIVED ONE LEVEL UP: three arms is itself too few for the native side, which has at least five doors across three files, and the answer was to CONSOLIDATE THE ROUTE rather than mint arms -- one funnel, plus a static gate proving nobody goes around it. THE VALIDATOR IS A RATCHET THAT FAILS IN BOTH DIRECTIONS: kPkAcceptanceExpected records how many Part B arms were green when this spec was last reviewed, so enforcement ARRIVING fails the spec until a human bumps the constant deliberately, and enforcement REGRESSING fails it too. Without that, a permanently-red half is DEF_FAMILY's mistake repeated -- markers with no grader, green by construction. NOT CLAIMED, stated rather than implied: PERSISTENCE ACROSS A RESTART (the declaration lives in a process-local map that unique_registry.cpp calls 'not persistent schema metadata'; a .dts runs in ONE process so no marker here can ask the question, and a two-run harness is step 1 of the lane); CONCURRENCY (one writer cannot exercise the table lock); REFERENTIAL INTEGRITY (out of scope, nothing here declares a foreign key). EVERY ANSWER IS A FIELD READ, never console text: if the cell still holds its original value the write was refused, if it holds the new one it was not. EXPLICIT-RUN AND IT MUST STAY THAT WAY WHILE PART B IS RED -- a partially-red spec must not enter REGRESSION CURATED SUITE. Promote on the NULLASSERT precedent only after Part B is green and soaked: two green runs on a build nobody changed anything on, then the flag moves, then a REBUILD, then read REGRESSION LIST for the [curated suite] tag BEFORE believing the run. SECOND INCREMENT 2026-09-07, RATCHET 3 -> 5: PKP_T7 and PKP_T8 measure the LEGACY bare INSERT and UPDATE verbs -- cmd_sql_insert.cpp and cmd_sql_update.cpp, registered at shell_commands.cpp:458-459. THEY ARE A SECOND DOOR AND T5/T6 NEVER TOUCHED IT: those two measure SQLSEL INSERT and SQLSEL UPDATE, which are different files reached by a different registration, so 'three of three' had described an enforced key for a day while a bare INSERT could still write a duplicate primary key. PKP_G6 AND PKP_G7 SHIPPED WITH THEM AND ARE THE MORE INTERESTING HALF: T7 and T8 both read 'refused' from a write NOT HAPPENING, and a verb that did nothing at all -- unregistered, unparsed, or a WHERE matching no row -- reads identically. G6 proves the INSERT verb appends, G7 proves the UPDATE verb's WHERE reaches record 3, and both write a NON-KEY field so neither is a second measurement of the policy. That is PKP_G5's lesson for the sixth recorded time in this tree and the first time it was designed in rather than discovered after. T7 ALSO ASKS WHETHER THE REFUSAL LEFT A BLANK ROW: the legacy INSERT appends first and writes second, so a gate before the field write rather than before appendBlank() would refuse the duplicate and still grow the table, which is why the arm reads LNAME = 'EPS' and not LNAME <> 'DUP7'. REPLACE_MULTI WAS GATED THE SAME DAY AND IS STILL UNASSERTED HERE, named rather than counted, because multirep_buffering_regression.dts was retired to _to_delete/ on 2026-09-04 and nothing replaced it -- a fix with no arm, recorded as one. AND THIS SPEC'S OWN ERASE FOUND A SEPARATE DEFECT ON 2026-09-07: it reported 'FAILED: PKPOL.dbf.tbj (used by another process)', which was the process's own leaked handle. enlist_sql_transaction opens the write-ahead journal before any change exists, cmd_ROLLBACK calls journal_note_rollback only inside `if (!tb.empty())`, and a transaction the primary-key gate refuses never buffers a change -- so an EMPTY transaction leaked the FILE* for the life of the process and orphaned a header-only .tbj. Fixed by closing the journal in release_sql_transaction, the pair of the enlist that opened it. IT WAS ONLY VISIBLE BECAUSE ERASE HAD JUST LEARNED TO SWEEP .tbj: the orphan had been landing silently for as long as the journal has existed, and an older one with a WSL-era path was sitting in the same directory. THIRD INCREMENT 2026-09-23, RATCHET 5 -> 7 AND MARKERS 15 -> 19 (18 for one red run -- see below): PKP_G8, PKP_T9 and PKP_T10 measure IMPORTSQL FILE, the SIXTH door and the first BULK CREATION path this spec asks about -- cmd_importsql.cpp's row loop was append_fenced() plus raw area.set() with no gate and no mint, so on a stamped table a source file's duplicate keys landed silently and a key field beyond the source columns stayed BLANK, the one state the funnel then refuses to let anyone repair. THE OWNER RULING IS THE DESIGN: identity is house-owned, meaning is data. A source key may embed meaning (a VIN does) and is DEMOTED to an ordinary data column, never imported into the house key; the house key is minted at append. Columns map BY POSITION, so coverage of the key is knowable from the column count and the refusal fires BEFORE THE FIRST ROW. T9 reads the refusal from GO 6 failing with the cursor parked on EPS -- by data, the T5/T7 shape. T10 imports past the key into a table whose key is deliberately NOT named SID, because plan_sid_if_needed mints that spelling with no declaration at all (PKP_P1 proves it) and an arm the magic name would satisfy measures the name, not the import path. G8 is G6's reason a third time: both arms read rows appearing or not appearing, and an unparsed verb or a missing fixture file also appends nothing, so the verb is proven on an unkeyed table first. The fixtures are pk_import_covers_key.psv and pk_import_data_only.psv, COMMITTED at the data root -- tracked data files under dottalkpp/data are precedented (the help DBFs, the schema txt files); bufvis2_probe.csv sits there too but is untracked scratch and is NOT the precedent -- because EXPORTSQL is still a stub and no script-side command writes a text file, so a fixture the spec reads must exist before the spec runs. AND THE EXTENDED SPEC'S FIRST RUN WENT RED, WHICH IS THE RATCHET WORKING: on build Sep 23 2026 16:01:40, T9 read .F. -- not because enforcement failed but because the section's CREATEs had CLOSED PKPOL out of area 1 (CREATE closes the current area before writing, its own usage says so), so the import refused for the WRONG reason and the arm was blind. G8 and T10 were witnessed green on that same red run (PKEY minted 2), so the mint and the verb were already proven. PKP_G9 is the correction -- T9's own fixture-open guard, the exact G5 shape, markers 18 -> 19 -- and the seventh recorded arrival of A CLOSE FOLLOWED BY A SELECT IS NOT AN OPEN, this time caught by the validator BEFORE anything was committed rather than by the owner after. Disposable PKPOL/PKPDIRTY/PKIMPG/PKIMP tables in DBF/SANDBOX, erased at both ends; mints no catalog rows.",
         false,
         false,
         RegressionValidator::PkPolicyV1,
@@ -925,7 +1050,7 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
     {
         "PKDURABLE",
         "pk_durability_regression.dts",
-        "A PRIMARY KEY DECLARATION SURVIVES A RESTART, AND THIS IS THE ONLY SPEC IN THE TREE THAT CAN SAY SO (AIF-156, 2026-09-07). A .dts RUNS IN ONE PROCESS -- not a gap in PKPOLICY but a LIMIT OF THE INSTRUMENT, and PKPOLICY's own header says so under NOT CLAIMED: no marker in it can distinguish a designation READ BACK from the x64 header from one merely remembered in a map that had not died yet. Until 2026-09-07 the answer was the second. unique_registry.cpp held the designation in a static std::unordered_map under its own boundary comment 'not persistent schema metadata', so a fresh session without a redeclare let REPLACE overwrite a primary key IN SILENCE on a build where all three PKPOLICY arms read green. THE SPEC IS A THIN WRAPPER AND ASSERTS ALMOST NOTHING ITSELF. The measurement runs in TWO CHILD PROCESSES: run 1 creates PKDUR, declares SET UNIQUE FIELD EMPNO PRIMARY, mints keys 1 and 2, and EXITS LEAVING THE TABLE ON DISK -- deliberately, because every other fixture in this tree cleans up after itself and this one must outlive its process or there is nothing to reopen; run 2 opens it, ISSUES NO DECLARATION AT ALL, and tries to duplicate the key. GRADING HAPPENS IN C++ BECAUSE IT MUST: `!` is std::system(), so a child's stdout never passes through the stream AlternateCapture swaps, and a transcript-reading validator would see NONE of the child markers. The children write theirs through SET ALTERNATE and validate_pk_durability() READS THOSE CAPTURES OFF DISK. A VALIDATOR CAN OPEN A FILE AND A MARKER CANNOT -- that asymmetry is the only reason a cross-process claim is assertable here at all. WHAT THE SPEC ITSELF CONTRIBUTES is the one thing the captures cannot supply: PKDUR_G0 prints before the shell-out and PKDUR_G1 after it, so a transcript with G0 and no G1 says the launch DIED -- PowerShell, an execution policy, an unbuilt runtime -- which is a different finding from a durability failure and must not be reported as one. FIFTEEN CHILD MARKERS, TEN OF THEM GUARDS, AND TWO ARMS THAT ARE SUPPOSED TO PRINT .F. -- the validator grades against an EXPECTED VALUE rather than against green, because a spec whose correct reading includes a red cannot be graded any other way. PKD_W3 is the load-bearing one: it proves the refusal fires IN THE DECLARING PROCESS, so a red in run 2 cannot be confused with enforcement being broken on this build entirely, and the validator reports UNPROVEN rather than FAIL when a guard reds. PKD_T2 closes and reopens after the refusal, because a write that got through and merely failed to flush would read green on T1 and red there. MISSING IS COUNTED SEPARATELY FROM RED, the house COUNT THE MARKERS rule applied to a file instead of a transcript: an errored marker prints nothing rather than going red, so seven of eight green is a lost claim wearing a clean face. THE CHILD LAUNCHER INVOKES THE EXE DIRECTLY and does not go through datarun.ps1, because that calls Update-DotTalkRuntimeExe which may COPY the runtime -- and the parent process holding the launcher open IS that runtime; copying over a running binary fails on Windows. It copies nothing and sets no environment. FIRST MEASURED 2026-09-07 by the standalone driver tools/staging/pk_durability_two_run.ps1 on build Sep 07 2026 12:55:02: 8 markers, 8 green, 0 red, 0 missing, with 'REPLACE: SID: is the PRIMARY key and cannot be written.' printed by a process that never declared the key. NOT CLAIMED, stated rather than implied: THE LONG-NAME HAZARD -- primary_field() returns a NAME and is_primary_field_() compares it against field_name_upper(), and SID is three characters, so this fixture CANNOT expose a mismatch between a long logical name and its 10-byte descriptor token, the exact class AIF-157 consolidated onto xfg::resolve_field_index_std; CONCURRENCY (two processes in sequence, not at once); and everything the write funnel does not cover -- CALCWRITE, REPLACE_MULTI, BROWSE and RECORDVIEW editing, COPY, SORT, IMPORTSQL. Durability of the DESIGNATION says nothing about completeness of the REFUSAL. THE VALIDATOR HAS BEEN OBSERVED REPORTING PASS ON A RUN THAT NEVER HAPPENED, AND THE FIX WAS WHERE THE GUARD SITS, NOT WHAT IT CHECKS. MEASURED 2026-09-07 on build Sep 07 2026 14:24:17: a session started WITHOUT DOTTALK_ALLOW_HOST_COMMANDS=1 printed BANG: refused for member.ai.regression, the children never ran, and the validator graded the .alt captures left on disk by the PREVIOUS successful run and reported PASS -- 8 of 8 markers green across TWO PROCESSES. G0 and G1 were honestly green and COULD NOT have caught it: the bang command RETURNS NORMALLY AFTER A REFUSAL, so reached-the-shell-out and shell-out-returned are both true on a run where nothing launched. They separate a launcher that DIED from one that RAN, never one that was never permitted to start. The stale-capture hazard was KNOWN -- it was written into the commit message that introduced it -- and the deletion was placed in the CHILD LAUNCHER, downstream of the very gate that refuses to start the launcher. THE FIRST REPLACEMENT WAS ALSO WRONG AND ALSO MEASURED, the same day: a transcript check for the launcher's own completion line, which a child process CANNOT deliver, because its stdout goes to the console handle and never passes through the stream the routed capture swaps. It turned a passing measurement red while the children's lines sat on the operator's screen, and pk_durability_child.ps1's own header comment had already said so in as many words. WHAT HOLDS NOW: the PARENT clears both captures in run_regression_script BEFORE anything the host-command policy can refuse, confirms they are gone by asking the filesystem rather than reading remove()'s verdict, and prints a pre-clear sentinel that validate_pk_durability() requires. A refused shell-out therefore leaves NO capture at all and is reported as an unrun measurement. THE TRANSFERABLE RULE, worth more than this spec: A GUARD AGAINST EVIDENCE SURVIVING A RUN HAS TO SIT WHERE THE RUN CANNOT SKIP IT, AND IT HAS TO ANNOUNCE ITSELF ON A CHANNEL THE GRADER ACTUALLY READS. EXPLICIT-RUN, and it should stay that way until the nesting is understood: this is the first spec that LAUNCHES PROCESSES, and what a `!` shell-out does inside REGRESSION ALL -- to the routed channel, to path slots, to a suite that already holds files open -- is UNMEASURED. Mints no catalog rows. The two child scripts carry absolute paths and that is a known debt recorded in their commit. AIF-158, 2026-09-08 -- THE FIXTURE WAS RENAMED AND THE RENAME WAS THE INSTRUMENT. PKDUR is now (EMPNO N(6,0), SID N(6,0), LNAME C(12)) with EMPNO declared PRIMARY and SID declared NOWHERE. SID stays as a LIVE CONTROL riding in the same row as the arm, written by the same APPEND: plan_sid_if_needed() mints any field with that spelling and asks no registry and no header, so PKD_G5 green beside PKD_T3 tells generation-by-name apart from generation-by-stamp. AN EARLIER CUT OF THIS MEASUREMENT HAD NO SUCH CONTROL, READ GREEN, AND PROVED ONLY THAT THE FIXTURE'S KEY FIELD WAS NAMED SID. The rename immediately exposed a defect no spec in the tree could see: finalize_appended_record() ran two generators in sequence and compute_next_numeric() restores its cursor with A.readCurrent(), which RELOADS THE RECORD BUFFER FROM DISK -- so the second generator's scan destroyed the first one's value and the declared primary key reached disk BLANK, in the declaring process, unfillable afterwards because the funnel refuses every write to a primary key. Every fixture in this tree that generates a key names it SID, so exactly one generator ever fired and there was nothing to destroy. Fixed by planning all key values first and applying them in one pass. IT THEN MEASURED THE ASYMMETRY IT WAS EXTENDED FOR, and the answer was a defect: unique_reg::primary_field() read the FILE while unique_reg::list_unique_fields() read the process map only, so a fresh process ENFORCED a key it would not MINT. PKD_T3 read .F. Fixed by merging the header-stamped primary into list_unique_fields, file first and cache second, the shape primary_field() has used since AIF-156; PKD_T3 now reads .T. PKD_T3B AND PKD_T4 ARE EXPECTED RED AND THAT IS NOT A CONCESSION. T3B is the complementary half of T3 -- both read EMPNO, one asks '= 3' and the other '= 0' -- and it exists so the arm cannot be made unfalsifiable by writing down only the outcome its author expected; measured the same day, a BLANK numeric field is not zero, so T3B reads .F. either way. T4 tries to overwrite a minted key by hand and the refusal IS the policy, so a GREEN T4 would mean enforcement had been lost.",
+        "A PRIMARY KEY DECLARATION SURVIVES A RESTART, AND THIS IS THE ONLY SPEC IN THE TREE THAT CAN SAY SO (AIF-156, 2026-09-07). A .dts RUNS IN ONE PROCESS -- not a gap in PKPOLICY but a LIMIT OF THE INSTRUMENT, and PKPOLICY's own header says so under NOT CLAIMED: no marker in it can distinguish a designation READ BACK from the x64 header from one merely remembered in a map that had not died yet. Until 2026-09-07 the answer was the second. unique_registry.cpp held the designation in a static std::unordered_map under its own boundary comment 'not persistent schema metadata', so a fresh session without a redeclare let REPLACE overwrite a primary key IN SILENCE on a build where all three PKPOLICY arms read green. THE SPEC IS A THIN WRAPPER AND ASSERTS ALMOST NOTHING ITSELF. The measurement runs in TWO CHILD PROCESSES: run 1 creates PKDUR, declares SET UNIQUE FIELD EMPNO PRIMARY, mints keys 1 and 2, and EXITS LEAVING THE TABLE ON DISK -- deliberately, because every other fixture in this tree cleans up after itself and this one must outlive its process or there is nothing to reopen; run 2 opens it, ISSUES NO DECLARATION AT ALL, and tries to duplicate the key. GRADING HAPPENS IN C++ BECAUSE IT MUST: `!` is std::system(), so a child's stdout never passes through the stream AlternateCapture swaps, and a transcript-reading validator would see NONE of the child markers. The children write theirs through SET ALTERNATE and validate_pk_durability() READS THOSE CAPTURES OFF DISK. A VALIDATOR CAN OPEN A FILE AND A MARKER CANNOT -- that asymmetry is the only reason a cross-process claim is assertable here at all. WHAT THE SPEC ITSELF CONTRIBUTES is the one thing the captures cannot supply: PKDUR_G0 prints before the shell-out and PKDUR_G1 after it, so a transcript with G0 and no G1 says the launch DIED -- PowerShell, an execution policy, an unbuilt runtime -- which is a different finding from a durability failure and must not be reported as one. FIFTEEN CHILD MARKERS, TEN OF THEM GUARDS, AND TWO ARMS THAT ARE SUPPOSED TO PRINT .F. -- the validator grades against an EXPECTED VALUE rather than against green, because a spec whose correct reading includes a red cannot be graded any other way. PKD_W3 is the load-bearing one: it proves the refusal fires IN THE DECLARING PROCESS, so a red in run 2 cannot be confused with enforcement being broken on this build entirely, and the validator reports UNPROVEN rather than FAIL when a guard reds. PKD_T2 closes and reopens after the refusal, because a write that got through and merely failed to flush would read green on T1 and red there. MISSING IS COUNTED SEPARATELY FROM RED, the house COUNT THE MARKERS rule applied to a file instead of a transcript: an errored marker prints nothing rather than going red, so seven of eight green is a lost claim wearing a clean face. THE CHILD LAUNCHER INVOKES THE EXE DIRECTLY and does not go through datarun.ps1, because that calls Update-DotTalkRuntimeExe which may COPY the runtime -- and the parent process holding the launcher open IS that runtime; copying over a running binary fails on Windows. It copies nothing and sets no environment. FIRST MEASURED 2026-09-07 by the standalone driver tools/staging/pk_durability_two_run.ps1 on build Sep 07 2026 12:55:02: 8 markers, 8 green, 0 red, 0 missing, with 'REPLACE: SID: is the PRIMARY key and cannot be written.' printed by a process that never declared the key. NOT CLAIMED, stated rather than implied: THE LONG-NAME HAZARD -- primary_field() returns a NAME and is_primary_field_() compares it against field_name_upper(), and SID is three characters, so this fixture CANNOT expose a mismatch between a long logical name and its 10-byte descriptor token, the exact class AIF-157 consolidated onto xfg::resolve_field_index_std; CONCURRENCY (two processes in sequence, not at once); and everything the write funnel does not cover -- CALCWRITE, REPLACE_MULTI, BROWSE and RECORDVIEW editing, COPY, SORT, IMPORTSQL. Durability of the DESIGNATION says nothing about completeness of the REFUSAL. THE VALIDATOR HAS BEEN OBSERVED REPORTING PASS ON A RUN THAT NEVER HAPPENED, AND THE FIX WAS WHERE THE GUARD SITS, NOT WHAT IT CHECKS. MEASURED 2026-09-07 on build Sep 07 2026 14:24:17: a session started WITHOUT DOTTALK_ALLOW_HOST_COMMANDS=1 printed BANG: refused for member.ai.regression, the children never ran, and the validator graded the .alt captures left on disk by the PREVIOUS successful run and reported PASS -- 8 of 8 markers green across TWO PROCESSES. G0 and G1 were honestly green and COULD NOT have caught it: the bang command RETURNS NORMALLY AFTER A REFUSAL, so reached-the-shell-out and shell-out-returned are both true on a run where nothing launched. They separate a launcher that DIED from one that RAN, never one that was never permitted to start. The stale-capture hazard was KNOWN -- it was written into the commit message that introduced it -- and the deletion was placed in the CHILD LAUNCHER, downstream of the very gate that refuses to start the launcher. THE FIRST REPLACEMENT WAS ALSO WRONG AND ALSO MEASURED, the same day: a transcript check for the launcher's own completion line, which a child process CANNOT deliver, because its stdout goes to the console handle and never passes through the stream the routed capture swaps. It turned a passing measurement red while the children's lines sat on the operator's screen, and pk_durability_child.ps1's own header comment had already said so in as many words. WHAT HOLDS NOW: the PARENT clears both captures in run_regression_script BEFORE anything the host-command policy can refuse, confirms they are gone by asking the filesystem rather than reading remove()'s verdict, and prints a pre-clear sentinel that validate_pk_durability() requires. A refused shell-out therefore leaves NO capture at all and is reported as an unrun measurement. THE TRANSFERABLE RULE, worth more than this spec: A GUARD AGAINST EVIDENCE SURVIVING A RUN HAS TO SIT WHERE THE RUN CANNOT SKIP IT, AND IT HAS TO ANNOUNCE ITSELF ON A CHANNEL THE GRADER ACTUALLY READS. EXPLICIT-RUN, and it should stay that way until the nesting is understood: this is the first spec that LAUNCHES PROCESSES, and what a `!` shell-out does inside REGRESSION CURATED SUITE -- to the routed channel, to path slots, to a suite that already holds files open -- is UNMEASURED. Mints no catalog rows. The two child scripts carry absolute paths and that is a known debt recorded in their commit. AIF-158, 2026-09-08 -- THE FIXTURE WAS RENAMED AND THE RENAME WAS THE INSTRUMENT. PKDUR is now (EMPNO N(6,0), SID N(6,0), LNAME C(12)) with EMPNO declared PRIMARY and SID declared NOWHERE. SID stays as a LIVE CONTROL riding in the same row as the arm, written by the same APPEND: plan_sid_if_needed() mints any field with that spelling and asks no registry and no header, so PKD_G5 green beside PKD_T3 tells generation-by-name apart from generation-by-stamp. AN EARLIER CUT OF THIS MEASUREMENT HAD NO SUCH CONTROL, READ GREEN, AND PROVED ONLY THAT THE FIXTURE'S KEY FIELD WAS NAMED SID. The rename immediately exposed a defect no spec in the tree could see: finalize_appended_record() ran two generators in sequence and compute_next_numeric() restores its cursor with A.readCurrent(), which RELOADS THE RECORD BUFFER FROM DISK -- so the second generator's scan destroyed the first one's value and the declared primary key reached disk BLANK, in the declaring process, unfillable afterwards because the funnel refuses every write to a primary key. Every fixture in this tree that generates a key names it SID, so exactly one generator ever fired and there was nothing to destroy. Fixed by planning all key values first and applying them in one pass. IT THEN MEASURED THE ASYMMETRY IT WAS EXTENDED FOR, and the answer was a defect: unique_reg::primary_field() read the FILE while unique_reg::list_unique_fields() read the process map only, so a fresh process ENFORCED a key it would not MINT. PKD_T3 read .F. Fixed by merging the header-stamped primary into list_unique_fields, file first and cache second, the shape primary_field() has used since AIF-156; PKD_T3 now reads .T. PKD_T3B AND PKD_T4 ARE EXPECTED RED AND THAT IS NOT A CONCESSION. T3B is the complementary half of T3 -- both read EMPNO, one asks '= 3' and the other '= 0' -- and it exists so the arm cannot be made unfalsifiable by writing down only the outcome its author expected; measured the same day, a BLANK numeric field is not zero, so T3B reads .F. either way. T4 tries to overwrite a minted key by hand and the refusal IS the policy, so a GREEN T4 would mean enforcement had been lost.",
         false,
         false,
         RegressionValidator::PkDurabilityV1,
@@ -943,7 +1068,7 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
     {
         "VARCHARRESET",
         "varchar_area_reset_regression.dts",
-        "A CLOSED VARCHAR TABLE MUST NOT POISON ITS AREA (2026-09-08). DbArea::_null_layout is assigned in ONE place -- partitionTrailingSystemField() -- and was reset in NONE, because clearFields() and DbArea::close() are TWO HAND-MAINTAINED TEARDOWN LISTS over the same members and both skipped it. So a VFP table with a VARCHAR field left its bit layout in the work area when it closed; the next table opened there had isVarlengthField_() answer from the stale layout, and storeFieldsToBuffer() took the VARCHAR BRANCH for a plain C() field -- writing the value correctly and then a LENGTH BYTE into that field's last byte. have_bitmap was false on the new table, so NOTHING WAS REFUSED AND NOTHING WAS PRINTED, and the bad byte reached DISK. THE VALUE WAS NEVER LOST: \"GAMMA\" was written correctly and CHR(5) was glued to its end, where ALLTRIM cannot remove it because it is not a space -- which is why the symptom read as a lost write and was not one. THIS SPEC EXISTS BECAUSE THE FIX SHIPPED WITHOUT AN ARM. The defect was found by a SECOND-ORDER symptom -- REGRESSION ALL then an explicit REGRESSION PKPOLICY went red on four markers while PKPOLICY alone read 15 of 15 -- and EIGHT hypotheses were refuted by measurement before the AREA was suspected at all: the magic name SID, the declaration, a second APPEND, is_unique_field(), the std::cout rdbuf swap, TABLE BUFFER, the nullable table, and the regression harness itself. Nothing in the corpus asserted that closing a varchar table leaves an area clean, so nothing could see it. FOUR CASES IN FOUR AREAS, EACH DROPPING ONE PROPERTY of the caught shape, so a future red says WHICH property returned rather than merely that something did: A intervening X64 three-field (shape change alone), B intervening VFP with no varchar and no null (VFP-ness alone), C intervening VFP with V(10) AND NO NULL (the varchar alone), D the caught shape with V(10) NULL. MEASURED PRE-FIX: A green, B green, C RED, D RED -- B and C differ by ONE CHARACTER, C(10) against V(10), which is what identified the varchar and exonerated nullability, VFP-ness and shape change. AREAS ARE CONTAMINATED INDEPENDENTLY (area 2 stayed clean while area 1 was broken in the same process) and that is what lets four cases share one run without poisoning each other. NINE GUARDS AND SIX ARMS, FIFTEEN GRADED MARKERS -- count them, an errored marker PRINTS NOTHING rather than going red. Every case carries intervening_live and arm_key_minted because a red arm and a case that NEVER EXECUTED read identically; a failed guard returns UNPROVEN, not FAIL. VAR_TD_survived_reopen closes and reopens because the corruption was DURABLE and a buffer read cannot see that. NOT CLAIMED: that _extras and _null_flags are cleared on close -- as of 2026-09-08 DbArea::close() still leaves BOTH standing and no marker here can see them; that any field index other than #2 is safe; that a different varchar WIDTH behaves the same; anything across a RESTART. EXPLICIT-RUN UNTIL SOAKED on the NULLASSERT precedent -- two green runs on a build nobody changed anything on, THEN the flag moves, THEN a REBUILD, THEN read REGRESSION LIST for the [default] tag BEFORE believing the run. Disposable tables in DBF/SANDBOX, erased at both ends; mints no catalog rows. PROMOTED TO THE DEFAULT SUITE 2026-09-08, AND THE SENTENCE ABOVE ABOUT BEING EXPLICIT-RUN IS LEFT STANDING BECAUSE IT WAS THE CONDITION AT THE TIME. THREE GREEN 15/15 RUNS BEFORE THE FLAG MOVED, and the last two are the ones that count: build Sep 08 2026 15:13:56 (first green), then 15:23:52 TWICE WITH NOTHING CHANGED IN BETWEEN. The middle run alone would NOT have satisfied the soak -- a NULLASSERT summary string was edited between runs one and two, and \"a string literal cannot affect execution\" is exactly the harmlessness argument this lane spent a day being wrong about, so a third run was taken rather than the argument made. THE REASON FOR PROMOTION IS A MEASURED COVERAGE HOLE, NOT THE SOAK -- the RELSCOPE2 and NULLASSERT precedent. REGRESSION ALL could not reach ONE INCH of this: a closed varchar table poisoning its area wrote BAD BYTES TO DISK with nothing refused and nothing printed, and the suite stayed green through all of it. The defect surfaced only when an operator typed REGRESSION ALL and then REGRESSION PKPOLICY. THE VALIDATOR HAS BEEN PROVEN TO FAIL BEFORE PROMOTION, which is the half DEF_FAMILY's entry says is usually left unmeasured: no rebuild is needed because the .dts is DATA read at runtime, so the registered spec was swapped for deliberately broken copies and restored in a finally block (verified byte-identical after). Breaking an ARM read FAIL naming VAR_TC_varchar_alone with its full diagnosis and 15 markers still printed, exactly one red; breaking a GUARD read UNPROVEN naming VAR_GC_intervening_live and correctly did NOT report it as a failing arm. THE COST IS NEAR ZERO: no catalog rows (none of the three minting verbs, mints_catalog is false), no LMDB, no index containers, nine disposable tables in DBF/SANDBOX erased at both ends. IT RUNS LAST BY DECLARATION ORDER AND THAT IS NOT CLAIMED AS SAFE -- see the correction filed against NULLASSERT in this same file (8fba98c5c), which is that \"it runs last\" is a statement about ORDER and never a proof of ISOLATION. What IS true here is that it runs AFTER NULLASSERT, the spec whose leaked state started this, so the in-suite run is a live check of the fix under the exact sequence that produced the original red.",
+        "A CLOSED VARCHAR TABLE MUST NOT POISON ITS AREA (2026-09-08). DbArea::_null_layout is assigned in ONE place -- partitionTrailingSystemField() -- and was reset in NONE, because clearFields() and DbArea::close() are TWO HAND-MAINTAINED TEARDOWN LISTS over the same members and both skipped it. So a VFP table with a VARCHAR field left its bit layout in the work area when it closed; the next table opened there had isVarlengthField_() answer from the stale layout, and storeFieldsToBuffer() took the VARCHAR BRANCH for a plain C() field -- writing the value correctly and then a LENGTH BYTE into that field's last byte. have_bitmap was false on the new table, so NOTHING WAS REFUSED AND NOTHING WAS PRINTED, and the bad byte reached DISK. THE VALUE WAS NEVER LOST: \"GAMMA\" was written correctly and CHR(5) was glued to its end, where ALLTRIM cannot remove it because it is not a space -- which is why the symptom read as a lost write and was not one. THIS SPEC EXISTS BECAUSE THE FIX SHIPPED WITHOUT AN ARM. The defect was found by a SECOND-ORDER symptom -- REGRESSION CURATED SUITE then an explicit REGRESSION PKPOLICY went red on four markers while PKPOLICY alone read 15 of 15 -- and EIGHT hypotheses were refuted by measurement before the AREA was suspected at all: the magic name SID, the declaration, a second APPEND, is_unique_field(), the std::cout rdbuf swap, TABLE BUFFER, the nullable table, and the regression harness itself. Nothing in the corpus asserted that closing a varchar table leaves an area clean, so nothing could see it. FOUR CASES IN FOUR AREAS, EACH DROPPING ONE PROPERTY of the caught shape, so a future red says WHICH property returned rather than merely that something did: A intervening X64 three-field (shape change alone), B intervening VFP with no varchar and no null (VFP-ness alone), C intervening VFP with V(10) AND NO NULL (the varchar alone), D the caught shape with V(10) NULL. MEASURED PRE-FIX: A green, B green, C RED, D RED -- B and C differ by ONE CHARACTER, C(10) against V(10), which is what identified the varchar and exonerated nullability, VFP-ness and shape change. AREAS ARE CONTAMINATED INDEPENDENTLY (area 2 stayed clean while area 1 was broken in the same process) and that is what lets four cases share one run without poisoning each other. NINE GUARDS AND SIX ARMS, FIFTEEN GRADED MARKERS -- count them, an errored marker PRINTS NOTHING rather than going red. Every case carries intervening_live and arm_key_minted because a red arm and a case that NEVER EXECUTED read identically; a failed guard returns UNPROVEN, not FAIL. VAR_TD_survived_reopen closes and reopens because the corruption was DURABLE and a buffer read cannot see that. NOT CLAIMED: that _extras and _null_flags are cleared on close -- as of 2026-09-08 DbArea::close() still leaves BOTH standing and no marker here can see them; that any field index other than #2 is safe; that a different varchar WIDTH behaves the same; anything across a RESTART. EXPLICIT-RUN UNTIL SOAKED on the NULLASSERT precedent -- two green runs on a build nobody changed anything on, THEN the flag moves, THEN a REBUILD, THEN read REGRESSION LIST for the [curated suite] tag BEFORE believing the run. Disposable tables in DBF/SANDBOX, erased at both ends; mints no catalog rows. PROMOTED TO THE DEFAULT SUITE 2026-09-08, AND THE SENTENCE ABOVE ABOUT BEING EXPLICIT-RUN IS LEFT STANDING BECAUSE IT WAS THE CONDITION AT THE TIME. THREE GREEN 15/15 RUNS BEFORE THE FLAG MOVED, and the last two are the ones that count: build Sep 08 2026 15:13:56 (first green), then 15:23:52 TWICE WITH NOTHING CHANGED IN BETWEEN. The middle run alone would NOT have satisfied the soak -- a NULLASSERT summary string was edited between runs one and two, and \"a string literal cannot affect execution\" is exactly the harmlessness argument this lane spent a day being wrong about, so a third run was taken rather than the argument made. THE REASON FOR PROMOTION IS A MEASURED COVERAGE HOLE, NOT THE SOAK -- the RELSCOPE2 and NULLASSERT precedent. REGRESSION CURATED SUITE could not reach ONE INCH of this: a closed varchar table poisoning its area wrote BAD BYTES TO DISK with nothing refused and nothing printed, and the suite stayed green through all of it. The defect surfaced only when an operator typed REGRESSION CURATED SUITE and then REGRESSION PKPOLICY. THE VALIDATOR HAS BEEN PROVEN TO FAIL BEFORE PROMOTION, which is the half DEF_FAMILY's entry says is usually left unmeasured: no rebuild is needed because the .dts is DATA read at runtime, so the registered spec was swapped for deliberately broken copies and restored in a finally block (verified byte-identical after). Breaking an ARM read FAIL naming VAR_TC_varchar_alone with its full diagnosis and 15 markers still printed, exactly one red; breaking a GUARD read UNPROVEN naming VAR_GC_intervening_live and correctly did NOT report it as a failing arm. THE COST IS NEAR ZERO: no catalog rows (none of the three minting verbs, mints_catalog is false), no LMDB, no index containers, nine disposable tables in DBF/SANDBOX erased at both ends. IT RUNS LAST BY DECLARATION ORDER AND THAT IS NOT CLAIMED AS SAFE -- see the correction filed against NULLASSERT in this same file (8fba98c5c), which is that \"it runs last\" is a statement about ORDER and never a proof of ISOLATION. What IS true here is that it runs AFTER NULLASSERT, the spec whose leaked state started this, so the in-suite run is a live check of the fix under the exact sequence that produced the original red.",
         true,   // PROMOTED 2026-09-08 -- three green 15/15 runs, the last two on a
                 // build nobody changed anything on; see the summary for the
                 // coverage argument and for the validator's proven FAIL path
@@ -954,9 +1079,8 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
     {
         "METAREPORT",
         "metadata_report_regression.dts",
-        "THE REPORTS THAT NAME A CONTAINER, AN ENV OR AN ORDER MUST NAME THE ONE THE ENGINE ACTUALLY USES (2026-09-10, from the metadata scan of the same day). Four verified falsehoods shipped as ab9905e56 and NOT ONE OF THEM HAD AN ARM: REGRESSION ALL was green through the whole defect and would have stayed green through its return. This spec is that missing instrument. IT IS GRADED BY A VALIDATOR AND NOT BY MARKERS, AND THAT IS FORCED RATHER THAN CHOSEN. Every claim here is CONSOLE TEXT -- a path, an envdir, a parenthetical -- and a marker in this language is a FIELD-VALUE comparison, the limit already recorded against LIST, COUNT and RECNO (the IDXDIFF precedent). MetadataReportV1 reads the routed capture and grades EIGHT FENCED BLOCKS, MR-P1 through MR-P8. A MISSING BLOCK IS A FAILURE, never a skipped check: that is the house COUNT THE MARKERS rule applied to fences, because a spec that quietly stops printing one of its eight would otherwise pass while asserting seven things. NOT ONE ASSERTION IS A LITERAL PATH. Every path claim is either an EQUALITY BETWEEN TWO VERBS' ANSWERS or a claim about an EXTENSION, so a clone on another drive letter grades identically and renaming the fixture touches nothing in the validator. Comparisons fold case, because these are Windows paths and a case-only difference is not a defect; the ORIGINALS are printed on failure. THE DISCRIMINATOR IS A SLOT THAT MOVES, AND THAT CORRECTS THIS TREE'S OWN WRITTEN ASSUMPTION. Both the scan and ab9905e56's commit message said proving the CDX INFO repair needed a two-workspace fixture with doubled basenames and divergent INDEXES/LMDB roots, and that no such fixture existed. IT NEEDS NO FIXTURE AT ALL. Attach a container, then re-point the INDEXES slot somewhere the container is not: a build whose reuse branch fires answers from the ATTACHMENT, a build that falls through to resolve_cdx_token(stem) answers from the SLOT. One SET PATH line replaced a fixture nobody had built. MR-P1 IS A CONTROL AND IS NOT EVIDENCE, stated so it is never read as one: while the slot still agrees with the attachment BOTH builds answer the same thing, and P1's only job is to supply the value P2 is measured against. If P1 names no container the validator reports UNPROVEN rather than FAIL, because an arm with no reference value has not failed, it has not run. MR-P3 IS THE MIRROR AND THE HALF THAT BIT HARDEST, and it must be READ BY THE EXTENSION AND NOT BY THE VERDICT. With a .cnx attached the old predicate FIRED and handed the .cnx path to a CDX verb, which then reported not-found on a file that exists. In this block 'file not found' is the CORRECT answer -- the x32 tree has no .cdx -- so what is graded is that the path ends .cdx and that no .cnx appears anywhere in the block. An arm that graded the verdict would have read this backwards. MR-P4 IS AN ORACLE FROM CODE NOBODY CHANGED. SET INDEX prints the env the backend opens; P5's echoed envdir must equal it. That is what makes the claim assertable without a literal path, and it is the same shape as the SQLSEL specs' use of SQLite: the reference comes from an instrument the change under test cannot have moved. The two slots are DIFFERENT ROOTS in this run on purpose, so gluing '.d' onto the container path lands under INDEXES while the backend opens what resolve_lmdb_env_for_cdx() returns, rooted at LMDB. MR-P8 IS THE COUNTERWEIGHT AND IS THE REASON THE FIX CANNOT OVERSHOOT. A change that forced PHYSICAL unconditionally would pass P6 and P7 and be EXACTLY as wrong as the defect was, so a chosen tag must still bring a real direction back -- asserted in the SAME run, four lines below the PHYSICAL readings, so the two cannot both be accidents. EXPLICIT-RUN, AND IT MUST STAY THAT WAY UNTIL IT IS SOAKED. Promotion doctrine is the NULLASSERT precedent: two green runs on a build NOBODY CHANGED ANYTHING ON, then the flag moves, then a REBUILD, then read REGRESSION LIST for the [default] tag BEFORE believing the run -- NAV_NATURAL's entry records a whole REGRESSION ALL wasted on skipping that last step. The soak is now enforced by tools/staging/check_soak_evidence.py, which blocks a false->true flip that does not name two PASS runs on ONE build in coordination/SOAK_EVIDENCE.md. THE VALIDATOR WENT RED ON 2026-09-10 AND THE DEBT IS PAID -- but read what it MEASURED, not what it was predicted to. The three repaired .cpp files were restored from 0db8c64d3 into the working tree, rebuilt, run, restored to HEAD, rebuilt and run again: FAIL then PASS on the SAME fixtures one minute apart (builds Sep 10 2026 15:20:10 and 15:21:17), L3 six of six at both ends of both runs. A validator that has only ever passed has an unmeasured FAIL path -- DEF_FAMILY's recorded mistake -- and this one no longer does. MR-P2 WAS CONFIRMED AND THE PREDICTION UNDERSTATED IT. It was predicted to name a container under INDEXES\\SANDBOX. It did -- and there IS one there, carrying FOUR tags against the attached container's SIX. So the pre-fix verb did not error and did not come up empty: it confidently reported a FOUR-TAG DIRECTORY FOR A SIX-TAG TABLE. That is R131's defect in the flesh, a report about one workspace's tree for a table opened out of another's, delivered with nothing to suggest anything was wrong. A prediction of 'not found' would have been the comfortable answer and it was not the true one. MR-P3's EVIDENCE IS IN THE TRANSCRIPT AND WAS NOT GRADED, and that distinction is load-bearing rather than pedantic: THIS VALIDATOR FAILS FAST, so it returned at MR-P2 and never reached MR-P3. What the pre-fix transcript carries inside the MR-P3 block is `CDX INFO: invalid header.` -- NOT the predicted 'names the .cnx', and worse than it. The old predicate handed a perfectly good CNX to a CDX parser, which pronounced the file CORRUPT. A user meeting that line would believe their index was damaged. Corroborated BY TRANSCRIPT, not by the grader, and recorded that way rather than smoothed into a claim the run did not make. MR-P5, MR-P6 AND MR-P7 REMAIN PREDICTIONS, for the same fail-fast reason, and each needs its own targeted back-out to reach: restore cmd_setlmdb.cpp alone for MR-P5, cmd_setorder.cpp alone for MR-P7. MR-P6 sits behind MR-P5 in the same file and needs the report-only half backed out by itself. Stated as OWED rather than left implied by 'the validator went red'. MR-P1, MR-P4 AND MR-P8 STAYED GREEN ON BOTH BUILDS exactly as designed -- the first two because they are references, MR-P8 because it discriminates the OVERSHOOT and never the defect. The controls held, so the red is the fix's absence rather than a broken fixture, which is the reading the whole control/measurement split exists to make available. AND THE TWO BUILDS ARE INDISTINGUISHABLE BY BANNER. Both printed `5ccad4b7 dirty`: the commit did not move, and the tree carries unrelated modifications either way, so the dirty flag says nothing. Only the build TIMESTAMP differs. tools/staging/check_soak_evidence.py proves two runs used ONE build by comparing banners -- so A RESTORED-FILE BUILD IS INVISIBLE TO IT, and a soak taken either side of one would read as the same build when it was not. Harmless here, because nothing was promoted. It is not harmless in general, and this run is the evidence for it. NOT CLAIMED, stated rather than implied: CDX INFO'S PER-TAG COUNTS. Both readings print root_off=0 and recs=0 for EVERY tag of a container over a 200-row table, while the CNX reader in the same transcript prints entries=200 for the same six tag names. Two readings fit -- the fields are wrong, or CDX INFO does a header-only read and displays two unpopulated fields as though authoritative -- and this spec cannot separate them. It is the same species as the four repaired here and was found the same way, by reading a report instead of trusting it. Also not claimed: anything about a SECOND workspace, and anything about the ORDER a cursor actually walks (that is NAV_NATURAL's job; this spec asserts only what the reports SAY). COST AND FOOTPRINT: READ-ONLY. It opens shipped fixtures, creates no table, erases nothing, and mints NO catalog row -- none of the three minting verbs appear, so mints_catalog is false. It re-points the DBF, INDEXES and LMDB slots and the harness restores them. It sets ECHO OFF and STOP_ON_ERROR OFF and does not restore them, which is the DEF_FAMILY shape and harmless where it sits. FIXTURE DEPENDENCIES, so a red is diagnosable: DBF/x64 STUDENTS with INDEXES/x64/STUDENTS.cdx and its LMDB env, and DBF/x32 STUDENTS with INDEXES/x32/STUDENTS.cnx. All ship. P2 is only a discriminator because INDEXES/SANDBOX is a DIFFERENT root from INDEXES/x64; it does not matter whether a STUDENTS.cdx happens to sit there.",
-        false,  // EXPLICIT-RUN until soaked -- two green runs on ONE unchanged
-                // build, then the flag, then a REBUILD, then read REGRESSION LIST
+        "THE REPORTS THAT NAME A CONTAINER, AN ENV OR AN ORDER MUST NAME THE ONE THE ENGINE ACTUALLY USES (2026-09-10, from the metadata scan of the same day). Four verified falsehoods shipped as ab9905e56 and NOT ONE OF THEM HAD AN ARM: REGRESSION CURATED SUITE was green through the whole defect and would have stayed green through its return. This spec is that missing instrument. IT IS GRADED BY A VALIDATOR AND NOT BY MARKERS, AND THAT IS FORCED RATHER THAN CHOSEN. Every claim here is CONSOLE TEXT -- a path, an envdir, a parenthetical -- and a marker in this language is a FIELD-VALUE comparison, the limit already recorded against LIST, COUNT and RECNO (the IDXDIFF precedent). MetadataReportV1 reads the routed capture and grades EIGHT FENCED BLOCKS, MR-P1 through MR-P8. A MISSING BLOCK IS A FAILURE, never a skipped check: that is the house COUNT THE MARKERS rule applied to fences, because a spec that quietly stops printing one of its eight would otherwise pass while asserting seven things. NOT ONE ASSERTION IS A LITERAL PATH. Every path claim is either an EQUALITY BETWEEN TWO VERBS' ANSWERS or a claim about an EXTENSION, so a clone on another drive letter grades identically and renaming the fixture touches nothing in the validator. Comparisons fold case, because these are Windows paths and a case-only difference is not a defect; the ORIGINALS are printed on failure. THE DISCRIMINATOR IS A SLOT THAT MOVES, AND THAT CORRECTS THIS TREE'S OWN WRITTEN ASSUMPTION. Both the scan and ab9905e56's commit message said proving the CDX INFO repair needed a two-workspace fixture with doubled basenames and divergent INDEXES/LMDB roots, and that no such fixture existed. IT NEEDS NO FIXTURE AT ALL. Attach a container, then re-point the INDEXES slot somewhere the container is not: a build whose reuse branch fires answers from the ATTACHMENT, a build that falls through to resolve_cdx_token(stem) answers from the SLOT. One SET PATH line replaced a fixture nobody had built. MR-P1 IS A CONTROL AND IS NOT EVIDENCE, stated so it is never read as one: while the slot still agrees with the attachment BOTH builds answer the same thing, and P1's only job is to supply the value P2 is measured against. If P1 names no container the validator reports UNPROVEN rather than FAIL, because an arm with no reference value has not failed, it has not run. MR-P3 IS THE MIRROR AND THE HALF THAT BIT HARDEST, and it must be READ BY THE EXTENSION AND NOT BY THE VERDICT. With a .cnx attached the old predicate FIRED and handed the .cnx path to a CDX verb, which then reported not-found on a file that exists. In this block 'file not found' is the CORRECT answer -- the x32 tree has no .cdx -- so what is graded is that the path ends .cdx and that no .cnx appears anywhere in the block. An arm that graded the verdict would have read this backwards. MR-P4 IS AN ORACLE FROM CODE NOBODY CHANGED. SET INDEX prints the env the backend opens; P5's echoed envdir must equal it. That is what makes the claim assertable without a literal path, and it is the same shape as the SQLSEL specs' use of SQLite: the reference comes from an instrument the change under test cannot have moved. The two slots are DIFFERENT ROOTS in this run on purpose, so gluing '.d' onto the container path lands under INDEXES while the backend opens what resolve_lmdb_env_for_cdx() returns, rooted at LMDB. MR-P8 IS THE COUNTERWEIGHT AND IS THE REASON THE FIX CANNOT OVERSHOOT. A change that forced PHYSICAL unconditionally would pass P6 and P7 and be EXACTLY as wrong as the defect was, so a chosen tag must still bring a real direction back -- asserted in the SAME run, four lines below the PHYSICAL readings, so the two cannot both be accidents. EXPLICIT-RUN, AND IT MUST STAY THAT WAY UNTIL IT IS SOAKED. Promotion doctrine is the NULLASSERT precedent: two green runs on a build NOBODY CHANGED ANYTHING ON, then the flag moves, then a REBUILD, then read REGRESSION LIST for the [curated suite] tag BEFORE believing the run -- NAV_NATURAL's entry records a whole REGRESSION CURATED SUITE wasted on skipping that last step. The soak is now enforced by tools/staging/check_soak_evidence.py, which blocks a false->true flip that does not name two PASS runs on ONE build in coordination/SOAK_EVIDENCE.md. THE VALIDATOR WENT RED ON 2026-09-10 AND THE DEBT IS PAID -- but read what it MEASURED, not what it was predicted to. The three repaired .cpp files were restored from 0db8c64d3 into the working tree, rebuilt, run, restored to HEAD, rebuilt and run again: FAIL then PASS on the SAME fixtures one minute apart (builds Sep 10 2026 15:20:10 and 15:21:17), L3 six of six at both ends of both runs. A validator that has only ever passed has an unmeasured FAIL path -- DEF_FAMILY's recorded mistake -- and this one no longer does. MR-P2 WAS CONFIRMED AND THE PREDICTION UNDERSTATED IT. It was predicted to name a container under INDEXES\\SANDBOX. It did -- and there IS one there, carrying FOUR tags against the attached container's SIX. So the pre-fix verb did not error and did not come up empty: it confidently reported a FOUR-TAG DIRECTORY FOR A SIX-TAG TABLE. That is R131's defect in the flesh, a report about one workspace's tree for a table opened out of another's, delivered with nothing to suggest anything was wrong. A prediction of 'not found' would have been the comfortable answer and it was not the true one. MR-P3's EVIDENCE IS IN THE TRANSCRIPT AND WAS NOT GRADED, and that distinction is load-bearing rather than pedantic: THIS VALIDATOR FAILS FAST, so it returned at MR-P2 and never reached MR-P3. What the pre-fix transcript carries inside the MR-P3 block is `CDX INFO: invalid header.` -- NOT the predicted 'names the .cnx', and worse than it. The old predicate handed a perfectly good CNX to a CDX parser, which pronounced the file CORRUPT. A user meeting that line would believe their index was damaged. Corroborated BY TRANSCRIPT, not by the grader, and recorded that way rather than smoothed into a claim the run did not make. MR-P5, MR-P6 AND MR-P7 REMAIN PREDICTIONS, for the same fail-fast reason, and each needs its own targeted back-out to reach: restore cmd_setlmdb.cpp alone for MR-P5, cmd_setorder.cpp alone for MR-P7. MR-P6 sits behind MR-P5 in the same file and needs the report-only half backed out by itself. Stated as OWED rather than left implied by 'the validator went red'. MR-P1, MR-P4 AND MR-P8 STAYED GREEN ON BOTH BUILDS exactly as designed -- the first two because they are references, MR-P8 because it discriminates the OVERSHOOT and never the defect. The controls held, so the red is the fix's absence rather than a broken fixture, which is the reading the whole control/measurement split exists to make available. AND THE TWO BUILDS ARE INDISTINGUISHABLE BY BANNER. Both printed `5ccad4b7 dirty`: the commit did not move, and the tree carries unrelated modifications either way, so the dirty flag says nothing. Only the build TIMESTAMP differs. tools/staging/check_soak_evidence.py proves two runs used ONE build by comparing banners -- so A RESTORED-FILE BUILD IS INVISIBLE TO IT, and a soak taken either side of one would read as the same build when it was not. Harmless here, because nothing was promoted. It is not harmless in general, and this run is the evidence for it. NOT CLAIMED, stated rather than implied: CDX INFO'S PER-TAG COUNTS. Both readings print root_off=0 and recs=0 for EVERY tag of a container over a 200-row table, while the CNX reader in the same transcript prints entries=200 for the same six tag names. Two readings fit -- the fields are wrong, or CDX INFO does a header-only read and displays two unpopulated fields as though authoritative -- and this spec cannot separate them. It is the same species as the four repaired here and was found the same way, by reading a report instead of trusting it. RESOLVED BY SOURCE 2026-09-22, and it was the SECOND reading, sharpened: the fields are honestly zero ON DISK. Only the NATIVE rebuild (cdx_native_backend.cpp's RUN8 writer) sets root_page_off/stats_rec/updated_ts and writes the tag directory back; BUILDLMDB -- the x64 default flow -- reads the directory for tag NAMES only, builds every key into the LMDB env, and never writes the directory back, exactly as the M0 reconciliation recorded stats_rec 'available and unused'. The CNX reader prints entries=200 because ITS build path (the RUN1 writer) does populate the same fields. The repair went where the defect was, the PRESENTATION: CDX INFO now appends a pathless note when the container's LMDB env exists, naming which build path maintains those fields and pointing at LMDB INFO for the live keys. Pathless BY DESIGN so this validator holds unchanged: MR-P3 fails any line mentioning a .cnx and the note names no path at all; MR-P1/P2 read only the 'CDX file' line. Also not claimed: anything about a SECOND workspace, and anything about the ORDER a cursor actually walks (that is NAV_NATURAL's job; this spec asserts only what the reports SAY). COST AND FOOTPRINT: READ-ONLY. It opens shipped fixtures, creates no table, erases nothing, and mints NO catalog row -- none of the three minting verbs appear, so mints_catalog is false. It re-points the DBF, INDEXES and LMDB slots and the harness restores them. It sets ECHO OFF and STOP_ON_ERROR OFF and does not restore them, which is the DEF_FAMILY shape and harmless where it sits. FIXTURE DEPENDENCIES, so a red is diagnosable: DBF/x64 STUDENTS with INDEXES/x64/STUDENTS.cdx and its LMDB env, and DBF/x32 STUDENTS with INDEXES/x32/STUDENTS.cnx. All ship. P2 is only a discriminator because INDEXES/SANDBOX is a DIFFERENT root from INDEXES/x64; it does not matter whether a STUDENTS.cdx happens to sit there. PROMOTED TO THE DEFAULT SUITE 2026-09-23, and the EXPLICIT-RUN sentence above is LEFT STANDING because it was the condition at the time. The soak: two PASS runs on ONE build, banner 'dottalk++ beta 1.b, 632c737a  (Sep 22 2026 20:44:51)' -- run 2's banner transcribed directly from the operator's console; run 1's banner was cut from the paste but its identity is PINNED BY RUN 2'S OWN DATARUN HEADER, which staged the same exe ('built 405 min ago', newest candidate unchanged) seconds after run 1 completed -- a documented derivation, not a reconstruction, recorded the same way in coordination/SOAK_EVIDENCE.md. Both runs also verified the CDX INFO honesty note live: present in MR-P1/P2 where the env exists, absent in MR-P3, validator 8/8 untouched. THE REASON IS THE MEASURED COVERAGE HOLE THIS ENTRY OPENS WITH, the RELSCOPE2 precedent: four verified falsehoods about containers, envs and order shipped as ab9905e56 while REGRESSION CURATED SUITE stayed green, because no default spec read a metadata report at all. The cost supports it: READ-ONLY, no catalog rows, shipped fixtures only. STILL OWED AND UNCHANGED BY PROMOTION: the MR-P5/P6/P7 targeted back-outs. IN-SUITE POSITION: this entry declares EARLY in the registry, so unlike NULLASSERT it does NOT run last; it sets ECHO OFF and STOP_ON_ERROR OFF without restoring them, which the DEF_FAMILY precedent treats as harmless -- and the first post-flip REGRESSION CURATED SUITE is the measurement of that claim, not a proof offered in advance. The flip needs a REBUILD; read REGRESSION LIST for the [curated suite] tag BEFORE believing the run. VERIFIED IN-SUITE 2026-09-23 -- the first post-flip REGRESSION CURATED SUITE on the rebuilt registry: specs run 33, passed 33, FAILED 0, the headline arithmetic exactly as predicted (31 defaults plus the two arms), and this spec's own 8/8 mid-suite with the honesty note present in MR-P1/P2 and absent in MR-P3, same as standalone. CORRECTED 2026-09-23: the IN-SUITE POSITION sentence above said this entry declares EARLY and does not run last. MEASURED FALSE by that same run -- this entry is declared LAST in the registry array (after VARCHARRESET) and EXECUTED last among the defaults, immediately before the GRPMINT and L3 arms. The sentence is left standing because that is how corrections are filed here; the error was the author's reading of the array, not anything the engine did. What the position claim existed to guard still got measured, from the other end: the unrestored ECHO OFF / STOP_ON_ERROR OFF had only the two arms downstream, and both graded green (GRPMINT absent-before/present-after with GM_D0 credited, L3 6/6), so no NULLASSERT-shape leak was observed. That is a claim about THIS declaration order only, never a proof of isolation -- the 8fba98c5c ruling against NULLASSERT applies here verbatim: 'it runs last' is a statement about ORDER. A future re-ordering of the registry re-opens the question and the next post-reorder ALL is its measurement. MR-P5/P6/P7 BACK-OUTS: DEBT PAID 2026-09-23, all on commit 648a7a3e, each cycle FAIL then PASS on consecutive incremental builds. MR-P5 (whole pre-fix cmd_setlmdb.cpp from 0db8c64d3, clean because ab9905e56 is the ONLY commit to touch either file since): FAIL naming P5, envdir echoed under INDEXES against the P4 oracle's LMDB root, exactly as predicted -- and that transcript's P6 block shows TAG '' (ASC), the P6 defect present but ungraded behind the fail-fast, corroborated BY TRANSCRIPT the same way the 09-10 run corroborated P3. MR-P7 (whole pre-fix cmd_setorder.cpp): FAIL naming P7, bare SET ORDER claiming (ASC); P6 read PHYSICAL first, which also measures that P6 does not live in cmd_setorder.cpp. MR-P6 needed a VARIANT -- the pre-fix file with the envdir half of the fix put back, machine-diffed against 0db8c64d3 to prove it differs ONLY in that half -- and its red run shows P5 passing then P6 failing on TAG '' (ASC), the two halves separated at last. AND THE FIRST MR-P6 ATTEMPT WAS NOT A RUN, which is the finding worth the detour: the variant was installed with PowerShell copy, which preserves the SOURCE file's LastWriteTime; the copied file read older than its .obj, MSBuild compiled NOTHING, and the 'FAIL-expected' run printed PASS from the previous build's binary. The build TIMESTAMP in the banner caught it -- identical to the prior run's, Sep 23 2026 04:36:06 twice -- and the rerun with the mtime touched went red as predicted. That is check_soak_evidence's banner doctrine at single-build granularity: a run whose build stamp did not move is not a run, however plausible its verdict.",
+        true,   // PROMOTED 2026-09-23 -- soak rows in coordination/SOAK_EVIDENCE.md
         false,  // mints no catalog row: none of the three minting verbs appear
         RegressionValidator::MetadataReportV1,
         true    // SET ORDER: / SET LMDB: are cli::cmdout; a cout rdbuf swap
@@ -1010,7 +1134,7 @@ const RegressionSpec* find_regression_spec(const std::string& token)
 // string is treated as one impossible filename and the script is never found.
 //
 // Measured 2026-07-30 on WSL: 22 of 32 specs carry backslash paths, including
-// 5 of the 8 DEFAULT-suite entries. REGRESSION ALL therefore ran 3 of 8 default
+// 5 of the 8 DEFAULT-suite entries. REGRESSION CURATED SUITE therefore ran 3 of 8 default
 // suites and reported the rest as "script not found" WITHOUT failing the run --
 // a green-looking Linux regression pass missing five eighths of its default
 // coverage. The engine is cross-platform; the harness quietly was not.
@@ -1060,23 +1184,98 @@ std::filesystem::path resolve_regression_script_path(const RegressionSpec& spec)
     return resolve_script_token(spec.script);
 }
 
+// Related process chains, not directory buckets. A spec may belong to several
+// groups; execution still follows the canonical registry order, once per spec.
+struct RegressionGroup {
+    const char* name;
+    const char* process;
+    const char* members;
+    const char* setup;
+    bool group_mint = false;
+};
+const RegressionGroup kRegressionGroups[] = {
+    {"WORKSPACE", "open -> scope/name resolution -> navigation -> close/restore",
+     "WORKSPACE_SCOPE USE_ARGS NAME_AMBIG WSMULTI WSLADDER RELSCOPE2 NAV_NATURAL OPENJOIN WSENV",
+     "Workspace scripts prepare their own fixtures; catalog minters are isolated."},
+    {"INDEX_WRITEBACK", "record update -> index maintenance -> seek -> buffered visibility",
+     "INDEX_X32 INDEX_X64 X64_METRICS SQLSEL_BUFFER_VIS NULLASSERT VARCHARRESET",
+     "x32/x64 index fixtures and SQL buffer fixtures; no child processes."},
+    {"SQL_QUERY", "mode routing -> select -> joins -> equivalent execution paths",
+     "SQLMODE_SMOKE SQLSEL_SELECT_V1 SQLSEL_INNER_JOIN SQLSEL_JOIN_EDGES SQLSEL_LEFT_JOIN SQLSEL_JOIN_FAMILY SQLSEL_PARALLEL",
+     "SQL scripts create SANDBOX fixtures; SQLite oracle supplied by the engine."},
+    {"SQL_DML", "SQL mutations -> transactions -> index maintenance -> read visibility",
+     "SQLSEL_DML SQLSEL_BUFFER_VIS INDEX_X64 NULLASSERT",
+     "SQL DML and buffer fixtures; scripts bootstrap their own environments.", true},
+    {"RELATIONS", "relation setup -> workspace boundaries -> joins -> cursor navigation",
+     "RELJOIN SQLSEL_INNER_JOIN WORKSPACE_SCOPE RELSCOPE2 NAV_NATURAL OPENJOIN",
+     "Relation/workspace fixtures; catalog-writing specs use scratch isolation."},
+    {"LANGUAGE", "tokenization -> script execution -> expression evaluation -> definitions",
+     "DOTSCRIPT_EXPR DOTSCRIPT_PARITY LEXING DEF_FAMILY EVALDIFF",
+     "DotScript fixtures and expression oracle; no host shell required."},
+    {"FIELD_TYPES", "decode -> null handling -> area reuse -> buffered reads",
+     "NONDESTRUCTIVE NULLASSERT VARCHARRESET SQLSEL_BUFFER_VIS",
+     "Type/null and buffer fixtures; scripts select their own environment."},
+    {"DURABILITY", "primary-key policy -> commit -> reopen in another process",
+     "PKPOLICY PKDURABLE",
+     "Requires Windows PowerShell, child runtime and DOTTALK_ALLOW_HOST_COMMANDS=1; see SHOW PKDURABLE.", true},
+    {"WORKSPACE_PERSISTENCE", "save -> reload -> session restoration -> RAM hydration -> writeback",
+     "WORKSPACE_MEMO WORKSPACE_V3 WORKSPACE_RAM WORKSPACE_SESSION WORKSPACE_WRITEBACK",
+     "Extended fixtures: MCC/cascade workspaces and x64 tables. Some specs are not graded; PARTIAL is not PASS."}
+};
+
+bool group_contains(const RegressionGroup& group, const std::string& name) {
+    std::istringstream members(group.members);
+    std::string member;
+    while (members >> member) if (member == name) return true;
+    return false;
+}
+const RegressionGroup* find_regression_group(const std::string& name) {
+    for (const auto& group : kRegressionGroups)
+        if (upper_copy(name) == group.name) return &group;
+    return nullptr;
+}
+void print_regression_groups() {
+    std::cout << "Related process groups (SHOW GROUP <name> for membership/setup):\n";
+    for (const auto& group : kRegressionGroups)
+        std::cout << "  " << group.name << " -- " << group.process << "\n";
+}
+void print_regression_group(const RegressionGroup& group) {
+    std::cout << "REGRESSION GROUP " << group.name << "\n  Process: " << group.process
+              << "\n  Setup: " << group.setup << "\n  Runtime: not yet measured for this group.\n"
+              << "  Mandatory checks: isolation BEFORE/AFTER, FIXTUREDET\n";
+    if (group.group_mint) std::cout << "  Additional check: GRPMINT\n";
+    for (const auto& spec : kRegressionSpecs) if (group_contains(group, spec.name))
+        std::cout << "  " << spec.name << " -> " << spec.script
+                  << (spec.validator == RegressionValidator::None ? " [NOT GRADED]" : " [graded]") << "\n";
+    std::cout << "Use SHOW <test> for its detailed fixture and assertion contract.\n";
+}
+
 void print_regression_usage()
 {
     std::cout
         << "Usage:\n"
         << "  REGRESSION USAGE\n"
         << "  REGRESSION LIST\n"
+        << "  REGRESSION GROUPS\n"
+        << "  REGRESSION SHOW GROUP <name>\n"
+        << "  REGRESSION GROUP <name> [QUIET] [LOG [<path>]]\n"
         << "  REGRESSION FIND <words...>       (search names/scripts/summaries)\n"
         << "  REGRESSION SEARCH <words...>     (alias of FIND)\n"
         << "  REGRESSION SHOW <name>\n"
-        << "  REGRESSION RUN <name>\n"
-        << "  REGRESSION <name>                [LOG [<path>]]\n"
-        << "  REGRESSION RUN <name>            [LOG [<path>]]\n"
-        << "  REGRESSION ALL                   [LOG [<path>]]\n"
-        << "  REGRESSION GRPFAIL               (AIF-160 two-pass group apply failure)\n"
-        << "  REGRESSION GRPNATIVE             (AIF-160 the retry after a group commit)\n"
-        << "  REGRESSION TRIGGERVETO [NORMAL|SELFTEST|MULTIREP|AFTER|RECOVERY]\n"
+        << "  REGRESSION <name>                [QUIET] [LOG [<path>]]\n"
+        << "  REGRESSION RUN <name>            [QUIET] [LOG [<path>]]\n"
+        << "  REGRESSION CURATED SUITE                   [QUIET] [LOG [<path>]]\n"
+        << "  REGRESSION GRPFAIL [QUIET] [LOG [<path>]] (AIF-160 two-pass group apply failure)\n"
+        << "  REGRESSION GRPNATIVE [QUIET] [LOG [<path>]] (AIF-160 the retry after a group commit)\n"
+        << "  REGRESSION GRPMINT [QUIET] [LOG [<path>]] (AIF-160 the SYS group catalog mints itself)\n"
+        << "  REGRESSION FIXTURECHECK [QUIET] [LOG [<path>]] (prove the missing-fixture detector can fire)\n"
+        << "  REGRESSION TRIGGERVETO [NORMAL|SELFTEST|MULTIREP|AFTER|RECOVERY] [QUIET] [LOG [<path>]]\n"
         << "Notes:\n"
+        << "  - ALL is retired; use CURATED SUITE. GROUPS lists related process chains.\n"
+        << "    SHOW GROUP lists membership/setup; GROUP executes selected tests once.\n"
+        << "  - QUIET and LOG work with every execution form, in either order.\n"
+        << "    Duplicate options/extra tokens refuse execution. Quote paths with spaces.\n"
+        << "    Bare LOG overwrites its stable TMP file; write failures report an error.\n"
         << "  - REGRESSION launches DOTSCRIPT; selected specs also validate marked\n"
         << "    transcript evidence and set final PASS/FAIL error status.\n"
         << "  - Scripts are expected to bootstrap their own environment.\n"
@@ -1084,18 +1283,43 @@ void print_regression_usage()
         << "  - FIND is the question-to-spec bridge: LIST and SHOW both assume you\n"
         << "    already know the NAME. All terms must match. THE SPEC IS THE HOW-TO --\n"
         << "    read the script for worked usage, or RUN it to watch it work.\n"
-        << "  - ALL runs the curated default suite in declared order, and ends on a\n"
+        << "  - CURATED SUITE runs the curated default suite in declared order, and ends on a\n"
         << "    SUMMARY: counts, the names of anything that FAILED, and the names of\n"
         << "    every spec that is NOT GRADED -- ran, printed, and was checked by\n"
         << "    nothing. The command's exit status comes from that tally.\n"
         << "  - LOG tees the run to a file; bare LOG writes it under the TMP slot.\n"
-        << "    Lines on the ROUTED channel are NOT in it (see the .alt captures).\n"
+        << "    Includes routed messages, stderr and regression child output.\n"
+        << "  - QUIET hides bulk screen output only; grading and logging are unchanged.\n"
+        << "    Omit QUIET for the complete screen dump.\n"
         << "    A log that cannot be opened REFUSES the run rather than running it\n"
         << "    unlogged.\n"
-        << "  - EVERY run -- ALL or a single spec -- is bracketed by the L3 catalog\n"
+        << "  - EVERY run -- CURATED SUITE or a single spec -- is bracketed by the L3 catalog\n"
         << "    isolation arm, which reads the PRODUCTION workspace catalog before\n"
         << "    and after and proves its own detector first. Count its markers: an\n"
         << "    errored marker PRINTS NOTHING rather than going red.\n"
+        << "  - GRPMINT runs inside CURATED SUITE and also stands alone. It points the SYS\n"
+        << "    slot at a directory that DOES NOT EXIST, asserts the group catalog\n"
+        << "    is ABSENT, commits a two-table group, and asserts the directory,\n"
+        << "    GROUPS.dbf and GROUPMEM.dbf were created by that commit. Read it as\n"
+        << "    ABSENT-THEN-PRESENT: GM_D0 is the detector and a green GM_G1 means\n"
+        << "    nothing without it.\n"
+        << "  - AN UNGRADED SPEC IS STILL READ. Its transcript is checked for the\n"
+        << "    engine's file-not-found line, and a spec that could not open its\n"
+        << "    fixture reports UNMEASURED rather than 'not graded'. A spec that ran\n"
+        << "    and asserted nothing, and a spec that never started, are different\n"
+        << "    facts and used to print the same word.\n"
+        << "  - FIXTURECHECK proves that detector can fire. Its positive case is a\n"
+        << "    LIVE one: it opens a table that cannot exist and requires the\n"
+        << "    detector to match what THIS BUILD printed, so a reworded engine\n"
+        << "    message reds it instead of blinding it. Two canned cases guard the\n"
+        << "    other direction, against matching a spec that only QUOTES the\n"
+        << "    words. It runs in the default suite, before the specs it guards.\n"
+        << "  - THE FIXTURE READ TAKES BOTH CHANNELS -- the std::cout tee AND an\n"
+        << "    ALTERNATE capture -- because the engine prints its open failure\n"
+        << "    through the ROUTED channel, which no rdbuf swap can see. FIXTURECHECK\n"
+        << "    prints FD_C0_channel_that_carried_it as an OBSERVATION, never a\n"
+        << "    verdict. If an operator SET ALTERNATE is already running, the read is\n"
+        << "    degraded to the tee and each ungraded spec says so in one line.\n"
         << "  - HARVEST is the top-layer shakedown for newly promoted surfaces.\n"
         << "  - LANGUAGE proves es/fr/de/it USAGE rendering across the localized command surface.\n";
 }
@@ -1105,7 +1329,7 @@ void print_regression_list()
     std::cout << "Curated regressions:\n";
     for (const auto& spec : kRegressionSpecs) {
         std::cout << "  " << spec.name;
-        if (spec.in_default_suite) std::cout << "  [default]";
+        if (spec.in_default_suite) std::cout << "  [curated suite]";
         std::cout << "\n"
                   << "    " << spec.summary << "\n"
                   << "    " << spec.script << "\n";
@@ -1120,7 +1344,7 @@ void print_regression_show(const RegressionSpec& spec)
               << "  Summary : " << spec.summary << "\n"
               << "  Script  : " << spec.script << "\n"
               << "  Resolved: " << resolved.string() << "\n"
-              << "  Default : " << (spec.in_default_suite ? "yes" : "no") << "\n";
+              << "  Curated : " << (spec.in_default_suite ? "yes" : "no") << "\n";
 }
 
 // REGRESSION FIND <words> -- the question-to-spec bridge (owner ruling
@@ -1188,7 +1412,7 @@ void print_regression_find(const std::string& terms_raw)
 // A spec flagged mints_catalog runs with the WORKSPACES slot pointed at a
 // per-run scratch root, so its WORKSPACE NEW rows land in a throwaway catalog
 // and PRODUCTION IS NOT WRITTEN. Measured cost before this landed: exactly ten
-// rows per REGRESSION ALL, 252 -> 262 on 2026-08-28, from four specs.
+// rows per REGRESSION CURATED SUITE, 252 -> 262 on 2026-08-28, from four specs.
 //
 // RAII, AND THAT IS THE REQUIREMENT RATHER THAN THE STYLE. The plan asked for
 // a restore that survives a throw, because L0 measured what the alternative
@@ -1201,7 +1425,7 @@ void print_regression_find(const std::string& terms_raw)
 //
 // THE SCRATCH ROOT IS PER RUN, NOT PER SESSION. l0probe and l1verify both use
 // a fixed directory and say so; that is fine for a probe run by hand and wrong
-// for a suite, because two sessions running REGRESSION ALL at once would share
+// for a suite, because two sessions running REGRESSION CURATED SUITE at once would share
 // one catalog and mint into each other. Each bracket CLAIMS its own directory,
 // so concurrent sessions cannot collide and successive specs in one run cannot
 // inherit each other's rows.
@@ -1294,6 +1518,81 @@ public:
 
 private:
     std::filesystem::path saved_;
+};
+
+// THE SAME SHAPE FOR THE SYS SLOT (AIF-160), and a separate class rather than a
+// parameter on the one above because the two are restored by DIFFERENT owners:
+// WorkspacesSlotGuard backstops a script that moves the catalog in DotScript,
+// while this backstops C++ that moves SYS around a single arm. Sharing one
+// class would mean every user of either carried the other's slot.
+//
+// IT ANNOUNCES ONLY WHEN THE SLOT ACTUALLY MOVED. The restore itself is
+// unconditional: putting back a slot that never moved is a no-op, while
+// skipping a restore that was needed points the group log -- engine state that
+// cannot be rebuilt from anything -- at a scratch directory for the rest of the
+// session.
+class SysSlotGuard {
+public:
+    SysSlotGuard()
+        : saved_(dottalk::paths::get_slot(dottalk::paths::Slot::SYS))
+    {
+    }
+
+    ~SysSlotGuard()
+    {
+        const std::filesystem::path now =
+            dottalk::paths::get_slot(dottalk::paths::Slot::SYS);
+        dottalk::paths::set_slot(dottalk::paths::Slot::SYS, saved_);
+        if (now != saved_) {
+            std::cout << "REGRESSION: SYS slot restored to " << saved_.string()
+                      << "\n";
+        }
+    }
+
+    SysSlotGuard(const SysSlotGuard&) = delete;
+    SysSlotGuard& operator=(const SysSlotGuard&) = delete;
+
+private:
+    std::filesystem::path saved_;
+};
+
+// THE SCRATCH ROOT THIS ARM CLAIMS IS KEPT BY DEFAULT AND DISCARDED ON ONE
+// PATH ONLY. There are five ways out of the mint arm and four of them are the
+// ones somebody will want to open, so the default is KEEP: a default of
+// "remove" would need four correct calls to get right, this needs one. The
+// success path discards, because the TMP slot already carries hundreds of
+// wscat_run_* roots that nothing sweeps and an arm running in every suite must
+// not add one per run to that pile.
+class ScratchRootKeeper {
+public:
+    explicit ScratchRootKeeper(std::filesystem::path root)
+        : root_(std::move(root))
+    {
+    }
+
+    void discard() { discard_ = true; }
+
+    ~ScratchRootKeeper()
+    {
+        if (!discard_) {
+            std::cout << "  Scratch root KEPT for inspection: "
+                      << root_.string() << "\n";
+            return;
+        }
+        std::error_code ec;
+        std::filesystem::remove_all(root_, ec);
+        if (ec) {
+            std::cout << "  REGRESSION: could not remove the scratch root "
+                      << root_.string() << ": " << ec.message() << "\n";
+        }
+    }
+
+    ScratchRootKeeper(const ScratchRootKeeper&) = delete;
+    ScratchRootKeeper& operator=(const ScratchRootKeeper&) = delete;
+
+private:
+    std::filesystem::path root_;
+    bool                  discard_ = false;
 };
 
 // ---------------------------------------------------------------------------
@@ -1417,7 +1716,14 @@ public:
         : spec_(std::move(spec_name)),
           dbf_(dottalk::paths::get_slot(dottalk::paths::Slot::DBF)),
           indexes_(dottalk::paths::get_slot(dottalk::paths::Slot::INDEXES)),
-          lmdb_(dottalk::paths::get_slot(dottalk::paths::Slot::LMDB))
+          lmdb_(dottalk::paths::get_slot(dottalk::paths::Slot::LMDB)),
+          // AIF-160. SYS WAS NOT WATCHED HERE UNTIL GRPMINT NEEDED TO MOVE IT.
+          // The bracket exists so a spec cannot hand the rest of the suite a
+          // moved slot, and the one slot holding state that CANNOT BE REBUILT
+          // FROM ANYTHING was the one it did not look at. A leaked SYS slot
+          // points the group log somewhere else in silence, and silence is the
+          // exact failure this class was written to make impossible.
+          sys_(dottalk::paths::get_slot(dottalk::paths::Slot::SYS))
     {
     }
 
@@ -1426,6 +1732,7 @@ public:
         restore_one(dottalk::paths::Slot::DBF,     dbf_,     "DBF");
         restore_one(dottalk::paths::Slot::INDEXES, indexes_, "INDEXES");
         restore_one(dottalk::paths::Slot::LMDB,    lmdb_,    "LMDB");
+        restore_one(dottalk::paths::Slot::SYS,     sys_,     "SYS");
     }
 
     PathSlotBracket(const PathSlotBracket&) = delete;
@@ -1449,6 +1756,7 @@ private:
     std::filesystem::path dbf_;
     std::filesystem::path indexes_;
     std::filesystem::path lmdb_;
+    std::filesystem::path sys_;
 };
 
 class TeeStreamBuf final : public std::streambuf {
@@ -2576,6 +2884,102 @@ bool validate_sqlsel_subqueries(const std::string& transcript)
     return true;
 }
 
+// AIF-168 PERF-2: the registered G-P2 gate. The OFF leg of each pair IS the
+// oracle -- both legs are pinned as EXACT blocks, so a parallel answer that
+// differs from serial in count, rows, order, or report composition cannot
+// read as green. The fixture is shaped so deleted rows sit in BOTH 2-worker
+// partitions and in a band that STRADDLES the seam (recno 1200/1201 of
+// 2400); the clamp (request 6, carry 2) and both declines are pinned with
+// their exact serial answers.
+bool validate_sqlsel_parallel(const std::string& transcript)
+{
+    static constexpr const char* kParLine =
+        "SQLSEL: single-table scan access path -- parallel (workers=2, rows=2400, recno-range partitions).";
+    static constexpr const char* kSmallDecline =
+        "SQLSEL: parallel declined -- table too small to partition (< 2000 rows); scanning serial.";
+    static constexpr const char* kSubqDecline =
+        "SQLSEL: parallel declined -- subquery predicate (shared subquery runtime); scanning serial.";
+
+    static constexpr std::array<const char*, 3> t1_off{{
+        "COUNT(*)", "2370", "1 row(s) selected."}};
+    static constexpr std::array<const char*, 4> t1_on{{
+        kParLine, "COUNT(*)", "2370", "1 row(s) selected."}};
+    static constexpr std::array<const char*, 3> t2_off{{
+        "COUNT(*)", "90", "1 row(s) selected."}};
+    static constexpr std::array<const char*, 4> t2_on{{
+        kParLine, "COUNT(*)", "90", "1 row(s) selected."}};
+    static constexpr std::array<const char*, 3> t3_off{{
+        "COUNT(*)", "190", "1 row(s) selected."}};
+    static constexpr std::array<const char*, 4> t3_on{{
+        kParLine, "COUNT(*)", "190", "1 row(s) selected."}};
+    static constexpr std::array<const char*, 10> t4_off{{
+        "ID", "1214", "1213", "1212", "1211", "1210", "1209",
+        "6 row(s) selected.",
+        "SQLSEL: LIMIT reached; 4 more row(s) available.",
+        "SQLSEL: ORDER BY ID DESC -- materialized sort over 10 matching row(s)."}};
+    static constexpr std::array<const char*, 11> t4_on{{
+        kParLine,
+        "ID", "1214", "1213", "1212", "1211", "1210", "1209",
+        "6 row(s) selected.",
+        "SQLSEL: LIMIT reached; 4 more row(s) available.",
+        "SQLSEL: ORDER BY ID DESC -- materialized sort over 10 matching row(s)."}};
+    static constexpr std::array<const char*, 4> t5_clamp{{
+        kParLine, "COUNT(*)", "2370", "1 row(s) selected."}};
+    static constexpr std::array<const char*, 4> t6_small{{
+        kSmallDecline, "COUNT(*)", "5", "1 row(s) selected."}};
+    static constexpr std::array<const char*, 6> t7_subq{{
+        kSubqDecline, kSmallDecline,
+        "SQLSEL: subquery evaluation count -- correlated=0, uncorrelated=1.",
+        "COUNT(*)", "5", "1 row(s) selected."}};
+
+    static constexpr std::array<const char*, 8> required{{
+        "SQLSEL: UPDATE affected 100 row(s); committed through table buffer + WAL.",
+        "SQLSEL: DELETE affected 10 row(s); committed through table buffer + WAL.",
+        "PAR_C1_parll_cursor_restored:.T.",
+        "PAR_C2_parsm_cursor_restored:.T.",
+        "SET PARALLEL: 2 worker(s)",
+        "SET PARALLEL: 6 worker(s)",
+        "SET PARALLEL: OFF",
+        "SQLSEL-PAR-END"}};
+
+    if (!require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T1-OFF", t1_off) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T1-ON", t1_on) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T2-OFF", t2_off) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T2-ON", t2_on) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T2F-OFF", t2_off) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T2F-ON", t2_on) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T3-OFF", t3_off) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T3-ON", t3_on) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T4-OFF", t4_off) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T4-ON", t4_on) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T5", t5_clamp) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T6", t6_small) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T7", t7_subq) ||
+        !require_transcript_fragments(transcript, "SQLSEL PARALLEL", required)) {
+        return false;
+    }
+
+    const std::size_t par_lines = transcript_count(transcript, kParLine);
+    const std::size_t small_declines = transcript_count(transcript, kSmallDecline);
+    const std::size_t subq_declines = transcript_count(transcript, kSubqDecline);
+    const std::size_t delete_tens = transcript_count(
+        transcript, "SQLSEL: DELETE affected 10 row(s); committed through table buffer + WAL.");
+    if (par_lines != 6 || small_declines != 2 || subq_declines != 1 || delete_tens != 3) {
+        std::cout << "SQLSEL PARALLEL: FAIL -- expected workers=2 lines 6, small declines 2, "
+                     "subquery declines 1, 10-row deletes 3; got "
+                  << par_lines << '/' << small_declines << '/' << subq_declines << '/'
+                  << delete_tens << ".\n";
+        return false;
+    }
+
+    std::cout << "SQLSEL PARALLEL DIFFERENTIAL: PASS -- 5/5 OFF==ON pairs exact "
+                 "(count, char, function, seam band, ORDER BY+LIMIT); deleted rows "
+                 "excluded in both partitions and ACROSS the seam; clamp 6->2 pinned "
+                 "in the path line; declines 3/3 with exact serial answers; cursors "
+                 "2/2; PARALLEL left OFF.\n";
+    return true;
+}
+
 bool validate_sqlsel_advanced_join(const std::string& transcript)
 {
     static constexpr std::array<SqlselOraclePair, 8> pairs{{
@@ -2892,10 +3296,14 @@ bool validate_evaldiff(const std::string& transcript)
 
 // AIF-156 -- PRIMARY KEY POLICY.
 //
-// Fifteen graded markers, derived not declared: seven guards PKP_G1..G7 and
-// eight arms PKP_T1..T8, contiguous. COUNT THEM. An errored marker in this
-// language PRINTS NOTHING rather than going red, so a transcript with fourteen
-// is a spec that lost a claim, not a spec that passed.
+// Nineteen graded markers, derived not declared: nine guards PKP_G1..G9 and
+// ten arms PKP_T1..T10, contiguous. COUNT THEM. An errored marker in this
+// language PRINTS NOTHING rather than going red, so a transcript with
+// eighteen is a spec that lost a claim, not a spec that passed. (This block
+// read fifteen/seven/eight until 2026-09-23, when G8, T9 and T10 arrived with
+// the IMPORTSQL FILE gating; G9 followed the same day from the extended
+// spec's first, red run -- its CREATEs had closed T9's fixture and the
+// ratchet caught the blind arm pre-commit.)
 //
 // THE SPEC IS WRITTEN IN TWO HALVES AND THEY ARE GRADED DIFFERENTLY.
 //
@@ -2906,11 +3314,12 @@ bool validate_evaldiff(const std::string& transcript)
 // in data that arrived dirty. If Part A reds, the policy work broke something
 // that already worked.
 //
-// PART B -- PKP_T4..T8 -- is the ACCEPTANCE CRITERION for write-time refusal on
-// the native REPLACE path, on SQLSEL INSERT and SQLSEL UPDATE, and on the
-// LEGACY bare INSERT and UPDATE verbs. Asserted as five arms rather than one
-// because each reaches the table buffer by its own path and a fix wired into
-// one is not evidence about the other.
+// PART B -- PKP_T4..T10 -- is the ACCEPTANCE CRITERION for write-time refusal
+// on the native REPLACE path, on SQLSEL INSERT and SQLSEL UPDATE, on the
+// LEGACY bare INSERT and UPDATE verbs, and (2026-09-23) on IMPORTSQL FILE,
+// whose pair also proves imported rows come out minted. Asserted as separate
+// arms rather than one because each reaches the table by its own path and a
+// fix wired into one is not evidence about the other.
 // MEASURED 2026-09-06 ON BUILD Sep 05 2026 21:18:51: all three RED. A native
 // REPLACE wrote a duplicate over a PRIMARY key and it survived a close and
 // reopen; SQLSEL INSERT committed a second duplicate through the buffer and WAL.
@@ -2978,7 +3387,13 @@ bool validate_evaldiff(const std::string& transcript)
 // refuse the duplicate and still grow the table by one. That is why the arm
 // reads LNAME = "EPS" (the row G6 left) instead of LNAME <> "DUP7": the weaker
 // spelling calls a blank-row refusal a pass.
-constexpr int kPkAcceptanceExpected = 5;
+// BUMPED 5 -> 7 ON 2026-09-23, WITH THE ARMS IT COUNTS, IN THE SAME COMMIT.
+// T9 and T10 are the IMPORTSQL FILE pair (owner ruling: identity is
+// house-owned, meaning is data -- a source key is demoted to a data column,
+// never imported into the house key, and the house key is minted at append).
+// They are born green because the enforcement and the arms land together;
+// the ratchet's job from here is to notice either of them going red.
+constexpr int kPkAcceptanceExpected = 7;
 
 // ---------------------------------------------------------------------------
 // PKDURABLE -- THE ONLY VALIDATOR IN THIS FILE THAT READS A FILE.
@@ -3204,7 +3619,7 @@ bool validate_pk_durability(const std::string& transcript)
 
 bool validate_pk_policy(const std::string& transcript)
 {
-    static constexpr std::array<const char*, 10> partA{{
+    static constexpr std::array<const char*, 12> partA{{
         "PKP_G1_declared_and_generated:.T.",
         "PKP_G2_second_key_is_2:.T.",
         "PKP_G3_third_key_is_3:.T.",
@@ -3221,14 +3636,31 @@ bool validate_pk_policy(const std::string& transcript)
         // did nothing at all produces the same reading. That is PKP_G5's
         // lesson arriving for the sixth recorded time in this tree.
         "PKP_G6_legacy_insert_verb_appends:.T.",
-        "PKP_G7_legacy_update_verb_reaches_the_row:.T."
+        "PKP_G7_legacy_update_verb_reaches_the_row:.T.",
+        // AIF-156 2026-09-23: the IMPORTSQL verb guard, G6's reason a third
+        // time -- T9 reads "refused" from rows not appearing, and a verb that
+        // failed to parse (or a missing fixture file) also appends nothing.
+        "PKP_G8_import_verb_appends_unkeyed:.T.",
+        // AIF-156 2026-09-23, SAME DAY, FROM A RED RUN: T9's fixture-open
+        // guard. The first cut had none; its CREATEs closed PKPOL out of
+        // area 1 (CREATE closes the current area before writing), the import
+        // refused for the WRONG reason, T9 read .F., and this ratchet fired
+        // pre-commit. PKP_G5's lesson, seventh recorded arrival.
+        "PKP_G9_t9_fixture_is_open:.T."
     }};
-    static constexpr std::array<const char*, 5> partBNames{{
+    static constexpr std::array<const char*, 7> partBNames{{
         "PKP_T4_native_replace_refused:",
         "PKP_T5_sqlsel_insert_refused:",
         "PKP_T6_sqlsel_update_refused:",
         "PKP_T7_legacy_insert_refused:",
-        "PKP_T8_legacy_update_refused:"
+        "PKP_T8_legacy_update_refused:",
+        // AIF-156 2026-09-23: the IMPORTSQL FILE pair. T9 -- an import whose
+        // positional columns would land on the stamped key refuses BEFORE the
+        // first row. T10 -- rows imported past the key come out MINTED, on a
+        // key deliberately not named SID so the magic-name planner cannot
+        // mint it by spelling alone.
+        "PKP_T9_import_covering_key_refused:",
+        "PKP_T10_import_rows_minted:"
     }};
 
     bool ok = true;
@@ -3271,7 +3703,7 @@ bool validate_pk_policy(const std::string& transcript)
 
     if (green != kPkAcceptanceExpected) {
         std::cout << "PK POLICY: FAIL -- acceptance count changed: "
-                  << green << " of 5 Part B arms green, expected "
+                  << green << " of 7 Part B arms green, expected "
                   << kPkAcceptanceExpected << ".\n";
         if (green > kPkAcceptanceExpected) {
             std::cout << "  Write-time enforcement APPEARS TO HAVE ARRIVED. That is the "
@@ -3295,19 +3727,20 @@ bool validate_pk_policy(const std::string& transcript)
     // reads. A partial state needs its own sentence or it gets reported as the
     // state it left.
     const char* posture =
-        (green == 5)
-            ? "the five write paths THIS SPEC ASKS ABOUT refuse a write to a "
+        (green == 7)
+            ? "the six write paths THIS SPEC ASKS ABOUT refuse a write to a "
               "declared PRIMARY key -- native REPLACE, SQLSEL INSERT, SQLSEL "
-              "UPDATE, and the LEGACY bare INSERT and UPDATE verbs, which are "
-              "a different pair of files reached by a different registration "
-              "and about which three-of-three said nothing whatever. It still "
-              "does not ask about CALCWRITE, BROWSE or RECORDVIEW editing, "
-              "COPY, SORT or IMPORTSQL, each of which reaches a field write by "
-              "its own route; REPLACE_MULTI is gated as of 2026-09-07 and is "
-              "UNASSERTED HERE because the multirep spec was retired on "
-              "2026-09-04 and nothing replaced it. Five of five is the arms "
-              "that exist, NOT a key that is enforced; the static gate over "
-              "the callers is what closes that gap."
+              "UPDATE, the LEGACY bare INSERT and UPDATE verbs, and (as of "
+              "2026-09-23) IMPORTSQL FILE, whose pair of arms also proves "
+              "imported rows come out MINTED rather than blank. It still does "
+              "not ask about COPY, SORT or the workspace writer, each of which "
+              "reaches a field write by its own route (COPY and SORT carry the "
+              "designation through carryPrimaryKey, asserted elsewhere); "
+              "REPLACE_MULTI is gated as of 2026-09-07 and is UNASSERTED HERE "
+              "because the multirep spec was retired on 2026-09-04 and nothing "
+              "replaced it. Seven of seven is the arms that exist, NOT a key "
+              "that is enforced; the static gate over the callers is what "
+              "closes that gap."
         : (green == 0)
             ? "write-time enforcement is NOT built; this spec is the acceptance "
               "criterion for it, not a claim that it works."
@@ -3316,13 +3749,13 @@ bool validate_pk_policy(const std::string& transcript)
               "working primary key -- it means the count matches what a human "
               "last acknowledged, no more.";
 
-    std::cout << "PK POLICY: PASS -- Part A green (10 markers), acceptance "
-              << green << " of 5 as expected. AIF-156: " << posture << "\n";
+    std::cout << "PK POLICY: PASS -- Part A green (12 markers), acceptance "
+              << green << " of 7 as expected. AIF-156: " << posture << "\n";
     return true;
 }
 
 // VARCHARRESET (2026-09-08). A ratchet over a defect that shipped SILENTLY and
-// was found by a SECOND-ORDER symptom rather than by any arm: REGRESSION ALL
+// was found by a SECOND-ORDER symptom rather than by any arm: REGRESSION CURATED SUITE
 // followed by an explicit REGRESSION PKPOLICY went red on four markers while
 // PKPOLICY alone read 15 of 15. Nothing in the corpus asserted that closing a
 // varchar table leaves its area clean, so nothing could see it.
@@ -3339,6 +3772,109 @@ bool validate_pk_policy(const std::string& transcript)
 //
 // EACH ARM CARRIES WHAT ITS RED MEANS, because the four cases differ by one
 // property each and a future red should say WHICH property came back.
+// INDEX_X64 v3 -- GRADED, AND THE GRADING IS HALF THE FIX.
+//
+// v2 was in_default_suite and RegressionValidator::None, and on the published
+// tree it opened NOTHING: its fixture was DBF/SANDBOX/students.dbf and
+// dbf/sandbox is a declared non-publish lane. Making the spec self-bootstrap
+// stops it being hollow; making it GRADED stops it being silent. Both were
+// needed and neither is sufficient.
+//
+// GUARDS AND ARMS ARE READ DIFFERENTLY, the VARCHARRESET shape: a red guard
+// means the fixture or the attach broke and the arms beside it are measuring
+// something other than what they name, so the result is UNPROVEN rather than
+// FAIL. Only an arm can refute the index rule.
+bool validate_index_x64_smoke(const std::string& transcript)
+{
+    static constexpr std::array<const char*, 3> guards{{
+        "IX_G0_physical_first_row_is_ROW1:.T.",
+        "IX_G1_physical_last_row_is_ROW6:.T.",
+        "IX_G2_attached_with_no_tag_walks_physical:.T."
+    }};
+
+    struct Arm { const char* marker; const char* means; };
+    static constexpr std::array<Arm, 7> arms{{
+        {"IX_T1_tag_top_is_the_physically_last_row:.T.",
+         "TOP under an active CDX tag did not follow the tag. This is the "
+         "discriminator: the fixture's LNAME order is the exact REVERSE of its "
+         "physical order, so a build that walks physical reads ROW1 here."},
+        {"IX_T2_tag_bottom_is_the_physically_first_row:.T.",
+         "BOTTOM under the tag did not follow it. Paired with T1 on purpose -- "
+         "one end can be right by accident, both cannot."},
+        {"IX_T3_seek_lands_on_the_row_the_key_names:.T.",
+         "SEEK under the tag did not reach the row its key names. If T1 and T2 "
+         "are green the ORDER is live and the LOOKUP is not, which is a "
+         "narrower defect than either of them alone."},
+        {"IX_T4_the_replace_landed_in_the_record:.T.",
+         "a REPLACE of an indexed field did not reach the record AT ALL. This "
+         "arm cannot fail for index reasons, so a red here is a write defect "
+         "and voids T5 -- read them as a pair and in that order."},
+        {"IX_T5_and_the_index_found_it_by_the_new_key:.T.",
+         "THE WRITE LANDED (T4 green) AND THE INDEX DID NOT LEARN IT. Live CDX "
+         "maintenance on a direct write is the claim under test, and DELETE's "
+         "own contract hedges it as best-effort. A red HERE with T4 GREEN is a "
+         "MEASUREMENT and is a finding about index maintenance -- it is NOT a "
+         "broken fixture and must not be tuned away."},
+        {"IX_T6_cleared_order_walks_physical_from_the_top:.T.",
+         "SET ORDER TO 0 did not put the walk back on physical. The container "
+         "is still steering after it was cleared, which is AIF-148's shape."},
+        {"IX_T7_cleared_order_walks_physical_to_the_end:.T.",
+         "the far end of the cleared order is wrong. Paired with T6 for the "
+         "same reason T1 is paired with T2."}
+    }};
+
+    bool guards_ok = true;
+    for (const char* g : guards) {
+        if (transcript.find(g) == std::string::npos) {
+            std::cout << "INDEX X64 SMOKE: guard missing or red: " << g << "\n";
+            guards_ok = false;
+        }
+    }
+    if (!guards_ok) {
+        std::cout << "INDEX X64 SMOKE: UNPROVEN -- a guard failed, so the arms say\n"
+                     "  NOTHING about the v64 index rule. A red IX_G0/G1 means the\n"
+                     "  fixture was never written in the order this spec assumes; a red\n"
+                     "  IX_G2 means attaching the container broke plain addressing, and\n"
+                     "  every tag reading after it is about a cursor nobody trusts.\n";
+        return false;
+    }
+
+    bool ok = true;
+    for (const Arm& a : arms) {
+        if (transcript.find(a.marker) == std::string::npos) {
+            std::cout << "INDEX X64 SMOKE: FAIL -- " << a.marker << "\n"
+                      << "  " << a.means << "\n";
+            ok = false;
+        }
+    }
+    if (!ok) return false;
+
+    // COUNT THEM. An errored marker in this language PRINTS NOTHING rather than
+    // going red, so ten present-and-true is a different claim from "no red was
+    // seen" -- which is the whole reason this file keeps saying so.
+    std::size_t printed = 0;
+    std::size_t pos = 0;
+    while ((pos = transcript.find("IX_", pos)) != std::string::npos) {
+        ++printed;
+        pos += 3;
+    }
+    if (printed < 10) {
+        std::cout << "INDEX X64 SMOKE: FAIL -- only " << printed << " IX_ marker(s)\n"
+                     "  reached the transcript and ten were declared. A marker that\n"
+                     "  ERRORS prints nothing at all, so the missing ones are lost\n"
+                     "  claims rather than silent passes.\n";
+        return false;
+    }
+
+    std::cout << "INDEX X64 SMOKE: PASS -- 10 of 10. The fixture is self-built, so\n"
+                 "  this reads the same on a fresh clone of main as it does here.\n"
+                 "  Attached with no tag the walk is PHYSICAL; under the tag both ends\n"
+                 "  invert; SEEK reaches the named row; a direct write to an indexed\n"
+                 "  field is found again by its new key; and SET ORDER TO 0 puts the\n"
+                 "  walk back.\n";
+    return true;
+}
+
 bool validate_varchar_area_reset(const std::string& transcript)
 {
     static constexpr std::array<const char*, 9> guards{{
@@ -3669,8 +4205,568 @@ bool validate_metadata_reports(const std::string& transcript)
                  "ASSERTED ANYWHERE -- every path claim is an equality between two "
                  "verbs or a claim about an extension. NOT CLAIMED: CDX INFO's per-tag "
                  "counts, which print root_off=0 recs=0 for every tag over a 200-row "
-                 "table and are a separate open question.\n";
+                 "table -- RESOLVED BY SOURCE 2026-09-22: honestly zero on disk (only "
+                 "the NATIVE rebuild writes them; BUILDLMDB never writes the tag "
+                 "directory back), and CDX INFO now says so with a pathless note this "
+                 "validator deliberately never reads.\n";
     return true;
+}
+
+// ---------------------------------------------------------------------------
+// THE ONE MESSAGE THAT MEANS "THE FILE IS NOT THERE", AND WHY IT IS ANCHORED
+// TO THE START OF A LINE.
+//
+// MEASURED 2026-09-13 ON THE PUBLISHED TREE. INDEX_X64 is in the default suite
+// and is ungraded, and on staging it opened NOTHING: its fixture
+// DBF/SANDBOX/students.dbf lives in the development tree, dbf/sandbox is a
+// declared non-publish lane, and the spec printed a page of refusals while the
+// suite reported PASS. Staging's SANDBOX holds NINE entries against dev's ~120.
+//
+// MWXSHAKE PRINTS THE SAME WORDS ON PURPOSE, and that is the trap. Its
+// shortfall arm proves WORKSPACE LOAD ... PARTIAL restores what survives, and
+// its evidence reads:
+//
+//   ! AREA 0 (slot 1): open failed (DbArea: file does not exist: ...)
+//
+// A substring search for "file does not exist" turns that deliberate
+// measurement red. THAT IS A CHECKER THAT CANNOT TELL AN INSTANCE OF A FAILURE
+// FROM A CITATION OF ONE, which this tree has already recorded once as a
+// finding and which would have been introduced here by the obvious
+// implementation. The engine's own open failure BEGINS A LINE and capitalises
+// the O; MWXSHAKE's sits mid-line and does not.
+//
+// IT IS A PHRASE MATCH ON AN ENGINE MESSAGE AND WOULD OTHERWISE GO STALE IN
+// SILENCE -- reword the message and this reads green forever. FIXTUREDET is
+// what stops that, and only because its positive case asks the ENGINE rather
+// than a copy of the string kept in this file.
+constexpr const char* kFixtureAbsentLine = "Open failed: file does not exist:";
+
+bool transcript_has_absent_fixture(const std::string& transcript)
+{
+    const std::string needle(kFixtureAbsentLine);
+    std::size_t pos = 0;
+    while ((pos = transcript.find(needle, pos)) != std::string::npos) {
+        if (pos == 0 || transcript[pos - 1] == '\n') return true;
+        pos += needle.size();
+    }
+    return false;
+}
+
+// AIF-165. Marker-bearing specs used to print assertions the harness never read.
+// The shared contract is intentionally exact: every declared marker must appear
+// once, in order, and true. A missing marker, a duplicate, a renamed or unexpected
+// marker, a false marker, or a reordered block is a failure.
+template <std::size_t N>
+bool validate_true_marker_contract(const std::string& transcript,
+                                   const char* spec_name,
+                                   const char* prefix,
+                                   const std::array<const char*, N>& expected)
+{
+    std::vector<std::string> actual;
+    std::istringstream in(transcript);
+    std::string line;
+    while (std::getline(in, line)) {
+        line = clean_transcript_line(std::move(line));
+        if (line.rfind(prefix, 0) != 0) continue;
+        if (line.size() < 4) continue;
+        const bool truth_marker =
+            line.compare(line.size() - 4, 4, ":.T.") == 0 ||
+            line.compare(line.size() - 4, 4, ":.F.") == 0;
+        if (truth_marker) actual.push_back(std::move(line));
+    }
+
+    const std::string label = std::string("TRUE MARKERS ") + spec_name;
+    if (actual.size() != expected.size()) {
+        std::cout << label << ": FAIL -- expected " << expected.size()
+                  << " marker line(s), got " << actual.size() << "\n";
+        return false;
+    }
+
+    for (std::size_t i = 0; i < expected.size(); ++i) {
+        const std::string wanted = std::string(expected[i]) + ":.T.";
+        if (actual[i] != wanted) {
+            std::cout << label << ": FAIL -- marker " << (i + 1)
+                      << " mismatch\n"
+                      << "  expected: " << wanted << "\n"
+                      << "  actual  : " << actual[i] << "\n";
+            return false;
+        }
+    }
+
+    std::cout << label << ": PASS -- " << expected.size()
+              << " exact marker(s), all true and in order.\n";
+    return true;
+}
+
+bool validate_workspace_markers(const RegressionSpec& spec,
+                                const std::string& transcript)
+{
+    const std::string name(spec.name);
+
+    if (name == "WORKSPACE_SCOPE") {
+        static constexpr std::array<const char*, 8> kExpected = {{
+            "WS_G0_default_sentinel_written",
+            "WS_G1_parent_sentinel_written",
+            "WS_G2_child_sentinel_written",
+            "WS_T1_scoped_close_spared_default",
+            "WS_G3_child_reopened",
+            "WS_T2_recursion_off_kept_child_open",
+            "WS_T3_default_untouched_under_off",
+            "WS_T4_close_all_released_the_file"
+        }};
+        return validate_true_marker_contract(transcript, spec.name, "WS_", kExpected);
+    }
+    if (name == "WSMULTI") {
+        static constexpr std::array<const char*, 11> kExpected = {{
+            "WSM_G0_default_sentinel",
+            "WSM_G1_alpha_sentinel",
+            "WSM_G2_beta_sentinel",
+            "WSM_G3_gamma_sentinel",
+            "WSM_G4_share_open_in_alpha",
+            "WSM_G5_share_open_in_beta",
+            "WSM_T1_peer_survived_sibling_close",
+            "WSM_T2_shared_file_survived_in_peer",
+            "WSM_T3_default_untouched",
+            "WSM_T4_child_file_released_and_reopenable",
+            "WSM_T5_default_readable_after_switch_back"
+        }};
+        return validate_true_marker_contract(transcript, spec.name, "WSM_", kExpected);
+    }
+    if (name == "WSLADDER") {
+        static constexpr std::array<const char*, 13> kExpected = {{
+            "WSL_G4_default_sentinel_written",
+            "WSL_G5_occupant_sentinel_written",
+            "WSL_G0_live_row_located_by_name",
+            "WSL_G1_located_row_is_live",
+            "WSL_T1_birth_row_is_self_describing",
+            "WSL_T2_birth_row_carries_no_payload",
+            "WSL_T3_birth_row_is_the_chain_root",
+            "WSL_G2_live_row_located_after_recreate",
+            "WSL_T4_destroy_then_new_minted_a_fresh_id",
+            "WSL_G3_retired_row_still_present",
+            "WSL_T5_retired_row_is_superseded",
+            "WSL_T6_default_survived_the_refusal",
+            "WSL_T7_occupied_workspace_kept_its_area"
+        }};
+        return validate_true_marker_contract(transcript, spec.name, "WSL_", kExpected);
+    }
+    if (name == "RELSCOPE2") {
+        static constexpr std::array<const char*, 5> kExpected = {{
+            "RS_G0_child_fixture_written",
+            "RS_G1_relation_live_before_the_act",
+            "RS_T1_clear_all_spared_the_other_workspace",
+            "RS_G2_other_workspace_relation_rebuilt",
+            "RS_T2_scoped_close_spared_the_other_workspace"
+        }};
+        return validate_true_marker_contract(transcript, spec.name, "RS_", kExpected);
+    }
+    if (name == "MWXSHAKE") {
+        static constexpr std::array<const char*, 48> kExpected = {{
+            "MWX_G0a_fixture_A_parent_written",
+            "MWX_G0b_fixture_A_shared_written",
+            "MWX_G0c_fixture_B_parent_written",
+            "MWX_G0d_fixture_B_shared_written",
+            "MWX_G0e_child_table_written",
+            "MWX_G1a_one_holds_its_area",
+            "MWX_G1b_two_holds_its_area",
+            "MWX_G1c_child_holds_its_area",
+            "MWX_T1_open_as_named_the_workspace",
+            "MWX_T2_reentry_left_the_open_table_alone",
+            "MWX_T3_sibling_workspace_survived_a_scoped_close",
+            "MWX_T4_recursion_off_left_the_nested_workspace_open",
+            "MWX_T5_second_copy_opened_beside_the_first",
+            "MWX_T6_destroy_refused_and_the_area_survived",
+            "MWX_T7_default_refused_destruction_and_still_works",
+            "MWX_T8_parent_with_a_child_refused_and_disk_intact",
+            "MWX_G2_first_mint_wrote_a_birth_row",
+            "MWX_T9_remint_after_destroy_is_a_fresh_identity",
+            "MWX_T10_deleted_rows_are_still_on_disk",
+            "MWX_T11_delete_did_not_lower_the_high_water_mark",
+            "MWX_T12_purge_alias_still_reaches_the_verb",
+            "MWX_T13_declared_workspace_kept_its_live_row",
+            "MWX_G3_container_source_has_its_memo",
+            "MWX_T14_session_survived_the_minidb_refusal",
+            "MWX_T15_row_one_hydrated_from_the_memo",
+            "MWX_T16_memo_value_survived_the_container",
+            "MWX_T17_hydrated_table_is_writable",
+            "MWX_T18_writeback_reached_the_real_disk",
+            "MWX_T19_writeback_carried_the_post_hydration_write",
+            "MWX_G4a_member_really_removed",
+            "MWX_G4b_survivor_still_on_disk",
+            "MWX_G5_healthy_session_standing",
+            "MWX_T20_session_survived_the_shortfall_refusal",
+            "MWX_T21_partial_restored_the_survivor",
+            "MWX_T22_missing_index_did_not_refuse_the_load",
+            "MWX_G6_order_is_live_before_the_save",
+            "MWX_T25_set_order_survived_the_round_trip",
+            "MWX_T26_and_the_far_end_of_the_order_too",
+            "MWX_G7a_physical_first_is_ZULU_before_any_index",
+            "MWX_G7b_physical_last_is_TANGO_before_any_index",
+            "MWX_T27_self_built_cdx_orders_the_walk",
+            "MWX_T28_and_the_far_end_of_the_built_order",
+            "MWX_T31_addtag_refused_a_dead_tag_and_changed_nothing",
+            "MWX_G7c_built_order_is_live_before_the_save",
+            "MWX_T29_built_tag_survived_the_round_trip",
+            "MWX_T30_far_end_after_the_built_round_trip",
+            "MWX_T23_container_row_is_flagged_minidb",
+            "MWX_T24_posture_row_is_flagged_dtshema"
+        }};
+        return validate_true_marker_contract(transcript, spec.name, "MWX_", kExpected);
+    }
+    if (name == "OPENJOIN") {
+        static constexpr std::array<const char*, 7> kExpected = {{
+            "OJC_G0_fixture_a_reads_AAA",
+            "OJC_G1_fixture_b_reads_BBB",
+            "OJC_G2_fixture_c_reads_CCC",
+            "OJC_G3_the_open_landed_somewhere",
+            "OJC_T1_opened_table_was_in_the_current_workspace",
+            "OJC_T2_third_table_landed_past_both",
+            "OJC_T3_AS_kept_the_open_out_of_the_current_workspace"
+        }};
+        return validate_true_marker_contract(transcript, spec.name, "OJC_", kExpected);
+    }
+    if (name == "WSENV") {
+        static constexpr std::array<const char*, 9> kExpected = {{
+            "RSE_G0_fixture_a_reads_AAA",
+            "RSE_G1_fixture_b_reads_BBB",
+            "RSE_G2_workspace_a_opened_its_own_table",
+            "RSE_G3_workspace_b_opened_its_own_table",
+            "RSE_T1_switch_restored_this_workspace_environment",
+            "RSE_T2_switch_restores_the_other_way_too",
+            "RSE_T3_in_clause_left_the_session_alone",
+            "RSE_T4_in_clause_bound_the_named_workspace",
+            "RSE_T5_explicit_binding_survived_the_switch"
+        }};
+        return validate_true_marker_contract(transcript, spec.name, "RSE_", kExpected);
+    }
+
+    std::cout << "WORKSPACE MARKERS " << spec.name
+              << ": FAIL -- no marker contract registered for this spec.\n";
+    return false;
+}
+
+bool transcript_has_clean_line_prefix(const std::string& transcript,
+                                      const std::string& prefix)
+{
+    std::istringstream in(transcript);
+    std::string line;
+    while (std::getline(in, line)) {
+        line = clean_transcript_line(std::move(line));
+        if (line.rfind(prefix, 0) == 0) return true;
+    }
+    return false;
+}
+
+bool validate_nondestructive_smoke(const std::string& transcript)
+{
+    static constexpr std::array<const char*, 19> kRequired = {{
+        "NONDESTRUCTIVE-SMOKE-BEGIN",
+        "NONDESTRUCTIVE-S00", "NONDESTRUCTIVE-S01", "NONDESTRUCTIVE-S02",
+        "NONDESTRUCTIVE-S03", "NONDESTRUCTIVE-S04", "NONDESTRUCTIVE-S05",
+        "NONDESTRUCTIVE-S06", "NONDESTRUCTIVE-S07", "NONDESTRUCTIVE-S08",
+        "NONDESTRUCTIVE-S09", "NONDESTRUCTIVE-S10", "NONDESTRUCTIVE-S11",
+        "NONDESTRUCTIVE-S12", "NONDESTRUCTIVE-S13", "NONDESTRUCTIVE-S14",
+        "NONDESTRUCTIVE-S15", "NONDESTRUCTIVE-S16",
+        "NONDESTRUCTIVE-SMOKE-END"
+    }};
+    if (!require_transcript_fragments(transcript, "NONDESTRUCTIVE", kRequired)) {
+        return false;
+    }
+    if (transcript_has_clean_line_prefix(transcript, "Unknown command:")) {
+        std::cout << "NONDESTRUCTIVE: FAIL -- an exercised command was unknown.\n";
+        return false;
+    }
+    std::cout << "NONDESTRUCTIVE: PASS -- all 17 sections reached completion and "
+                 "no exercised command was unknown.\n";
+    return true;
+}
+
+bool require_localized_usage_block(const std::string& transcript,
+                                   const char* marker,
+                                   const char* usage_label)
+{
+    std::vector<std::string> lines;
+    std::string error;
+    if (!transcript_block(transcript, std::string(marker) + "-BEGIN",
+                          std::string(marker) + "-END", lines, error)) {
+        std::cout << "LANGUAGE: FAIL -- " << error << "\n";
+        return false;
+    }
+    const std::size_t count = static_cast<std::size_t>(std::count(
+        lines.begin(), lines.end(), std::string(usage_label)));
+    if (count != 18) {
+        std::cout << "LANGUAGE: FAIL -- " << marker << " expected 18 exact '"
+                  << usage_label << "' labels, got " << count << "\n";
+        return false;
+    }
+    return true;
+}
+
+bool validate_language_shakedown(const std::string& transcript)
+{
+    static constexpr std::array<const char*, 1> kResult = {{"INDEXSEEK(): 0"}};
+    static constexpr std::array<const char*, 3> kRequired = {{
+        "Message catalog validation: green",
+        "Message locale is en-US",
+        "=== LANGUAGE SHAKEDOWN CANARY DONE ==="
+    }};
+    if (!require_localized_usage_block(transcript, "LANG-EN", "Usage:") ||
+        !require_localized_usage_block(transcript, "LANG-ES", "Uso:") ||
+        !require_localized_usage_block(transcript, "LANG-FR", "Utilisation :") ||
+        !require_localized_usage_block(transcript, "LANG-DE", "Verwendung:") ||
+        !require_localized_usage_block(transcript, "LANG-IT", "Uso:") ||
+        !require_exact_transcript_block(transcript, "LANGUAGE", "LANG-RESULT", kResult) ||
+        !require_transcript_fragments(transcript, "LANGUAGE", kRequired)) {
+        return false;
+    }
+    if (transcript_has_clean_line_prefix(transcript, "Unknown command:")) {
+        std::cout << "LANGUAGE: FAIL -- a localized USAGE command was unknown.\n";
+        return false;
+    }
+    std::cout << "LANGUAGE: PASS -- 90 localized USAGE blocks, catalog green, "
+                 "locale restored, and result payload stable.\n";
+    return true;
+}
+
+bool validate_reljoin(const std::string& transcript)
+{
+    static constexpr std::array<const char*, 2> kT6 = {{
+        "50000010 | W26ENGL170 | ENGL170 | Gonzalez", "OK"
+    }};
+    static constexpr std::array<const char*, 6> kT7 = {{
+        "50000010 | W26ENGL170 | ENGL170 | Gonzalez",
+        "50000010 | W26ENGL170 | ENGL170 | White",
+        "50000010 | W26ENGL170 | ENGL170 | Gonzalez",
+        "50000010 | W26ENGL170 | ENGL170 | White",
+        "50000010 | W26ENGL290 | ENGL290 | Wilson", "OK"
+    }};
+    static constexpr std::array<const char*, 4> kT9 = {{
+        "50000010 | W26ENGL170 | ENGL170 | Gonzalez",
+        "50000010 | W26ENGL170 | ENGL170 | White",
+        "50000010 | W26ENGL290 | ENGL290 | Wilson", "OK"
+    }};
+    static constexpr std::array<const char*, 6> kT10 = {{
+        "50000010 | W26ENGL170 | ENGL170 |  6 | Gonzalez",
+        "50000010 | W26ENGL170 | ENGL170 |  6 | White",
+        "50000010 | W26ENGL170 | ENGL170 | 10 | Gonzalez",
+        "50000010 | W26ENGL170 | ENGL170 | 10 | White",
+        "50000010 | W26ENGL290 | ENGL290 |  5 | Wilson", "OK"
+    }};
+    static constexpr std::array<const char*, 3> kT11 = {{
+        "50000010 | W26ENGL170 | ENGL170 | Gonzalez",
+        "50000010 | W26ENGL170 | ENGL170 | White", "OK"
+    }};
+    static constexpr std::array<const char*, 6> kT12A = {{
+        "50000010 | Clark | W26ENGL170 |  6 | Gonzalez",
+        "50000010 | Clark | W26ENGL170 |  6 | White",
+        "50000010 | Clark | W26ENGL170 | 10 | Gonzalez",
+        "50000010 | Clark | W26ENGL170 | 10 | White",
+        "50000010 | Clark | W26ENGL290 |  5 | Wilson", "OK"
+    }};
+    static constexpr std::array<const char*, 6> kT12B = {{
+        "Relations (tree) rooted at: STUDENTS", "STUDENTS",
+        "-> ENROLL ON SID  (matches: 2)",
+        "-> CLASSES ON CLS_ID  (matches: 3)",
+        "-> TASSIGN ON CLS_ID  (matches: 3)",
+        "-> TEACHERS ON TID  (matches: 3)"
+    }};
+    static constexpr std::array<const char*, 2> kRequired = {{
+        "Relations for parent: STUDENTS", "-> ENROLL  (matches: 2)"
+    }};
+
+    if (!require_exact_transcript_block(transcript, "RELJOIN", "RELJOIN-T6", kT6) ||
+        !require_exact_transcript_block(transcript, "RELJOIN", "RELJOIN-T7", kT7) ||
+        !require_exact_transcript_block(transcript, "RELJOIN", "RELJOIN-T8", kT7) ||
+        !require_exact_transcript_block(transcript, "RELJOIN", "RELJOIN-T9", kT9) ||
+        !require_exact_transcript_block(transcript, "RELJOIN", "RELJOIN-T10A", kT10) ||
+        !require_exact_transcript_block(transcript, "RELJOIN", "RELJOIN-T10B", kT10) ||
+        !require_exact_transcript_block(transcript, "RELJOIN", "RELJOIN-T11", kT11) ||
+        !require_exact_transcript_block(transcript, "RELJOIN", "RELJOIN-T12A", kT12A) ||
+        !require_exact_transcript_block(transcript, "RELJOIN", "RELJOIN-T12B", kT12B) ||
+        !require_transcript_fragments(transcript, "RELJOIN", kRequired)) {
+        return false;
+    }
+    std::cout << "RELJOIN: PASS -- nine exact result blocks cover ONE, JOIN/ENUM "
+                 "parity, DISTINCT, LIMIT, projection, and relation-tree shape.\n";
+    return true;
+}
+
+bool validate_remaining_default(const RegressionSpec& spec,
+                                const std::string& transcript)
+{
+    const std::string name(spec.name);
+    if (name == "NONDESTRUCTIVE") return validate_nondestructive_smoke(transcript);
+    if (name == "LANGUAGE") return validate_language_shakedown(transcript);
+    if (name == "RELJOIN") return validate_reljoin(transcript);
+
+    if (name == "INDEX_X32") {
+        static constexpr std::array<const char*, 14> kExpected = {{
+            "IX32_G0_source_fixture_top_is_Taylor",
+            "IX32_T1_physical_top_is_Taylor",
+            "IX32_T2_physical_second_is_Martin",
+            "IX32_T3_physical_bottom_is_Davis",
+            "IX32_T4_lname_top_is_Anderson",
+            "IX32_T5_seek_white_found_White",
+            "IX32_T6_find_martin_found_Martin",
+            "IX32_T7_major_top_is_ACCT",
+            "IX32_G1_copy_preserved_physical_top",
+            "IX32_T8_inx_top_is_Anderson",
+            "IX32_T9_inx_skip_ten_is_Brown",
+            "IX32_T10_ascending_top_is_Anderson",
+            "IX32_T11_descending_top_is_Wilson",
+            "IX32_T12_cleared_order_top_is_Taylor"
+        }};
+        return validate_true_marker_contract(transcript, spec.name, "IX32_", kExpected);
+    }
+    if (name == "X64_METRICS") {
+        static constexpr std::array<const char*, 8> kExpected = {{
+            "X64M_G0_mid_write_reached_first_field",
+            "X64M_G1_mid_write_reached_last_field",
+            "X64M_T1_mid_first_field_survived_reopen",
+            "X64M_T2_mid_last_field_survived_reopen",
+            "X64M_G2_high_write_reached_first_field",
+            "X64M_G3_high_write_reached_last_field",
+            "X64M_T3_high_first_field_survived_reopen",
+            "X64M_T4_high_last_field_survived_reopen"
+        }};
+        return validate_true_marker_contract(transcript, spec.name, "X64M_", kExpected);
+    }
+    if (name == "DOTSCRIPT_EXPR") {
+        static constexpr std::array<const char*, 16> kExpected = {{
+            "VAR stored: n", "R1_var_scalar:.T.",
+            "VAR stored: label", "R2_var_string_fn:.T.",
+            "VAR stored: a", "R3_array_subscript:.T.",
+            "R4_array_subscript_arith:.T.", "R5_var_case_insensitive:.T.",
+            "VAR stored: m", "R6_array_nested_chained:.T.",
+            "R7_array_display_expect_{array:3}:", "{array:3}",
+            "R8_out_of_range_expect_error:",
+            "FORMULA error: scalar evaluation failed -- in: $a[9]",
+            "B1_if_true_literal:PASS", "B2_if_false_literal:PASS"
+        }};
+        std::vector<std::string> actual;
+        std::string error;
+        if (!transcript_block(transcript, "DOTSCRIPT-EXPR-REGRESSION-BEGIN",
+                              "DOTSCRIPT-EXPR-REGRESSION-END", actual, error)) {
+            std::cout << "DOTSCRIPT_EXPR: FAIL -- " << error << "\n";
+            return false;
+        }
+        if (actual.size() != kExpected.size()) {
+            std::cout << "DOTSCRIPT_EXPR: FAIL -- expected " << kExpected.size()
+                      << " exact line(s), got " << actual.size() << "\n";
+            return false;
+        }
+        for (std::size_t i = 0; i < kExpected.size(); ++i) {
+            const bool measured_error_variant =
+                i == 13 &&
+                (actual[i] == "FORMULA error: scalar evaluation failed -- in: $a[9]" ||
+                 actual[i] == "FORMULA error: unable to evaluate expression -- in: $a[9]");
+            if (actual[i] != kExpected[i] && !measured_error_variant) {
+                std::cout << "DOTSCRIPT_EXPR: FAIL -- line " << (i + 1)
+                          << " mismatch\n"
+                          << "  expected: " << kExpected[i] << "\n"
+                          << "  actual  : " << actual[i] << "\n";
+                return false;
+            }
+        }
+        std::cout << "DOTSCRIPT_EXPR: PASS -- 16 lines exact; the out-of-range "
+                     "arm emitted one of its two measured evaluator errors.\n";
+        return true;
+    }
+    if (name == "DOTSCRIPT_PARITY") {
+        static constexpr std::array<const char*, 5> kExpected = {{
+            "VAR stored: pv", "PARITY_display_memvar_should_be_T:.T.",
+            "PARITY_predicate_memvar:PASS", "VAR stored: pa",
+            "PARITY_predicate_array_subscript:PASS"
+        }};
+        const bool ok = require_exact_transcript_block(
+            transcript, "DOTSCRIPT_PARITY", "PREDICATE-MEMVAR-PARITY", kExpected);
+        if (ok) {
+            std::cout << "DOTSCRIPT_PARITY: PASS -- 5 exact lines.\n";
+        }
+        return ok;
+    }
+    if (name == "LEXING") {
+        static constexpr std::array<const char*, 1> kExpected = {{"AFTER-COMMENT-LINES"}};
+        const bool ok = require_exact_transcript_block(
+            transcript, "LEXING", "COMMENT-REGRESSION", kExpected);
+        if (ok) {
+            std::cout << "LEXING: PASS -- the exact comment-handling block survived.\n";
+        }
+        return ok;
+    }
+    if (name == "USE_ARGS") {
+        static constexpr std::array<const char*, 8> kExpected = {{
+            "U_G0_sentinel_in_area_0",
+            "U_T1_in_n_placed_elsewhere_and_did_not_move_me",
+            "U_T2_table_is_in_the_named_area",
+            "U_T3_in_free_did_not_move_me",
+            "U_T4_in_free_grew_this_workspace_run",
+            "U_T5_unknown_token_opened_nothing",
+            "U_T6_out_of_range_in_opened_nothing",
+            "U_T7_malformed_in_opened_nothing"
+        }};
+        return validate_true_marker_contract(transcript, spec.name, "U_", kExpected);
+    }
+    if (name == "NAME_AMBIG") {
+        static constexpr std::array<const char*, 3> kExpected = {{
+            "N_G0_first_instance_parked_on_record_2",
+            "N_T1_first_name_still_reaches_the_first_holder",
+            "N_T2_renamed_second_instance_is_addressable"
+        }};
+        static constexpr std::array<const char*, 2> kRequired = {{
+            "USE: alias 'students' is held by area 0 in this workspace; this instance is named 'students2'.",
+            "name ambiguity : 0 resolution(s)"
+        }};
+        const bool ok =
+            validate_true_marker_contract(transcript, spec.name, "N_", kExpected) &&
+            require_transcript_fragments(transcript, "NAME_AMBIG", kRequired);
+        if (ok) {
+            std::cout << "NAME_AMBIG: PASS -- markers, rename announcement, and "
+                         "zero-resolution ledger all present.\n";
+        }
+        return ok;
+    }
+    if (name == "NAV_NATURAL") {
+        static constexpr std::array<const char*, 12> kExpected = {{
+            "NAV_G0_fixture_row1_written", "NAV_G1_park_moved_off_row1",
+            "NAV_G2_park_reaches_last_row", "NAV_G3_addressing_survives_attach",
+            "NAV_T1_top_reaches_first_physical", "NAV_T2_bottom_reaches_last_physical",
+            "NAV_T3_skip_forward_moved_one_row", "NAV_T4_skip_backward_moved_one_row",
+            "NAV_T5_go_top_reaches_first_physical", "NAV_T6_go_bottom_reaches_last_physical",
+            "NAV_T7_tag_top_follows_the_tag", "NAV_T8_tag_bottom_follows_the_tag"
+        }};
+        return validate_true_marker_contract(transcript, spec.name, "NAV_", kExpected);
+    }
+    if (name == "NULLASSERT") {
+        static constexpr std::array<const char*, 21> kExpected = {{
+            "NL_G0_row1_is_the_untouched_control",
+            "NL_G1_row2_is_blank_before_any_null_exists",
+            "NL_G2_row3_holds_a_value_before_it_is_nulled",
+            "NL_G3_row4_holds_a_value_before_it_is_nulled",
+            "NL_G4_row5_holds_a_value_before_it_is_nulled",
+            "NL_T1_isnull_finds_the_nulled_row_and_not_the_blank_one",
+            "NL_T2_isnull_on_the_numeric_finds_the_row_whose_number_was_nulled",
+            "NL_T3_nulling_id_left_vname_readable_in_the_same_row",
+            "NL_T4_nulling_vname_left_the_neighbour_row_readable",
+            "NL_T5_the_nulled_cell_reads_empty_by_value",
+            "NL_T6_the_blank_cell_reads_empty_by_value_too",
+            "NL_T7_nulling_vname_left_id_readable_in_the_same_row",
+            "NL_T8_the_varchar_null_survived_close_and_reopen",
+            "NL_T9_the_numeric_null_survived_close_and_reopen",
+            "NL_T10_a_written_value_replaced_the_null",
+            "NL_T11_with_row3_cleared_isnull_finds_row5_nulled_by_the_dotted_spelling",
+            "NL_T12_the_cleared_bit_survived_close_and_reopen",
+            "NL_T13_a_refused_null_left_the_non_nullable_value_intact",
+            "NL_T14_a_refused_null_left_the_rest_of_the_bitmap_intact",
+            "NL_T15_a_buffered_null_was_refused_and_the_value_survived",
+            "NL_T16_the_bitmap_survived_the_buffered_refusal"
+        }};
+        return validate_true_marker_contract(transcript, spec.name, "NL_", kExpected);
+    }
+
+    std::cout << "REMAINING DEFAULT " << spec.name
+              << ": FAIL -- no validator contract registered for this spec.\n";
+    return false;
 }
 
 bool validate_regression_transcript(const RegressionSpec& spec,
@@ -3701,6 +4797,8 @@ bool validate_regression_transcript(const RegressionSpec& spec,
             return validate_sqlsel_dml_transaction(transcript);
         case RegressionValidator::SqlselWorkspaceScopeV1:
             return validate_sqlsel_workspace_scope(transcript);
+        case RegressionValidator::SqlselParallelV1:
+            return validate_sqlsel_parallel(transcript);
         case RegressionValidator::SqlmodeSmokeV1:
             return validate_sqlmode_smoke(transcript);
         case RegressionValidator::SqlselBufferVisibilityV1:
@@ -3721,6 +4819,12 @@ bool validate_regression_transcript(const RegressionSpec& spec,
             return validate_workdesk(transcript);
         case RegressionValidator::MetadataReportV1:
             return validate_metadata_reports(transcript);
+        case RegressionValidator::IndexX64SmokeV1:
+            return validate_index_x64_smoke(transcript);
+        case RegressionValidator::WorkspaceMarkersV1:
+            return validate_workspace_markers(spec, transcript);
+        case RegressionValidator::RemainingDefaultV1:
+            return validate_remaining_default(spec, transcript);
     }
     return false;
 }
@@ -3907,7 +5011,7 @@ bool clear_pk_durability_child_captures()
 // ---------------------------------------------------------------------------
 // WHAT A SPEC ACTUALLY REPORTED, 2026-09-13.
 //
-// REGRESSION ALL could not say. It ran every spec and then set its exit status
+// REGRESSION CURATED SUITE could not say. It ran every spec and then set its exit status
 // from the two isolation arms ALONE; each spec's verdict reached the operator
 // as text on a screen and reached the command's status as nothing at all.
 //
@@ -3933,6 +5037,195 @@ struct RegressionResult {
     const char*       name;
     RegressionOutcome outcome;
 };
+
+// DECLARATION ORDER IS PART OF THE CODE. This arm sat ABOVE the enum it
+// returns until 2026-09-13, and the compile-harness that proved it could not
+// see that: the harness DECLARED RegressionOutcome before including the block,
+// so it verified the function in ISOLATION and never IN PLACE. MSVC caught it
+// in one line -- C4430, missing type specifier -- and the lesson is the same
+// one this file keeps recording in other costumes: a test whose setup differs
+// from the real thing measures the setup. It lives here now, below the enum
+// and RegressionResult and above the first caller, where a reader can check
+// the order by looking rather than by building.
+// PROVE THE DETECTOR BEFORE CREDITING WHAT IT LETS THROUGH. This is the L3
+// arm's rule -- never credit G1 without D1 -- applied to a checker whose
+// NEGATIVE result is what twenty specs' "not graded" now rests on.
+//
+// THE POSITIVE HALF IS A LIVE ORACLE AND NOT A CANNED STRING, and that is the
+// whole design. The first cut of this arm fed the detector four hand-written
+// transcripts and was MEASURED WRONG before it shipped: a mutation that
+// reworded the engine's message left the detector blind AND the selftest green,
+// because both the constant and the canned cases live in this file and go stale
+// together. A guard whose reference copy drifts with the thing it guards is not
+// a guard. So the positive case ASKS THE ENGINE: open a table that cannot
+// exist, capture what the engine actually prints on THIS BUILD, and require the
+// detector to fire on it. Reword the message in cmd_use.cpp and this goes red
+// on the next run.
+//
+// THE NEGATIVE HALF STAYS CANNED, deliberately, because it guards against
+// OVER-matching and nothing in the engine has to agree with it.
+//
+// IF THIS ARM REDS ON A FRESH BUILD, read which half. An empty capture means
+// the message travels the ROUTED channel and never reaches the tee, which is an
+// instrument problem and is reported as UNMEASURED rather than as a verdict.
+RegressionOutcome run_fixture_detector_selftest(DbArea& area)
+{
+    namespace fs = std::filesystem;
+
+    std::cout << "\nREGRESSION: FIXTURE DETECTOR SELFTEST\n"
+                 "  READ RULE: ONE LIVE case that must FIRE and TWO canned cases\n"
+                 "  that must stay SILENT. The live one proves the detector still\n"
+                 "  matches what THIS BUILD prints; the silent pair proves it does\n"
+                 "  not redden MWXSHAKE, which quotes the same words on purpose.\n";
+
+    std::size_t wrong = 0;
+
+    // ---- FD_D0: the live oracle, read on BOTH CHANNELS. -------------------
+    // A scratch root nothing has ever written to, so the name cannot resolve by
+    // accident, and the slot bracket puts DBF back whatever happens. The root is
+    // discarded at once: nothing is ever created inside it, and the TMP slot
+    // already carries hundreds of unswept wscat_run_* roots.
+    //
+    // THE TEE ALONE WAS BLIND, AND THIS ARM IS THE THING THAT FOUND IT.
+    // Measured 2026-09-13 on the first real run: FIXTUREDET came back UNMEASURED
+    // in an otherwise green suite because cmd_USE prints its open failure with
+    // cli::cmdout::print_message and NOT with std::cout -- thirty-three routed
+    // calls in cmd_use.cpp and zero std::cout. The reason no rdbuf swap can see
+    // it is one line in output_router.cpp: OutputRouter::Impl captures
+    // std::cout.rdbuf() ONCE, at singleton construction, and writes to that
+    // saved pointer forever after. Swapping std::cout's buffer later changes
+    // where std::cout goes and changes NOTHING about where the router goes.
+    //
+    // So the capture is the ALTERNATE file, which MultiBuf copies every routed
+    // byte into regardless of destination -- and the tee is kept BESIDE it
+    // rather than replaced, because a `?` marker in a .dts does reach std::cout
+    // (the L3 isolation arm reads its six markers that way) and the detector
+    // must not become blind in the other direction to cure this one.
+    std::string live_cout;
+    std::string live_routed;
+    bool        alt_declined = false;
+    {
+        PathSlotBracket slots("FIXTUREDET");
+        const fs::path scratch = claim_scratch_root();
+        ScratchRootKeeper keeper(scratch);
+        keeper.discard();
+        dottalk::paths::set_slot(dottalk::paths::Slot::DBF, scratch);
+
+        // NOT inside the scratch root: that root is discarded above, and a
+        // capture file deleted before it is read is a fifth way to measure
+        // nothing.
+        const fs::path alt_path =
+            dottalk::paths::get_slot(dottalk::paths::Slot::TMP) /
+            "regression_FIXTUREDET.alt";
+        std::error_code ec;
+        fs::create_directories(alt_path.parent_path(), ec);
+
+        std::ostringstream captured;
+        {
+            // The ALTERNATE is taken FIRST and the tee installed INSIDE it, so
+            // AlternateCapture's own refusal message goes to the screen rather
+            // than into the buffer that is about to be searched for a refusal.
+            AlternateCapture alt(alt_path, "FIXTURE DETECTOR");
+            if (!alt.ok()) {
+                alt_declined = true;
+            } else {
+                std::streambuf* const original = std::cout.rdbuf();
+                TeeStreamBuf tee(original, captured.rdbuf());
+                std::cout.rdbuf(&tee);
+                try {
+                    std::istringstream use_args("FIXTUREDET_NO_SUCH_TABLE");
+                    cmd_USE(area, use_args);
+                } catch (...) {
+                    std::cout.rdbuf(original);
+                    throw;
+                }
+                std::cout.flush();
+                std::cout.rdbuf(original);
+            }
+        }   // the capture closes and FLUSHES here; the file is complete after
+
+        if (!alt_declined) {
+            live_cout   = captured.str();
+            live_routed = slurp_capture_file(alt_path);
+        }
+    }
+
+    if (alt_declined) {
+        std::cout << "FIXTURE DETECTOR: UNMEASURED -- the ALTERNATE channel was not\n"
+                     "  taken, and the engine's open-failure message travels on it.\n"
+                     "  The detector was never asked anything. The refusal above says\n"
+                     "  whose capture is holding the channel.\n"
+                     "  THIS IS NOT A PASS AND NOT A FAILURE.\n";
+        return RegressionOutcome::Unmeasured;
+    }
+
+    const std::string live = live_cout + live_routed;
+
+    if (live.empty()) {
+        std::cout << "  FD_D0_engine_open_failure_is_visible:.F.\n"
+                     "FIXTURE DETECTOR: UNMEASURED -- USE on a table that cannot exist\n"
+                     "  printed NOTHING ON EITHER CHANNEL: not the std::cout tee and\n"
+                     "  not the ALTERNATE capture, both of which were live. That is a\n"
+                     "  THIRD thing, not the routed-channel case this arm was widened\n"
+                     "  for on 2026-09-13 -- either the refusal did not happen at all,\n"
+                     "  or it goes somewhere neither instrument reads.\n"
+                     "  THIS IS NOT A PASS AND NOT A FAILURE.\n";
+        return RegressionOutcome::Unmeasured;
+    }
+
+    const bool fired = transcript_has_absent_fixture(live);
+    std::cout << "  FD_D0_detector_fires_on_a_real_open_failure:"
+              << (fired ? ".T." : ".F.") << "\n";
+    if (!fired) ++wrong;
+
+    // ---- FD_C0: an OBSERVATION, and it can never be the red one. ----------
+    // Which channel carried the message is not an arm, because either answer is
+    // acceptable and a detector that reads both is correct either way. It is
+    // PRINTED because the answer was ROUTED on 2026-09-13, which is precisely
+    // why a std::cout-only detector reported UNMEASURED and why the ungraded
+    // path below reads both. A word is used rather than .T./.F. so that nobody
+    // greps this line for a failure it cannot express.
+    const bool on_routed = transcript_has_absent_fixture(live_routed);
+    const bool on_cout   = transcript_has_absent_fixture(live_cout);
+    const char* const carrier = on_routed ? (on_cout ? "BOTH" : "ROUTED")
+                                          : (on_cout ? "COUT" : "NEITHER");
+    std::cout << "  FD_C0_channel_that_carried_it:" << carrier << "\n"
+                 "    (observation, not an arm. If this ever reads COUT the ungraded\n"
+                 "     read could be narrowed back to the tee; while it reads ROUTED\n"
+                 "     the tee alone is a blind instrument and must not be trusted.)\n";
+
+    // ---- FD_G0/G1: the over-match guards, canned on purpose. -------------
+    struct DetCase { const char* name; const char* text; };
+    static const DetCase silent[] = {
+        { "FD_G0_mwxshake_citation_is_not_an_instance",
+          "  ! AREA 0 (slot 1): open failed (DbArea: file does not exist: /y.dbf)\n" },
+        { "FD_G1_ordinary_setup_noise_is_not_a_failure",
+          "ERASE: Table not found: students_cdx_smoke.dbf\n"
+          "USE: refused -- unrecognized argument 'BOGUS'.\n"
+          "  Nothing was opened. USE used to ignore what it did not understand.\n" }
+    };
+    for (const DetCase& c : silent) {
+        const bool got = transcript_has_absent_fixture(c.text);
+        std::cout << "  " << c.name << ":" << (got ? ".F." : ".T.") << "\n";
+        if (got) ++wrong;
+    }
+
+    if (wrong) {
+        std::cout << "FIXTURE DETECTOR: FAIL -- " << wrong << " of 3 cases read wrong.\n"
+                     "  If FD_D0 is the red one, the engine's open-failure message has\n"
+                     "  been reworded and the detector no longer matches it. If a FD_G\n"
+                     "  is red, it over-matches and would redden a spec that only\n"
+                     "  QUOTES the words. UNTIL THIS IS GREEN EVERY 'not graded' IN\n"
+                     "  THIS SUITE IS UNVERIFIED: a spec that could not open its\n"
+                     "  fixture would be counted as one that merely asserts nothing.\n";
+        return RegressionOutcome::Failed;
+    }
+
+    std::cout << "FIXTURE DETECTOR: PASS -- 3 of 3. It fires on an open failure this\n"
+                 "  build actually produced, and stays silent on a citation of the\n"
+                 "  same words.\n";
+    return RegressionOutcome::Passed;
+}
 
 RegressionOutcome run_regression_script(DbArea& area, const RegressionSpec& spec)
 {
@@ -3982,8 +5275,95 @@ RegressionOutcome run_regression_script(DbArea& area, const RegressionSpec& spec
         cmd_DOTSCRIPT(area, dotscript_args);
     };
 
+    // NOT GRADED IS STILL READ. Until 2026-09-13 this branch ran the script
+    // with NO CAPTURE AT ALL and returned NotGraded unconditionally, which is
+    // how INDEX_X64 came to report "not graded" on the published tree while
+    // having opened nothing whatsoever.
+    //
+    // AN UNGRADED SPEC THAT RAN AND ONE THAT COULD NOT START MUST NOT READ
+    // ALIKE. The first is NotGraded, which is honest and is what twenty of
+    // these are. The second is UNMEASURED, a name this enum already carried and
+    // nothing could decide. The tee costs one rdbuf swap per ungraded spec.
+    //
+    // THE CHECK IS ON THIS PATH ONLY, stated rather than left implied: a GRADED
+    // spec whose fixture is missing already goes red through its validator, and
+    // a red is a result an operator can act on. An ungraded one produced
+    // nothing at all, and that was the hole.
     if (spec.validator == RegressionValidator::None) {
-        run_script();
+        // BOTH CHANNELS, AND THE TEE ALONE WOULD NOT HAVE CAUGHT INDEX_X64.
+        // Measured 2026-09-13, by the guard built to prove this detector: the
+        // engine's open failure is cli::cmdout::print_message, the router holds
+        // the console streambuf it captured at singleton construction, and a
+        // later std::cout.rdbuf() swap cannot reach it. The check shipped that
+        // morning read the tee only, so it was blind to the exact failure it
+        // was written for -- a spec that opened nothing -- on its first run.
+        //
+        // THE ALTERNATE IS TAKEN FOR EVERY UNGRADED SPEC, and that is safe by
+        // MEASUREMENT rather than by assumption: all nineteen ungraded scripts
+        // in the default suite were scanned on 2026-09-13 for SET ALTERNATE,
+        // SET PRINT, SET DEVICE and SET CONSOLE, and the count was ZERO. A spec
+        // that later takes the channel itself would clobber this capture, so
+        // that scan is a standing condition of this branch, not a one-off.
+        //
+        // AN OPERATOR'S OWN CAPTURE IS NOT INTERRUPTED AND NOT SHOUTED AT. The
+        // router is asked directly instead of letting AlternateCapture refuse,
+        // because its refusal is ten lines and would print nineteen times. The
+        // spec still returns NotGraded -- it asserted nothing either way -- and
+        // one line says the fixture read was degraded to the tee.
+        const std::filesystem::path ungraded_alt =
+            dottalk::paths::get_slot(dottalk::paths::Slot::TMP) /
+            (std::string("regression_") + spec.name + "_ungraded.alt");
+        std::error_code ungraded_ec;
+        std::filesystem::create_directories(ungraded_alt.parent_path(), ungraded_ec);
+
+        const bool operator_capture_active =
+            !cli::OutputRouter::instance().alternate_to_path().empty();
+
+        std::unique_ptr<AlternateCapture> ungraded_capture;
+        if (!operator_capture_active) {
+            ungraded_capture = std::make_unique<AlternateCapture>(
+                ungraded_alt, std::string(spec.name) + " (ungraded fixture read)");
+        }
+        const bool routed_read = (ungraded_capture && ungraded_capture->ok());
+
+        std::ostringstream ungraded;
+        std::streambuf* const plain = std::cout.rdbuf();
+        TeeStreamBuf ungraded_tee(plain, ungraded.rdbuf());
+        std::cout.rdbuf(&ungraded_tee);
+        try {
+            run_script();
+        } catch (...) {
+            std::cout.rdbuf(plain);
+            throw;
+        }
+        std::cout.flush();
+        std::cout.rdbuf(plain);
+
+        std::string ungraded_routed;
+        if (routed_read) {
+            ungraded_capture.reset();   // closes and flushes; only now readable
+            ungraded_routed = slurp_capture_file(ungraded_alt);
+        }
+
+        if (transcript_has_absent_fixture(ungraded.str()) ||
+            transcript_has_absent_fixture(ungraded_routed)) {
+            std::cout << "REGRESSION " << spec.name << ": UNMEASURED -- a fixture this\n"
+                         "  spec tried to open IS NOT ON THIS MACHINE, so the spec did\n"
+                         "  not run. Find the 'Open failed: file does not exist:' line\n"
+                         "  above; everything after it in this spec was refusals.\n"
+                         "  THIS IS NOT A PASS AND NOT A FAILURE.\n";
+            if (routed_read) {
+                std::cout << "  Routed-channel capture: " << ungraded_alt.string() << "\n";
+            }
+            xbase::error::set_last_error(xbase::error::e_invalid_argument());
+            return RegressionOutcome::Unmeasured;
+        }
+
+        if (!routed_read) {
+            std::cout << "  NOTE: the fixture read saw std::cout ONLY this run, and the\n"
+                         "    engine's open-failure line is on the ROUTED channel, so a\n"
+                         "    missing fixture would NOT have been caught here.\n";
+        }
         return RegressionOutcome::NotGraded;
     }
 
@@ -5177,7 +6557,7 @@ bool run_trigger_veto_arm_inner(DbArea& area, const std::string& mode)
 
 // AN EXPLICIT RUN GETS THE SAME INSTRUMENT THE SUITE GETS.
 //
-// `REGRESSION ALL` has carried the arm since cb92ef310. A single
+// `REGRESSION CURATED SUITE` has carried the arm since cb92ef310. A single
 // `REGRESSION RUN <name>` did not, and that is the command a developer uses to
 // SOAK a spec -- so the one path where a spec is being evaluated for promotion
 // was the one path with no measurement. A spec that wrote production during a
@@ -5195,78 +6575,60 @@ const char* outcome_label(RegressionOutcome o)
 }
 
 // ---------------------------------------------------------------------------
-// A LOG IS A TEE ON std::cout, AND IT HAS A BLIND SPOT IT DECLARES IN ITS OWN
-// HEADER. Lines written through cli::cmdout::print_line do NOT pass through a
-// std::cout rdbuf swap -- that is the documented reason capture_routed_channel
-// and AlternateCapture exist at all -- so they reach the screen and not this
-// file.
-//
-// Taking SET ALTERNATE here instead would make the log complete and turn every
-// routed-channel spec into "NOT RUN", because AlternateCapture REFUSES rather
-// than clobbers when the channel is already held. The tee is the choice that
-// leaves those specs measurable. The gap is printed INTO the log rather than
-// left for a reader to discover from a line that is not there -- an instrument
-// that hides what it cannot see is the failure this file spends five thousand
-// lines warning about.
-//
-// Nesting is fine and is exercised on every graded spec: run_regression_script
-// installs its own validator tee over whatever rdbuf it finds, which is this
-// one, and restores it afterwards.
+// AIF-174: route ordinary output, routed messages, stderr and child output
+// through one independent capture. Validator tees and SET ALTERNATE stay intact.
 class SuiteLog {
 public:
-    SuiteLog() = default;
     ~SuiteLog() { release(); }
-
-    SuiteLog(const SuiteLog&) = delete;
-    SuiteLog& operator=(const SuiteLog&) = delete;
-
-    // Returns false ONLY when a log was asked for and could not be opened.
-    // An empty path is "no log wanted" and succeeds.
-    bool open(const std::string& path, const char* what)
-    {
-        if (path.empty()) return true;
-
-        const std::filesystem::path p(path);
-        std::error_code ec;
-        if (p.has_parent_path()) {
-            std::filesystem::create_directories(p.parent_path(), ec);
+    bool open(const std::string& path, const char* what, bool quiet = false) {
+        auto& router = cli::OutputRouter::instance();
+        if (router.capture_active()) return false;
+        if (!path.empty()) {
+            const std::filesystem::path p(path);
+            std::error_code ec;
+            if (p.has_parent_path()) std::filesystem::create_directories(p.parent_path(), ec);
+            file_.open(p, std::ios::out | std::ios::trunc | std::ios::binary);
+            if (!file_) return false;
+            file_ << what << " log\n";
+            if (!file_) return false;
         }
-        file_.open(p, std::ios::out | std::ios::trunc | std::ios::binary);
-        if (!file_.is_open()) return false;
-
-        path_ = p.string();
-        file_ << what << " log\n"
-              << "  file       : " << path_ << "\n"
-                 "  BLIND SPOT : lines emitted on the ROUTED CHANNEL\n"
-                 "               (cli::cmdout::print_line) do NOT pass through a\n"
-                 "               std::cout tee and are NOT in this file. They were\n"
-                 "               on the operator's screen. Per-spec routed evidence\n"
-                 "               is in the .alt captures the transcript names.\n"
-                 "============================================================\n";
-        file_.flush();
-
-        original_ = std::cout.rdbuf();
-        tee_ = std::make_unique<TeeStreamBuf>(original_, file_.rdbuf());
-        std::cout.rdbuf(tee_.get());
+        if (!router.begin_capture(path.empty() ? nullptr : file_.rdbuf(), quiet)) return false;
+        path_ = path;
+        original_ = std::cout.rdbuf(router.out().rdbuf());
+        error_ = std::cerr.rdbuf(router.out().rdbuf());
         return true;
     }
-
-    void release()
-    {
+    void summary() { cli::OutputRouter::instance().capture_quiet(false); }
+    void progress(const std::string& line, bool quiet) {
+        if (!quiet) return;
+        summary();
+        std::cout << line << "\n";
+        cli::OutputRouter::instance().capture_quiet(true);
+    }
+    void release() {
         if (!original_) return;
         std::cout.flush();
-        std::cout.rdbuf(original_);   // restore BEFORE the tee is destroyed
+        std::cerr.flush();
+        std::cout.rdbuf(original_);
+        std::cerr.rdbuf(error_);
         original_ = nullptr;
-        tee_.reset();
-        file_.close();
-        std::cout << "REGRESSION: log written to " << path_ << "\n";
+        bool ok = cli::OutputRouter::instance().end_capture();
+        if (file_.is_open()) {
+            file_.close();
+            ok = ok && !file_.fail();
+        }
+        if (!ok) {
+            std::cout << "REGRESSION: LOG WRITE FAILED -- transcript incomplete.\n";
+            xbase::error::set_last_error(xbase::error::e_invalid_argument());
+        } else if (!path_.empty()) {
+            std::cout << "REGRESSION: log written to " << path_ << "\n";
+        }
     }
-
 private:
-    std::ofstream                  file_;
-    std::unique_ptr<TeeStreamBuf>  tee_;
-    std::streambuf*                original_ = nullptr;
-    std::string                    path_;
+    std::ofstream file_;
+    std::streambuf* original_ = nullptr;
+    std::streambuf* error_ = nullptr;
+    std::string path_;
 };
 
 // ---------------------------------------------------------------------------
@@ -5279,7 +6641,7 @@ private:
 // learned more from this block than from any green line above it.
 void print_regression_suite_summary(const std::vector<RegressionResult>& results,
                                     bool before_ok,
-                                    bool after_ok)
+                                    bool after_ok, const std::string& label = "CURATED SUITE")
 {
     std::size_t passed = 0, failed = 0, not_graded = 0, unmeasured = 0;
     for (const auto& r : results) {
@@ -5292,7 +6654,7 @@ void print_regression_suite_summary(const std::vector<RegressionResult>& results
     }
 
     std::cout << "\n============================================================\n"
-                 "REGRESSION ALL SUMMARY\n"
+                 << "REGRESSION " << label << " SUMMARY\n" <<
                  "============================================================\n"
               << "  specs run      : " << results.size() << "\n"
               << "  passed         : " << passed << "\n"
@@ -5323,8 +6685,8 @@ void print_regression_suite_summary(const std::vector<RegressionResult>& results
 
     if (not_graded) {
         std::cout << "\n  NOT GRADED -- ran, printed a transcript, and NOTHING checked\n"
-                     "  it. These specs cannot go red, so a green suite says nothing\n"
-                     "  whatever about them:\n";
+                     "  it. These specs cannot go red. Their presence makes the suite\n"
+                     "  PARTIAL rather than PASS:\n";
         std::string line = "   ";
         for (const auto& r : results) {
             if (r.outcome != RegressionOutcome::NotGraded) continue;
@@ -5339,8 +6701,12 @@ void print_regression_suite_summary(const std::vector<RegressionResult>& results
         if (line.size() > 3) std::cout << line << "\n";
     }
 
-    const bool ok = !failed && !unmeasured && before_ok && after_ok;
-    std::cout << "\n  VERDICT: " << (ok ? "PASS" : "FAIL") << "\n"
+    // AIF-165. PASS means the suite graded everything it ran. Transcript-only
+    // specs are neither failures nor successes, so a clean but incomplete run
+    // is PARTIAL and sets the engine command error context to non-success.
+    const bool hard_fail = failed || unmeasured || !before_ok || !after_ok;
+    const char* const verdict = hard_fail ? "FAIL" : (not_graded ? "PARTIAL" : "PASS");
+    std::cout << "\n  VERDICT: " << verdict << "\n"
                  "============================================================\n";
 }
 
@@ -5358,10 +6724,10 @@ void print_regression_suite_summary(const std::vector<RegressionResult>& results
 // REGRESSION RUN is an interactive act, not a hot loop.
 void run_regression_script_measured(DbArea& area,
                                     const RegressionSpec& spec,
-                                    const std::string& log_path)
+                                    const std::string& log_path, bool quiet = false)
 {
     SuiteLog log;
-    if (!log.open(log_path, "REGRESSION RUN")) {
+    if (!log.open(log_path, "REGRESSION RUN", quiet)) {
         std::cout << "REGRESSION " << spec.name << ": NOT RUN -- could not open the\n"
                      "  log at " << log_path << "\n"
                      "  A run whose evidence went nowhere must not be mistaken for a\n"
@@ -5374,6 +6740,7 @@ void run_regression_script_measured(DbArea& area,
     const RegressionOutcome outcome = run_regression_script(area, spec);
     const bool after_ok = run_isolation_arm(area, "AFTER");
 
+    log.summary();
     std::cout << "\n  " << spec.name << ": " << outcome_label(outcome)
               << (outcome == RegressionOutcome::NotGraded
                       ? "  (it ran, and NOTHING checked it)"
@@ -5385,20 +6752,28 @@ void run_regression_script_measured(DbArea& area,
     // global that another spec was free to clear.
     if (!before_ok || !after_ok ||
         outcome == RegressionOutcome::Failed ||
-        outcome == RegressionOutcome::Unmeasured) {
+        outcome == RegressionOutcome::Unmeasured ||
+        outcome == RegressionOutcome::NotGraded) {
         xbase::error::set_last_error(xbase::error::e_invalid_argument());
     }
 }
 
-void run_regression_default_suite(DbArea& area, const std::string& log_path)
+// AIF-160. DEFINED WITH THE GROUP ARMS FURTHER DOWN, WHERE ITS LANE IS
+// DOCUMENTED, AND CALLED FROM THE SUITE HERE. The suite needs the name before
+// the definition and the definition belongs beside GRPFAIL and GRPNATIVE.
+RegressionOutcome run_group_mint_arm(DbArea& area);
+
+void run_regression_default_suite(DbArea& area, const std::string& log_path,
+                                  bool quiet = false, const RegressionGroup* group = nullptr)
 {
     // REFUSE RATHER THAN RUN UNLOGGED. An operator who asked for a log and got
     // a run instead has no way to know the evidence went nowhere, which is the
     // PKDURABLE lesson (a validator reported PASS on a run that never
     // happened) applied one level up.
     SuiteLog log;
-    if (!log.open(log_path, "REGRESSION ALL")) {
-        std::cout << "REGRESSION ALL: NOT RUN -- could not open the log at\n"
+    if (!log.open(log_path, group ? group->name : "REGRESSION CURATED SUITE", quiet)) {
+        std::cout << "REGRESSION " << (group ? group->name : "CURATED SUITE")
+                  << ": NOT RUN -- could not open the log at\n"
                   << "  " << log_path << "\n"
                      "  A run whose evidence went nowhere must not be mistaken for a\n"
                      "  logged one, so nothing was run. Fix the path and re-run.\n";
@@ -5406,33 +6781,70 @@ void run_regression_default_suite(DbArea& area, const std::string& log_path)
         return;
     }
 
+    if (group) {
+        std::istringstream members(group->members);
+        std::string member;
+        while (members >> member) {
+            const auto* spec = find_regression_spec(member);
+            if (!spec || !std::filesystem::exists(resolve_regression_script_path(*spec))) {
+                log.summary();
+                std::cout << "REGRESSION GROUP: NOT RUN -- missing test/script " << member << "\n";
+                xbase::error::set_last_error(xbase::error::e_invalid_argument());
+                return;
+            }
+        }
+    }
+
     std::vector<RegressionResult> results;
 
-    // Plan condition 2: "REGRESSION ALL leaves PRODUCTION unchanged." The arm
+    // Plan condition 2: "REGRESSION CURATED SUITE leaves PRODUCTION unchanged." The arm
     // reads production's high-water before and after everything below, and the
     // BEFORE pass is also what proves the detector is alive on this build.
     const bool before_ok = run_isolation_arm(area, "BEFORE");
 
+    // THE DETECTOR RUNS BEFORE THE SPECS IT GUARDS, which is the L3 arm's rule
+    // in its general form: a negative reading is worth exactly what the
+    // instrument behind it is worth. If FIXTUREDET reds, every "not graded"
+    // below it is unverified and the suite says so by failing.
+    results.push_back({ "FIXTUREDET", run_fixture_detector_selftest(area) });
+
     for (const auto& spec : kRegressionSpecs) {
-        if (!spec.in_default_suite) continue;
+        if (group ? !group_contains(*group, spec.name) : !spec.in_default_suite) continue;
+        log.progress(std::string("RUN ") + spec.name, quiet);
         results.push_back({ spec.name, run_regression_script(area, spec) });
+        log.progress(std::string(spec.name) + ": " + outcome_label(results.back().outcome), quiet);
     }
+
+    // AIF-160. GRPMINT IS AN ARM AND NOT A SPEC, so it is called here rather
+    // than reached by the loop above: it moves Slot::SYS around its own
+    // execution and a spec running inside that loop cannot bracket itself.
+    // Same reason the L3 catalog arm and the trigger veto arm are not specs.
+    //
+    // IT IS IN THE DEFAULT SUITE ON PURPOSE. Before this, not one of the
+    // twenty-nine specs touched the group catalog, so REGRESSION CURATED SUITE on a
+    // fresh clone created nothing at all under data/sys and the manifest's
+    // never-published ruling for that directory had never once been exercised.
+    if (!group || group->group_mint)
+        results.push_back({ "GRPMINT", run_group_mint_arm(area) });
 
     const bool after_ok = run_isolation_arm(area, "AFTER");
 
-    print_regression_suite_summary(results, before_ok, after_ok);
+    log.summary();
+    print_regression_suite_summary(results, before_ok, after_ok,
+                                   group ? std::string("GROUP ") + group->name : "CURATED SUITE");
 
     // THE STATUS IS SET ONCE, HERE, FROM THE TALLY. It used to be whatever the
     // last spec happened to leave in a global -- and since a passing spec
-    // CLEARS that global and an ungraded spec counts as passing, a failure in
-    // the middle of the suite could not survive to the end of it.
-    std::size_t failed = 0, unmeasured = 0;
+    // CLEARS that global, a failure in the middle of the suite could not
+    // survive to the end of it. AIF-165 also makes NOT GRADED non-success.
+    std::size_t failed = 0, not_graded = 0, unmeasured = 0;
     for (const auto& r : results) {
         if (r.outcome == RegressionOutcome::Failed)     ++failed;
+        if (r.outcome == RegressionOutcome::NotGraded)  ++not_graded;
         if (r.outcome == RegressionOutcome::Unmeasured) ++unmeasured;
     }
 
-    if (!before_ok || !after_ok || failed || unmeasured) {
+    if (!before_ok || !after_ok || failed || unmeasured || not_graded) {
         xbase::error::set_last_error(xbase::error::e_invalid_argument());
     } else {
         xbase::error::clear_last_error();
@@ -5839,6 +7251,174 @@ static bool run_group_apply_failure_arm(DbArea& area)
     return true;
 }
 
+// ===========================================================================
+// AIF-160 -- GRPMINT: THE GROUP CATALOG MINTS ITSELF, OR IT DOES NOT.
+//
+// PROMOTE.manifest rules dottalkpp/data/sys/*.dbf never-published on the
+// grounds that "group_log.cpp ensure_table() mints both on first write and the
+// read paths never do, so a clone needs nothing shipped."
+//
+// NOTHING HAS EVER TESTED THAT SENTENCE. On 2026-09-12 it was bypassed by
+// hand: data/sys was copied from the development tree to the staging tree
+// rather than being allowed to mint there. Both trees now hold byte-identical
+// files with identical mtimes, so the claim is not merely untested -- the
+// condition that would test it no longer exists on either machine.
+//
+// WHY AN ARM AND NOT A SPEC. It must move Slot::SYS around its own execution,
+// and a spec running inside the suite loop cannot bracket itself. Same reason
+// the L3 catalog isolation arm and the trigger veto arm are not specs.
+//
+// THE READ RULE, WHICH IS THE WHOLE DESIGN:
+//
+//   A PRESENCE CHECK PASSES HOLLOW. "GROUPS.dbf exists" is green on every
+//   machine that already has one, which is currently all of them. That is the
+//   INDEX_X64 shape: a spec that cannot go red has measured nothing, and this
+//   file already carries twenty of those.
+//
+//   So GM_D0 IS THE DETECTOR AND IT IS ASSERTED ABSENT. Never credit GM_G1
+//   without GM_D0: a catalog present at entry means the redirect did not take
+//   and every reading after it is about PRODUCTION, not about a clone.
+//
+//   THE SLOT IS AIMED AT A DIRECTORY THAT DOES NOT EXIST, not merely an empty
+//   one. claim_scratch_root() CREATES what it returns, so pointing SYS straight
+//   at it would concede the directory half of the manifest's claim before the
+//   measurement began. ensure_table calls fs::create_directories on the parent;
+//   if it did not, a clone would need the directory shipped even though the
+//   tables self-create, and the ruling would still be wrong.
+//
+// TWO TABLES IS THE MINIMUM THAT DECIDES A GROUP. A single-area commit takes
+// the ordinary path and writes no group row at all, so a one-table fixture
+// would mint nothing and the red would mean "the fixture was wrong" rather
+// than "the catalog does not self-create".
+// ===========================================================================
+
+static const char* const kGroupMintScript = "group_mint_regression.dts";
+
+RegressionOutcome run_group_mint_arm(DbArea& area)
+{
+    namespace fs = std::filesystem;
+
+    std::cout << "\nREGRESSION: AIF-160 GROUP CATALOG MINT ARM\n"
+                 "  READ RULE: GM_D0 IS THE DETECTOR AND IT IS ASSERTED ABSENT.\n"
+                 "  A catalog present at entry means the SYS redirect did not\n"
+                 "  take, and every reading after it is about PRODUCTION rather\n"
+                 "  than about a clone. Never credit GM_G1 without GM_D0.\n";
+
+    const fs::path resolved = resolve_script_token(kGroupMintScript);
+    std::cout << "  Script  : " << kGroupMintScript << "\n"
+              << "  Resolved: " << resolved.string() << "\n";
+
+    std::error_code ec;
+    if (!fs::exists(resolved, ec) || ec) {
+        std::cout << "  NOT RUN -- the arm script is not on disk at that path.\n"
+                     "  THIS IS NOT A PASS AND IT IS NOT A FAILURE: the group\n"
+                     "  catalog is UNMEASURED for this run (AIF-118).\n";
+        return RegressionOutcome::Unmeasured;
+    }
+
+    // THE FIXTURE MOVES DBF, INDEXES AND LMDB TO SANDBOX AND NEVER PUTS THEM
+    // BACK -- exactly as the four GRPFAIL scripts do, and harmless there only
+    // because nothing downstream of them cares. This arm runs LAST in the
+    // suite, so its leak would land on the AFTER isolation arm and on whatever
+    // the operator typed next.
+    //
+    // DECLARED BEFORE SysSlotGuard SO IT IS DESTROYED AFTER IT. The guard puts
+    // SYS back first; the bracket then finds SYS where it left it and stays
+    // quiet about the one slot this arm moves on purpose. Reversed, every run
+    // would report a SYS leak that is not one.
+    PathSlotBracket slots("GRPMINT");
+    SysSlotGuard guard;
+
+    const fs::path scratch  = claim_scratch_root();
+    const fs::path sys_root = scratch / "sys";
+    ScratchRootKeeper keeper(scratch);
+
+    dottalk::paths::set_slot(dottalk::paths::Slot::SYS, sys_root);
+    std::cout << "  SYS slot -> " << sys_root.string() << "\n";
+
+    const std::string catalog = dottalk::group::catalog_path();
+    const std::string members = dottalk::group::members_path();
+    if (catalog.empty() || members.empty()) {
+        std::cout << "GROUP CATALOG MINT: UNMEASURED -- the SYS slot resolved to\n"
+                     "  nothing, so neither path could be formed.\n";
+        return RegressionOutcome::Unmeasured;
+    }
+
+    // ---- GM_D*: the detector, and the only arm that can void the rest. ----
+    ec.clear();
+    const bool dir_absent     = !fs::exists(sys_root, ec);
+    const bool catalog_absent = !fs::exists(catalog, ec);
+    const bool members_absent = !fs::exists(members, ec);
+
+    std::cout << "  GM_D0_sys_directory_absent:"
+              << (dir_absent ? ".T." : ".F.") << "\n"
+              << "  GM_D1_group_log_absent:"
+              << (catalog_absent ? ".T." : ".F.") << "\n"
+              << "  GM_D2_members_table_absent:"
+              << (members_absent ? ".T." : ".F.") << "\n";
+
+    if (!dir_absent || !catalog_absent || !members_absent) {
+        std::cout << "GROUP CATALOG MINT: UNMEASURED -- something already exists\n"
+                     "  beneath the redirected SYS slot, so the redirect did not\n"
+                     "  take or a previous run left this root behind. NOTHING below\n"
+                     "  that line would have been a measurement of a clone.\n";
+        return RegressionOutcome::Unmeasured;
+    }
+
+    // ---- The commit. -----------------------------------------------------
+    std::string transcript;
+    if (!trigger_veto_run_script(area, kGroupMintScript, transcript)) {
+        std::cout << "GROUP CATALOG MINT: UNMEASURED -- the fixture script did not\n"
+                     "  run, so no group was offered to the catalog.\n";
+        return RegressionOutcome::Unmeasured;
+    }
+
+    static constexpr std::array<const char*, 2> required{{
+        "GM_S1_member_one_applied:.T.",
+        "GM_S2_member_two_applied:.T."
+    }};
+    if (!require_transcript_fragments(transcript, "GROUP CATALOG MINT", required)) {
+        std::cout << "  The group did not commit, so the file readings below would\n"
+                     "  be about a transaction that never happened. RED HERE IS A\n"
+                     "  BROKEN FIXTURE, not a verdict on the manifest's ruling.\n";
+        return RegressionOutcome::Failed;
+    }
+
+    // ---- GM_G*: what the commit brought into being on its own. -----------
+    ec.clear();
+    const bool dir_now     = fs::exists(sys_root, ec);
+    const bool catalog_now = fs::exists(catalog, ec);
+    const bool members_now = fs::exists(members, ec);
+    const long long decided = dottalk::group::decision_count();
+
+    std::cout << "  GM_G0_sys_directory_created:"
+              << (dir_now ? ".T." : ".F.") << "\n"
+              << "  GM_G1_group_log_created:"
+              << (catalog_now ? ".T." : ".F.") << "\n"
+              << "  GM_G2_members_table_created:"
+              << (members_now ? ".T." : ".F.") << "\n"
+              << "  GM_G3_decision_rows: " << decided << "\n";
+
+    if (!dir_now || !catalog_now || !members_now || decided < 1) {
+        std::cout << "GROUP CATALOG MINT: FAIL -- a group committed and the SYS\n"
+                     "  catalog did not come into being beneath it.\n"
+                     "  PROMOTE.manifest rules dottalkpp/data/sys/*.dbf\n"
+                     "  never-published because a clone needs nothing shipped.\n"
+                     "  IF THIS LINE IS PRINTING, THAT RULING IS WRONG and the\n"
+                     "  promotion chain ships a tree that cannot commit a group\n"
+                     "  until somebody hand-copies engine state into it.\n";
+        return RegressionOutcome::Failed;
+    }
+
+    keeper.discard();
+    std::cout << "GROUP CATALOG MINT: PASS -- absent before, present after.\n"
+                 "  The directory, GROUPS.dbf and GROUPMEM.dbf were all created by\n"
+                 "  the commit itself, under a SYS root that did not exist when the\n"
+                 "  arm started. PROMOTE.manifest's never-published ruling for\n"
+                 "  dottalkpp/data/sys is now TESTED rather than asserted.\n";
+    return RegressionOutcome::Passed;
+}
+
 bool run_trigger_veto_arm(DbArea& area, const std::string& mode)
 {
     std::ostringstream captured;
@@ -5868,44 +7448,45 @@ bool run_trigger_veto_arm(DbArea& area, const std::string& mode)
 // and got an unlogged run would have exactly the same problem: a command that
 // did something other than what was asked and said nothing.
 struct LogOption {
-    bool        ok = true;   // false: the tail was not understood; refuse.
-    std::string path;        // empty: no log was requested.
+    bool ok = true;
+    bool quiet = false;
+    std::string path;
 };
 
 LogOption parse_log_option(std::istringstream& in, const std::string& default_name)
 {
     LogOption result;
-
-    std::string tok;
-    if (!(in >> tok)) return result;             // nothing after the verb
-
-    if (upper_copy(tok) != "LOG") {
-        std::cout << "REGRESSION: unrecognized argument '" << tok << "'.\n"
-                     "  Expected LOG [<path>], or nothing at all. Nothing was run.\n";
-        result.ok = false;
-        return result;
+    std::vector<std::pair<std::string, bool>> tokens;
+    bool logged = false;
+    while (in >> std::ws && in.peek() != std::char_traits<char>::eof()) {
+        std::string token;
+        const bool quoted = in.peek() == '"';
+        if (quoted) {
+            in.get();
+            if (!std::getline(in, token, '"') || in.eof()) { result.ok = false; break; }
+            if (in.peek() != std::char_traits<char>::eof() && !std::isspace(in.peek())) {
+                result.ok = false; break;
+            }
+        } else in >> token;
+        tokens.emplace_back(token, quoted);
     }
-
-    std::string path;
-    if (in >> path) {
-        // A quoted path may carry spaces; take the rest of the line and strip.
-        if (!path.empty() && path.front() == '"') {
-            std::string rest;
-            std::getline(in, rest);
-            path += rest;
-            const std::size_t close = path.find('"', 1);
-            path = (close == std::string::npos) ? path.substr(1)
-                                                : path.substr(1, close - 1);
-        }
-        result.path = path;
-        return result;
+    for (std::size_t i = 0; result.ok && i < tokens.size(); ++i) {
+        const auto option = upper_copy(tokens[i].first);
+        if (!tokens[i].second && option == "QUIET" && !result.quiet) result.quiet = true;
+        else if (!tokens[i].second && option == "LOG" && !logged) {
+            logged = true;
+            result.path = (dottalk::paths::get_slot(dottalk::paths::Slot::TMP) / default_name).string();
+            if (i + 1 < tokens.size() && (tokens[i+1].second ||
+                (upper_copy(tokens[i+1].first) != "QUIET" && upper_copy(tokens[i+1].first) != "LOG"))) {
+                result.path = tokens[++i].first;
+                if (result.path.empty()) result.ok = false;
+            }
+        } else result.ok = false;
     }
-
-    // Bare LOG: the TMP slot, under a stable name. Stable rather than stamped
-    // on purpose -- the .alt captures beside it behave the same way, and an
-    // operator who wants history gives a path.
-    result.path = (dottalk::paths::get_slot(dottalk::paths::Slot::TMP) /
-                   default_name).string();
+    if (!result.ok) {
+        std::cout << "REGRESSION: invalid options. Expected [QUIET] [LOG [path]]. Nothing was run.\n";
+        xbase::error::set_last_error(xbase::error::e_invalid_argument());
+    }
     return result;
 }
 
@@ -5932,9 +7513,39 @@ void cmd_REGRESSION(DbArea& area, std::istringstream& in)
     }
 
     if (op == "ALL") {
-        const LogOption lg = parse_log_option(in, "regression_all.log");
+        std::cout << "REGRESSION: ALL has been replaced by CURATED SUITE. Nothing was run.\n";
+        xbase::error::set_last_error(xbase::error::e_invalid_argument());
+        return;
+    }
+    if (op == "CURATED") {
+        std::string suite;
+        if (!(in >> suite) || upper_copy(suite) != "SUITE") {
+            std::cout << "REGRESSION: expected CURATED SUITE. Nothing was run.\n";
+            xbase::error::set_last_error(xbase::error::e_invalid_argument());
+            return;
+        }
+        const LogOption lg = parse_log_option(in, "regression_curated_suite.log");
         if (!lg.ok) return;
-        run_regression_default_suite(area, lg.path);
+        run_regression_default_suite(area, lg.path, lg.quiet);
+        return;
+    }
+
+    if (op == "GROUPS") {
+        print_regression_groups();
+        return;
+    }
+    if (op == "GROUP") {
+        std::string name;
+        in >> name;
+        const auto* group = find_regression_group(name);
+        if (!group) {
+            std::cout << "REGRESSION: unknown process group '" << name << "'. Nothing was run.\n";
+            print_regression_groups();
+            xbase::error::set_last_error(xbase::error::e_invalid_argument());
+            return;
+        }
+        const auto options = parse_log_option(in, std::string("regression_group_") + group->name + ".log");
+        if (options.ok) run_regression_default_suite(area, options.path, options.quiet, group);
         return;
     }
 
@@ -5952,6 +7563,16 @@ void cmd_REGRESSION(DbArea& area, std::istringstream& in)
             print_regression_usage();
             return;
         }
+        if (op == "SHOW" && upper_copy(name) == "GROUP") {
+            in >> name;
+            const auto* group = find_regression_group(name);
+            if (group) print_regression_group(*group);
+            else {
+                std::cout << "REGRESSION: unknown group '" << name << "'.\n";
+                xbase::error::set_last_error(xbase::error::e_invalid_argument());
+            }
+            return;
+        }
         const RegressionSpec* spec = find_regression_spec(name);
         if (!spec) {
             std::cout << "REGRESSION: unknown regression '" << name << "'.\n";
@@ -5965,32 +7586,49 @@ void cmd_REGRESSION(DbArea& area, std::istringstream& in)
         const LogOption lg =
             parse_log_option(in, std::string("regression_") + spec->name + ".log");
         if (!lg.ok) return;
-        run_regression_script_measured(area, *spec, lg.path);
+        run_regression_script_measured(area, *spec, lg.path, lg.quiet);
         return;
     }
 
-    if (op == "TRIGGERVETO") {
-        std::string mode;
-        in >> mode;
-        std::string up = upper_copy(mode);
-        if (up.empty()) up = "NORMAL";
-        if (up != "NORMAL" && up != "SELFTEST" && up != "MULTIREP" &&
-            up != "AFTER" && up != "RECOVERY") {
-            std::cout << "REGRESSION TRIGGERVETO: unknown mode '" << mode
-                      << "'. Use NORMAL, SELFTEST, MULTIREP, AFTER or RECOVERY.\n";
+    if (op == "TRIGGERVETO" || op == "GRPNATIVE" || op == "GRPFAIL" ||
+        op == "FIXTURECHECK" || op == "GRPMINT") {
+        std::string mode = "NORMAL";
+        if (op == "TRIGGERVETO") {
+            const auto position = in.tellg();
+            std::string token;
+            if (in >> token) {
+                const auto value = upper_copy(token);
+                if (value == "QUIET" || value == "LOG") in.seekg(position);
+                else mode = value;
+            } else in.clear();
+            if (mode != "NORMAL" && mode != "SELFTEST" && mode != "MULTIREP" &&
+                mode != "AFTER" && mode != "RECOVERY") {
+                std::cout << "REGRESSION TRIGGERVETO: invalid mode. Nothing was run.\n";
+                xbase::error::set_last_error(xbase::error::e_invalid_argument());
+                return;
+            }
+        }
+        const auto options = parse_log_option(in, "regression_" + op + ".log");
+        if (!options.ok) return;
+        SuiteLog log;
+        if (!log.open(options.path, op.c_str(), options.quiet)) {
+            std::cout << "REGRESSION: NOT RUN -- cannot open log/capture.\n";
+            xbase::error::set_last_error(xbase::error::e_invalid_argument());
             return;
         }
-        run_trigger_veto_arm(area, up);
-        return;
-    }
-
-    if (op == "GRPNATIVE") {
-        run_group_native_arm(area);
-        return;
-    }
-
-    if (op == "GRPFAIL") {
-        run_group_apply_failure_arm(area);
+        RegressionOutcome outcome;
+        if (op == "FIXTURECHECK") outcome = run_fixture_detector_selftest(area);
+        else if (op == "GRPMINT") outcome = run_group_mint_arm(area);
+        else {
+            const bool ok = op == "TRIGGERVETO" ? run_trigger_veto_arm(area, mode)
+                          : op == "GRPNATIVE" ? run_group_native_arm(area)
+                                               : run_group_apply_failure_arm(area);
+            outcome = ok ? RegressionOutcome::Passed : RegressionOutcome::Failed;
+        }
+        log.summary();
+        std::cout << "REGRESSION " << op << ": " << outcome_label(outcome) << "\n";
+        if (outcome == RegressionOutcome::Passed) xbase::error::clear_last_error();
+        else xbase::error::set_last_error(xbase::error::e_invalid_argument());
         return;
     }
 
@@ -5998,7 +7636,7 @@ void cmd_REGRESSION(DbArea& area, std::istringstream& in)
         const LogOption lg =
             parse_log_option(in, std::string("regression_") + spec->name + ".log");
         if (!lg.ok) return;
-        run_regression_script_measured(area, *spec, lg.path);
+        run_regression_script_measured(area, *spec, lg.path, lg.quiet);
         return;
     }
 

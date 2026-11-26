@@ -696,11 +696,22 @@ static const CommandDoc REGRESSION_DOC = {
     "Launch curated DotTalk++ regression DotScript entrypoints",
 
     {
+        "REGRESSION USAGE",
+        "REGRESSION FIND <words...>",
+        "REGRESSION SEARCH <words...>",
         "REGRESSION LIST",
         "REGRESSION SHOW <name>",
-        "REGRESSION RUN <name>",
-        "REGRESSION <name>",
-        "REGRESSION ALL"
+        "REGRESSION GROUPS",
+        "REGRESSION SHOW GROUP <name>",
+        "REGRESSION GROUP <name> [QUIET] [LOG [<path>]]",
+        "REGRESSION RUN <name> [QUIET] [LOG [<path>]]",
+        "REGRESSION <name> [QUIET] [LOG [<path>]]",
+        "REGRESSION CURATED SUITE [QUIET] [LOG [<path>]]",
+        "REGRESSION TRIGGERVETO [NORMAL|SELFTEST|MULTIREP|AFTER|RECOVERY] [QUIET] [LOG [<path>]]",
+        "REGRESSION GRPNATIVE [QUIET] [LOG [<path>]]",
+        "REGRESSION GRPFAIL [QUIET] [LOG [<path>]]",
+        "REGRESSION GRPMINT [QUIET] [LOG [<path>]]",
+        "REGRESSION FIXTURECHECK [QUIET] [LOG [<path>]]"
     },
 
     {
@@ -710,11 +721,15 @@ static const CommandDoc REGRESSION_DOC = {
         "REGRESSION RUN X64_METRICS",
         "REGRESSION RUN HARVEST",
         "REGRESSION INDEX_X64",
-        "REGRESSION ALL"
+        "REGRESSION CURATED SUITE QUIET LOG"
     },
 
     {
         "REGRESSION delegates script execution to DOTSCRIPT",
+        "ALL is retired; use CURATED SUITE. Groups select related process chains",
+        "QUIET is optional; full screen output remains the default",
+        "LOG includes ordinary/routed output, stderr and captured child output",
+        "Standalone checks also accept QUIET and LOG; malformed options refuse execution",
         "Curated entries are expected to bootstrap their own runtime environment",
         "LIST is intentionally smaller than the full historical script estate",
         "Dev-only warning/repro canaries stay out unless intentionally promoted",

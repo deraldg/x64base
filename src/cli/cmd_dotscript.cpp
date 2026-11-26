@@ -8,7 +8,7 @@
 // status: supported
 
 // src/commands/cmd_dotscript.cpp
-// DOTSCRIPT runner with TRACE banner + scripts/tests resolver + @file support + one-level subscript limit.
+// DOTSCRIPT runner with TRACE banner, deterministic paths, @file and one subscript.
 
 // @dottalk.usage v1
 // owner: DOT|DOTSCRIPT
@@ -20,8 +20,8 @@
 // mutates: delegates script commands session
 // usage-access: DOTSCRIPT USAGE
 // summary:
-//   Run a DotTalk++ script file, resolving bare names through script/test
-//   search locations, supporting @file notation, TRACE mode, and one-level
+//   Run a DotTalk++ script file, resolving bare names through SCRIPTS,
+//   supporting @file notation, TRACE mode, and one-level
 //   subscript nesting.
 //
 // usage:
@@ -43,7 +43,9 @@
 //   DOTSCRIPT reads an external script file and executes each nonblank,
 //   noncomment line through the shell command executor.
 //   Script comments/blank lines are ignored when they begin with *, //, &&, or ; after trimming.
-//   Bare script names try the typed name, .dts extension, scripts/, and tests/ candidates.
+//   Bare names use SCRIPTS only; a missing extension means .dts.
+//   Qualified relative paths use DATA; subscripts use their caller's directory.
+//   Absolute paths are exact. Missing files never trigger a directory search.
 //   @file notation is accepted and unquoted before path resolution.
 //   TRACE without a file reports the current trace state and usage.
 //   TRACE ON/OFF changes global DOTSCRIPT trace state.
@@ -282,60 +284,13 @@ static bool extract_dotscript_output_clause(
     return true;
 }
 
-static inline bool has_extension(const std::string& s) {
-    return std::filesystem::path(s).has_extension();
-}
-
-static std::vector<std::string> build_candidate_specs(const std::string& spec) {
-    std::vector<std::string> out;
-    out.push_back(spec);
-
-    if (!has_extension(spec)) {
-        out.push_back(spec + ".dts");
-    }
-
-    const std::filesystem::path p(spec);
-    const bool no_parent = !p.has_parent_path();
-
-    if (no_parent) {
-        // Priority requested: scripts/ first, then tests/
-        out.push_back((std::filesystem::path("scripts") / spec).string());
-        if (!has_extension(spec)) out.push_back((std::filesystem::path("scripts") / (spec + ".dts")).string());
-
-        out.push_back((std::filesystem::path("tests") / spec).string());
-        if (!has_extension(spec)) out.push_back((std::filesystem::path("tests") / (spec + ".dts")).string());
-    }
-
-    // Dedup preserving order
-    std::vector<std::string> dedup;
-    dedup.reserve(out.size());
-    for (const auto& s : out) {
-        bool seen = false;
-        for (const auto& d : dedup) {
-            if (d == s) { seen = true; break; }
-        }
-        if (!seen) dedup.push_back(s);
-    }
-    return dedup;
-}
-
 static std::optional<std::filesystem::path> resolve_existing_script_path(
     const std::string& spec,
     std::string* attempts_out
 ) {
-    const auto candidates = build_candidate_specs(spec);
-    std::ostringstream attempts;
-
-    for (const auto& c : candidates) {
-        const auto p = shell_resolve_script_path(c);
-        attempts << "  - " << c << " -> " << p.string() << "\n";
-        if (std::filesystem::exists(p)) {
-            if (attempts_out) *attempts_out = attempts.str();
-            return p;
-        }
-    }
-
-    if (attempts_out) *attempts_out = attempts.str();
+    const auto p = shell_resolve_script_path(spec);
+    if (attempts_out) *attempts_out = "  File: " + p.string() + "\n";
+    if (std::filesystem::is_regular_file(p)) return p;
     return std::nullopt;
 }
 
@@ -356,7 +311,10 @@ static void print_usage() {
         << "  DOTSCRIPT TRACE ON|OFF <file>\n"
         << "  DOTSCRIPT TRACE ON|OFF @<file>\n"
         << "Notes:\n"
-        << "  - Bare names resolve as typed, .dts, scripts/, then tests/.\n"
+        << "  - Bare names use SET PATH SCRIPTS only (default DATA/scripts).\n"
+        << "  - Missing extension means .dts; no fallback directory search.\n"
+        << "  - Qualified relative paths use DATA; subscripts use their caller's directory.\n"
+        << "  - Absolute paths are exact.\n"
         << "  - Lines beginning with *, //, &&, or ; after trimming are skipped.\n"
         << "  - DOTSCRIPT executes commands; side effects depend on script contents.\n"
         << "  - OUT/OUTPUT tees full command output to a transcript file.\n"
@@ -453,7 +411,7 @@ void cmd_DOTSCRIPT(DbArea& area, std::istringstream& args)
 
                 std::string tail;
                 std::getline(ss, tail);
-                tail = strip_at_prefix(unquote_copy(std::move(tail)));
+                tail = trim_copy(std::move(tail));
                 if (tail.empty()) {
                     std::cout << "DOTSCRIPT TRACE is now " << (g_dotscript_trace ? "ON" : "OFF") << "\n";
                     return;
@@ -470,11 +428,11 @@ void cmd_DOTSCRIPT(DbArea& area, std::istringstream& args)
                 std::string joined = t2;
                 if (!tail.empty()) joined += " " + tail;
 
-                file_spec = strip_at_prefix(unquote_copy(std::move(joined)));
+                file_spec = std::move(joined);
             }
         } else {
             // DOTSCRIPT <file...> or DOTSCRIPT @<file...>
-            file_spec = strip_at_prefix(unquote_copy(std::move(rest)));
+            file_spec = std::move(rest);
         }
     }
 
@@ -483,6 +441,9 @@ void cmd_DOTSCRIPT(DbArea& area, std::istringstream& args)
         std::cout << "DOTSCRIPT: " << transcript_error << "\n";
         return;
     }
+    // Keep quoting until OUT/OUTPUT has been parsed. Otherwise an exact
+    // filename containing " OUT " can be mistaken for a transcript clause.
+    file_spec = strip_at_prefix(unquote_copy(std::move(file_spec)));
 
     if (file_spec.empty()) {
         print_usage();
@@ -545,6 +506,7 @@ void cmd_DOTSCRIPT(DbArea& area, std::istringstream& args)
         std::cout << "DOTSCRIPT: unable to open '" << resolved->string() << "'\n";
         return;
     }
+    std::cout << "DOTSCRIPT: running " << resolved->string() << "\n";
 
     std::string line;
     size_t lineno = 0;      // physical lines consumed so far

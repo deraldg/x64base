@@ -17,47 +17,43 @@
 
 #include "xbase.hpp"
 #include "xbase_64.hpp"
+#include "xbase/x64_memo_slot.hpp"
 #include "memo/memo_auto.hpp"
 #include "memo/memostore.hpp"
 
 namespace dottalk::memo {
 namespace {
 
-static bool is_x64_memo_field(const xbase::DbArea& area, int field1)
-{
-    if (field1 < 1 || field1 > area.fieldCount()) return false;
-    if (area.versionByte() != xbase::DBF_VERSION_64) return false;
-
-    const auto& f = area.fields()[static_cast<std::size_t>(field1 - 1)];
-    return (f.type == 'M' || f.type == 'm') &&
-           f.length == xbase::X64_MEMO_FIELD_LEN;
-}
-
-static std::uint64_t parse_u64_or_zero(const std::string& s, bool& ok)
-{
-    ok = true;
-
-    if (s.empty()) return 0;
-
-    try {
-        std::size_t used = 0;
-        const unsigned long long v = std::stoull(s, &used, 10);
-        if (used != s.size()) {
-            ok = false;
-            return 0;
-        }
-        return static_cast<std::uint64_t>(v);
-    } catch (...) {
-        ok = false;
-        return 0;
-    }
-}
+// THE PREDICATE AND THE PARSER HAVE ONE OWNER -- xbase/x64_memo_slot.hpp (R149).
+// What stood here were two of ten identical private bodies. Deleting them is
+// the point: this predicate decides what a field READ returns, whether a value
+// may be treated as an object id, and whether a WRITE lays down raw bytes --
+// three layers that must not be able to disagree.
+using xbase::is_x64_memo_field;
+using xbase::parse_u64_or_zero;
 
 static dottalk::memo::MemoStore* memo_store_for_area(xbase::DbArea& area) noexcept
 {
     auto* backend = cli_memo::memo_backend_for(area);
     if (!backend) return nullptr;
     return dynamic_cast<dottalk::memo::MemoStore*>(backend);
+}
+
+// Memo-typed fields whose WIDTH this scanner cannot decode. See the long note
+// in scan_x64_memos_in_area() for why their presence refuses the scan outright.
+static std::vector<std::string> collect_undecodable_memo_fields(const xbase::DbArea& area)
+{
+    std::vector<std::string> out;
+    if (area.versionByte() != xbase::DBF_VERSION_64) return out;
+
+    // ONE OWNER FOR THE WIDTH QUESTION (R149) -- the tenth place this predicate
+    // was written down, and the one that decides whether GC may run at all.
+    for (const auto& f : area.fields()) {
+        if (xbase::is_undecodable_x64_memo_field(f, /*is_x64=*/true)) {
+            out.push_back(f.name);
+        }
+    }
+    return out;
 }
 
 static std::vector<int> collect_x64_memo_fields(const xbase::DbArea& area)
@@ -102,6 +98,55 @@ bool scan_x64_memos_in_area(xbase::DbArea& area,
 
     const std::vector<int> memo_fields = collect_x64_memo_fields(area);
     out.x64_memo_fields = static_cast<int>(memo_fields.size());
+
+    // A STORE THIS SCANNER CANNOT READ MUST NOT REPORT A CLEAN ZERO.
+    //
+    // is_x64_memo_field() matches type 'M' at exactly X64_MEMO_FIELD_LEN (8) --
+    // the uint64 object-id slot. A SECOND CONVENTION EXISTS: WORKSPACES.SNAPSHOT
+    // is M(16), a 16-hex MemoRef token, deliberately built that way and read
+    // back with get_by_name() like a character field. For that table
+    // collect_x64_memo_fields() returns EMPTY, and until 2026-10-13 this
+    // function then took the early return below -- ABOVE the orphan computation
+    // -- so MEMO VERIFY and MEMO GC reported `orphan objects 0` and
+    // `reclaimable 0` FOR EVERY POSSIBLE STATE OF THE STORE. Not a judgement
+    // that the payloads were reachable; it had never looked at the field.
+    //
+    // THAT ZERO WAS PROTECTING THE WORKSPACE LINEAGE BY ACCIDENT, and an
+    // accident is not a guarantee. It equally hid any REAL orphan in that store,
+    // which is the same instrument-that-cannot-fail shape this tree keeps
+    // finding: a green that means "I did not look".
+    //
+    // THE MIXED CASE IS THE DANGEROUS ONE and is why this refuses even when
+    // decodable fields exist. A table holding BOTH an M(8) and an M(16) field
+    // would scan the M(8) references, miss the M(16) ones, and then report the
+    // objects those tokens name as ORPHANS -- and MEMO GC CONFIRM would erase
+    // live data. So the test is "any undecodable field", not "no decodable
+    // fields".
+    //
+    // Returning false is the whole mechanism: cmd_MEMO's caller prints `error`
+    // and SKIPS gc_orphan_memos_in_area entirely, so GC cannot run on a store
+    // that was never scanned. Widening the predicate instead would make those
+    // payloads collectable, and that is a retention ruling, not a scanner's
+    // decision.
+    out.undecodable_field_names = collect_undecodable_memo_fields(area);
+    out.undecodable_memo_fields = static_cast<int>(out.undecodable_field_names.size());
+
+    if (out.undecodable_memo_fields > 0) {
+        std::string names;
+        for (std::size_t i = 0; i < out.undecodable_field_names.size(); ++i) {
+            if (i) names += ", ";
+            names += out.undecodable_field_names[i];
+        }
+        out.dtx_append_bytes = store->append_bytes();
+        out.live_objects = store->live_object_count();
+        out.ok = false;
+        out.error = "NOT SCANNED -- " + std::to_string(out.undecodable_memo_fields)
+                  + " memo field(s) of a width this scanner cannot decode ("
+                  + names + "); M(n) with n != 8 is not an object-id slot."
+                  + " The counts in this report are therefore not measurements,"
+                  + " and GC was not run.";
+        return false;
+    }
 
     if (memo_fields.empty()) {
         out.dtx_append_bytes = store->append_bytes();

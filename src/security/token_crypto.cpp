@@ -56,6 +56,17 @@ std::string gen_token() {
     return std::string(b64);
 }
 
+std::string sha256_hex(const std::string& bytes) {
+    crypto_init();
+    unsigned char digest[crypto_hash_sha256_BYTES];              // 32
+    crypto_hash_sha256(digest,
+                       reinterpret_cast<const unsigned char*>(bytes.data()),
+                       bytes.size());
+    char hex[crypto_hash_sha256_BYTES * 2 + 1];                  // 64 + NUL
+    sodium_bin2hex(hex, sizeof hex, digest, sizeof digest);
+    return std::string(hex);                                     // lowercase
+}
+
 std::string make_credential(const std::string& secret) {
     crypto_init();
     char out[crypto_pwhash_STRBYTES];                  // == 128; matches SYSUSER.CRED width

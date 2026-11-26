@@ -1301,7 +1301,7 @@ bool TFoxtalkApp::dispatchMenu(int id)
         // explicit Enter/Run confirmation from the command bar.
         case cmFtTestRegressionList: return run("REGRESSION LIST");
         case cmFtTestRegressionRun:  return prefill("REGRESSION RUN ");
-        case cmFtTestRegressionAll:  return prefill("REGRESSION ALL");
+        case cmFtTestRegressionAll:  return prefill("REGRESSION CURATED SUITE");
 
         // Help.
         case cmFtHelpMain:       return run("HELP");

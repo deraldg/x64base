@@ -59,6 +59,7 @@
 #include <filesystem>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>   // std::exception, for the sha256_hex KAT below
 #include <string>
 
 #include "common/path_state.hpp"
@@ -69,6 +70,8 @@
 #include "xbase_security_tests.hpp"
 
 using namespace xbase::security;
+#include "security/token_crypto.hpp"   // sha256_hex, under known-answer test below
+
 using namespace xbase::security::policy;
 using namespace xbase::security::runtime;
 
@@ -217,6 +220,48 @@ void cmd_SECURITY(xbase::DbArea& A, std::istringstream& in)
     if (sub == "SELFTEST")
     {
         int failures = xbase::tests::run_xbase_security_tests();
+
+        // KNOWN-ANSWER TESTS for sha256_hex, added 2026-10-13 alongside the
+        // function itself.
+        //
+        // A HASH WITH NO KAT IS AN INSTRUMENT THAT CANNOT FAIL. It returns 64
+        // plausible hex characters whether or not it computes SHA-256, every
+        // caller downstream believes them, and nothing in the system is in a
+        // position to disagree. The two vectors below are the canonical ones.
+        //
+        // IT MATTERS MORE HERE THAN FOR A CHECKSUM. PAYLOAD_SHA is the IDENTITY
+        // of a workspace payload, so a wrong-but-stable hash would quietly give
+        // two different desks the same name -- and a content-addressed store
+        // whose addresses collide is worse than one with no addresses at all.
+        {
+            struct Kat { const char* in; const char* want; const char* label; };
+            const Kat kats[] = {
+                { "",    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                         "sha256_hex(\"\") matches the canonical empty-string vector" },
+                { "abc", "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+                         "sha256_hex(\"abc\") matches the canonical \"abc\" vector" },
+            };
+            for (const auto& k : kats) {
+                std::string got;
+                try { got = dottalk::security::sha256_hex(k.in); }
+                catch (const std::exception& e) { got = std::string("threw: ") + e.what(); }
+
+                // A PASSING TEST MUST SAY SO. Reporting only failures makes a
+                // green KAT indistinguishable from a KAT that never ran, which
+                // is the same instrument-that-cannot-fail defect the vectors
+                // above exist to prevent. The "[ OK ]" / "[FAIL]" spelling and
+                // the cout/cerr split are those of xbase_security_tests.cpp,
+                // so these two lines read as part of the same suite.
+                if (got == k.want) {
+                    std::cout << "[ OK ] " << k.label << "\n";
+                } else {
+                    ++failures;
+                    std::cerr << "[FAIL] " << k.label << "\n"
+                              << "  want " << k.want << "\n"
+                              << "  got  " << got << "\n";
+                }
+            }
+        }
 
         if (failures == 0)
             std::cout << "All xBase_64 security tests passed.\n";

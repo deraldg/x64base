@@ -142,8 +142,14 @@ inline AreaKind detect_area_kind_from_version(std::uint8_t ver) noexcept
 }
 
 // ---- Memo field storage contract ------------------------------------------
-constexpr std::uint8_t LEGACY_MEMO_FIELD_LEN = 10; // pre-x64: plain fixed-width text slot
-constexpr std::uint8_t X64_MEMO_FIELD_LEN    = 8;  // x64: uint64 object-id slot
+// THREE WIDTHS, TWO x64 CONVENTIONS. A memo field's WIDTH is what says how its
+// bytes are to be read; the type letter alone does not. Asking only the type is
+// how an M(16) table came to be opened with a sidecar store its own readers then
+// refused. The predicate that answers this has ONE owner --
+// xbase/x64_memo_slot.hpp -- and R149 says so.
+constexpr std::uint8_t LEGACY_MEMO_FIELD_LEN  = 10; // pre-x64: plain fixed-width text slot
+constexpr std::uint8_t X64_MEMO_FIELD_LEN     = 8;  // x64: uint64 object-id slot
+constexpr std::uint8_t X64_MEMO_REF_TOKEN_LEN = 16; // x64: 16-hex MemoRef token, character-like
 
 // ---- On-disk structures (packed) ------------------------------------------
 #pragma pack(push, 1)
@@ -311,6 +317,17 @@ public:
     // false for non-N/F types or an unparseable value (caller should fall back
     // to decodeFieldFromBuffer()).
     bool fieldNumFromBuffer(int idx1, double& out) const;
+
+    // PERF-1c (AIF-168): position + RAW load in one step -- gotoRec64 with
+    // readCurrentRaw instead of readCurrent. gotoRec64 decodes EVERY field
+    // eagerly on every navigation; a scan that decodes on demand through
+    // decodeFieldFromBuffer() was paying that full decode anyway (and the
+    // explicit readCurrent that followed made it TWO full decodes per row).
+    // Same contract as readCurrentRaw: the deleted flag and record buffer are
+    // fresh; get()/_fd are NOT -- read values only via decodeFieldFromBuffer()
+    // or fieldNumFromBuffer() until the next full readCurrent(). Additive:
+    // gotoRec64 is unchanged.
+    bool gotoRec64Raw(std::uint64_t recno);
 
     // ---- Durable PRIMARY designation (AIF-156) ----------------------------
     //

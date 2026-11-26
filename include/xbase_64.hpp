@@ -190,6 +190,53 @@ constexpr uint32_t DBF64_FLAG_STRICT_FALLBACK_NAMES = 0x00000004;
 constexpr uint32_t DBF64_FLAG_HAS_META_BLOCK        = 0x00000008;
 
 // -----------------------------------------------------------------------------
+// X64 MEMO STORAGE CONTRACT -- TWO CONVENTIONS ON ONE FORMAT
+// -----------------------------------------------------------------------------
+// Measured 2026-10-20. Recorded here because DBF64_FLAG_HAS_MEMO above is the
+// flag everyone reaches for and IT DOES NOT ANSWER THE QUESTION THAT MATTERS.
+//
+// THE FLAG SAYS A TABLE HAS MEMO. THE FIELD WIDTH SAYS HOW TO READ IT.
+//
+//   M(8)   xbase::X64_MEMO_FIELD_LEN      a raw little-endian uint64 OBJECT ID.
+//          DbArea::loadFieldsFromBuffer and DbArea::decodeFieldFromBuffer read
+//          the eight bytes and hand callers std::to_string(object_id), or an
+//          empty string when the id is 0. The .dtx sidecar store resolves that
+//          id to a payload. The write-back path turns the text back into eight
+//          raw bytes, so the READ and the WRITE must agree about the width.
+//
+//   M(16)  xbase::X64_MEMO_REF_TOKEN_LEN  a 16-hex MemoRef TOKEN, stored and
+//          read LIKE A CHARACTER FIELD through the field-type codec. No object
+//          id is involved and no store is consulted. cmd_workspace.cpp mints
+//          these for the WORKSPACES catalog's SNAPSHOT column.
+//
+// CONSEQUENCES THAT HAVE EACH COST A DEFECT:
+//
+//   * THE TOKENS TRAVEL AND THE STORE DOES NOT. An M(16) token lives in the
+//     record bytes, so any DBF-only copy -- a backup table, a flavour
+//     conversion, a plain PACK rewrite -- carries the tokens while the .dtx
+//     stays with the original. The copy's tokens then resolve against nothing.
+//
+//   * MemoKind IS { NONE, FPT, DBT } (include/xbase.hpp). THERE IS NO DTX KIND,
+//     so `memoKind() != NONE` never fires for an x64 memo table and cannot be
+//     used to ask "does this table have a sidecar store".
+//
+//   * THE ATTACH PATH TESTS THE TYPE ONLY. cmd_use.cpp tests `f.type == 'M' ||
+//     f.type == 'm'` with no width test, so the engine opens a real MemoStore
+//     for an M(16) table and every consumer downstream then refuses to read it.
+//     ONE INCONSISTENCY, NOT TWO DESIGNS.
+//
+//   * PACK and MEMO GC REFUSE a memo width they cannot decode rather than
+//     taking the plain path, because the plain path rewrites the DBF and leaves
+//     the sidecar untouched -- stranding every payload the removed rows named:
+//     unreachable, still on disk, and not collectable afterwards.
+//
+// ASK THE OWNER, NOT THE TYPE LETTER. xbase/x64_memo_slot.hpp holds the one
+// predicate -- x64_memo_slot_kind() -> None / ObjectId8 / RefToken16 /
+// UnknownWidth -- and R149 makes that ownership a rule a gate enforces. Twelve
+// private copies of it existed before 2026-10-20 and every body was identical,
+// which is the hazard rather than the comfort.
+
+// -----------------------------------------------------------------------------
 // X64 PER-FIELD META FLAGS -- X64FieldMetaEntry.flags
 // -----------------------------------------------------------------------------
 //

@@ -1,3 +1,13 @@
+# ---- Regression output capture --------------------------------------------
+add_executable(dottalkpp_regression_output_capture_test
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_regression_output_capture.cpp
+  ${CMAKE_SOURCE_DIR}/src/cli/output_router.cpp
+)
+target_include_directories(dottalkpp_regression_output_capture_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_compile_definitions(dottalkpp_regression_output_capture_test PRIVATE NOMINMAX)
+target_compile_features(dottalkpp_regression_output_capture_test PRIVATE cxx_std_17)
+add_test(NAME dottalkpp_regression_output_capture_test COMMAND dottalkpp_regression_output_capture_test)
+
 # ---- PDLC / DTV foundation smoke test --------------------------------------
 # Canonical DotTalk Value + qualified reference + DataAddress (tuple/PDLC Phase-0).
 # Links the isolated dottalk_value lib; proves signed/unsigned exact integers
@@ -125,6 +135,32 @@ add_executable(dottalkpp_security_policy_test
 )
 target_include_directories(dottalkpp_security_policy_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
 add_test(NAME dottalkpp_security_policy_test COMMAND dottalkpp_security_policy_test)
+
+# ---- AIF-120 R146: a derived panel is bound to the AREA ---------------------
+#
+# Grades the BINDING RULE: re-derive when the area changes, and NOT on a repaint
+# of the same area. The second half is the one a naive fix gets wrong -- it would
+# resolve a schema per page turn.
+#
+# IT IS A ctest AND NOT A .dts FOR A MEASURED REASON. SMARTBROWSER is an
+# interactive pager and under a script it paints the first page and exits on the
+# failed getline, recorded in the probe's own header
+# (dottalkpp/data/scripts/buffer_visibility_probe_v3_smartbrowser.dts). So no
+# script in this tree can reach OPEN CHILD, and the defect R146 names can be
+# neither provoked nor proven fixed from the .dts suite. A spec that cannot fail
+# is the INDEX_X64 v2 shape the suite reported as PASS on 2026-09-13.
+#
+# Header-only and resolver-injected, so it links nothing, opens no table and
+# gates on no option: it runs on every build, including a plain one.
+add_executable(dottalkpp_area_bound_view_test
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_area_bound_view.cpp
+)
+target_compile_features(dottalkpp_area_bound_view_test PRIVATE cxx_std_20)
+target_include_directories(dottalkpp_area_bound_view_test PRIVATE
+  ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_SOURCE_DIR}/src/cli
+)
+add_test(NAME dottalkpp_area_bound_view_test COMMAND dottalkpp_area_bound_view_test)
 
 # ---- X64 record-size hard-guard test (16 MiB ceiling via create_dbf) --------
 # If the linker reports unresolved memo/xindex symbols pulled in by create_dbf,
@@ -664,6 +700,78 @@ if(TARGET xbase)
       "FoxPro 9 if it was lost. dottalkpp_vfp_set_null_test is not built.")
   endif()
 endif()
+
+# ---- DDict catalog directory: chosen by name, not by working directory -----
+# Measured 2026-09-18: catalog_candidates() never named dottalkpp/data/datadict.
+# The Workbench's DDict panel found it only because the launcher pushes cwd to
+# dottalkpp/data; from the repo root the winner was the nested mirror
+# dottalkpp/data/datadict/datadict instead. Both catalogs are byte-identical
+# today, so nothing looked wrong, and nothing would have until one was rebuilt.
+#
+# Compiles the two translation units it exercises rather than linking a target:
+# ddict_catalog_paths.cpp is filesystem-only and ddict_read_helpers.cpp is the
+# string helper it calls. No engine library, no fixture, no repo file touched --
+# the test builds its own tree under temp_directory_path().
+add_executable(dottalkpp_ddict_catalog_dir_test
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_ddict_catalog_dir.cpp
+  ${CMAKE_SOURCE_DIR}/src/datadict/ddict_catalog_paths.cpp
+  ${CMAKE_SOURCE_DIR}/src/datadict/ddict_read_helpers.cpp
+)
+target_compile_features(dottalkpp_ddict_catalog_dir_test PRIVATE cxx_std_20)
+target_include_directories(dottalkpp_ddict_catalog_dir_test PRIVATE
+  ${CMAKE_SOURCE_DIR}/include)
+add_test(NAME dottalkpp_ddict_catalog_dir_test COMMAND dottalkpp_ddict_catalog_dir_test)
+
+# DDICT read view: native x64base-created long-name fixtures and read-only DTX.
+add_executable(dottalkpp_ddict_catalog_view_test
+  test_ddict_catalog_view.cpp
+  ${CMAKE_SOURCE_DIR}/src/help/helpdata_messages.cpp
+  ${CMAKE_SOURCE_DIR}/src/cli/cmd_ddict.cpp
+  ${CMAKE_SOURCE_DIR}/src/cli/command_output.cpp
+  ${CMAKE_SOURCE_DIR}/src/cli/command_catalog.cpp
+  ${CMAKE_SOURCE_DIR}/src/cli/output_router.cpp
+  ${CMAKE_SOURCE_DIR}/src/datadict/ddict_catalog_paths.cpp
+  ${CMAKE_SOURCE_DIR}/src/datadict/ddict_callsite_bridge.cpp
+  ${CMAKE_SOURCE_DIR}/src/datadict/ddict_catalog_resolver.cpp
+  ${CMAKE_SOURCE_DIR}/src/datadict/ddict_catalog_view.cpp
+  ${CMAKE_SOURCE_DIR}/src/datadict/ddict_dbf_reader.cpp
+  ${CMAKE_SOURCE_DIR}/src/datadict/ddict_object_resolver.cpp
+  ${CMAKE_SOURCE_DIR}/src/datadict/ddict_read_helpers.cpp
+)
+target_compile_features(dottalkpp_ddict_catalog_view_test PRIVATE cxx_std_20)
+target_link_libraries(dottalkpp_ddict_catalog_view_test PRIVATE xbase memo)
+target_include_directories(dottalkpp_ddict_catalog_view_test PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_compile_definitions(dottalkpp_ddict_catalog_view_test PRIVATE
+  DDICT_TEST_ROOT="${CMAKE_BINARY_DIR}/ddict-dogfood")
+add_test(NAME dottalkpp_ddict_catalog_view_test COMMAND dottalkpp_ddict_catalog_view_test)
+
+# ---- Workspace catalog nesting order: PARENT_ID, never PREV_ID -------------
+# WORKSPACES.dbf carries two edges -- PARENT_ID/TREE_DEPTH for containment and
+# PREV_ID/SUPERSEDED for retirement -- and cmd_workspace.cpp writes both while
+# nothing in this tree ever walked either. Walk the wrong one and the catalog
+# renders as a tree built out of its own history.
+#
+# Header-only, so this links nothing and touches no filesystem. It runs on any
+# build.
+add_executable(dottalkpp_workspace_catalog_order_test
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_workspace_catalog_order.cpp
+)
+target_compile_features(dottalkpp_workspace_catalog_order_test PRIVATE cxx_std_20)
+target_include_directories(dottalkpp_workspace_catalog_order_test PRIVATE
+  ${CMAKE_SOURCE_DIR}/include)
+add_test(NAME dottalkpp_workspace_catalog_order_test
+         COMMAND dottalkpp_workspace_catalog_order_test)
+
+# ---- HELP namespace and predicate-shortcut precedence ---------------------
+# An explicit catalog namespace must win over the bare HELP PREDICATES
+# convenience spelling. Header-only: no runtime or filesystem dependency.
+add_executable(dottalkpp_help_router_test
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_help_router.cpp
+)
+target_compile_features(dottalkpp_help_router_test PRIVATE cxx_std_20)
+target_include_directories(dottalkpp_help_router_test PRIVATE
+  ${CMAKE_SOURCE_DIR}/src)
+add_test(NAME dottalkpp_help_router_test COMMAND dottalkpp_help_router_test)
 
 # ---- The build script's test-target list: DERIVED, not enumerated ----------
 # Written last, deliberately, so it sees every target this directory created.

@@ -9,6 +9,7 @@
 
 #include "cli/table_state.hpp"
 
+#include <algorithm>   // std::max, for next_insert_key
 #include <array>
 #include <cctype>
 #include <cstring>
@@ -18,6 +19,7 @@
 #include <sstream>
 
 #include "xbase.hpp"
+#include "cli/append_fence.hpp"
 #include "xbase/durable.hpp"   // AIF-161: durable_sync before the log dies
 #include "common/path_state.hpp"  // AIF-160: the SYS slot, and what it exempts
 #include "cli/group_log.hpp"      // AIF-160: the P marker asks the group log
@@ -795,7 +797,10 @@ bool journal_note_rollback(int area0) {
 }
 
 // Crash recovery: replay a committed <dbf>.tbj on open, else discard it.
-bool recover_table_buffer_journal(xbase::DbArea& area) {
+bool recover_table_buffer_journal(xbase::DbArea& area, RecoverStats* out) {
+    RecoverStats local;
+    RecoverStats& stats = out ? *out : local;
+    stats = RecoverStats{};
     if (!area.isOpen()) return false;
 
     // SYS IS NEVER RECOVERED -- see is_engine_state_file above. This returns
@@ -1011,12 +1016,50 @@ bool recover_table_buffer_journal(xbase::DbArea& area) {
             std::string tag, prio, mode;
             std::uint64_t recno = 0;
             is >> tag >> recno >> prio >> mode;  // "I|U" <recno> <priority> <H|S>
-            if (recno == 0) continue;
-            if (tag == "I" && recno == area.recCount64() + 1) {
-                if (!area.appendBlank() || !area.readCurrent()) continue;
+            if (recno == 0) { ++stats.skipped; continue; }
+            // AN INSERT ALWAYS APPENDS (owner ruling 2026-09-19, OI-043 option
+            // A). The number in the log is the BUFFER KEY the transaction used
+            // to order its changes, not an address. What stood here was
+            // `recno == area.recCount64() + 1`, the same bounds-not-staleness
+            // shape as cmd_commit.cpp, written independently in a second file
+            // -- and worse here, because a replay runs when the operator has
+            // already lost something. Measured 2026-09-19: a stale-but-in-range
+            // key overwrote a live record, and a stale-and-out-of-range one was
+            // dropped by the bare `continue` below while the log was deleted
+            // anyway.
+            if (tag == "I") {
+                // OI-043: recovery grows a table other engines may hold.
+                //
+                // ONE FENCE PER APPEND, NOT ONE FENCE PER REPLAY -- and that is
+                // a measured choice, not an oversight. The obvious objection is
+                // that a second process can append BETWEEN two of these, so the
+                // rows one log carries need not land contiguously. True, and
+                // harmless: under rule (A) the recno is minted INSIDE the fence
+                // at append time, so a gap in the replayed run is an artifact
+                // of interleaving, not a lost record. Nothing downstream reads
+                // a journal's recnos as addresses any more -- that was exactly
+                // the bug the comment above this one records fixing.
+                //
+                // The question that DID need measuring is what happens when the
+                // table is held for the whole replay. Measured 2026-09-19 by
+                // dottalkpp/data/scripts/recovery_under_foreign_lock.ps1: a
+                // two-record journal was planted beside a LIVE foreign lock.
+                // USE opened the table, applied NOTHING, left the count at the
+                // seeds, and KEPT THE LOG -- OI-044's keep-the-log path firing
+                // against a genuine refusal rather than against a corrupt file.
+                // The lock was released; the log was still present; the next
+                // USE replayed both records in order and removed the log.
+                //
+                // A CONTENDED RECOVERY IS A DEFERRAL, NOT A PARTIAL WRITE.
+                // Per-append fencing is therefore sufficient for correctness. A
+                // whole-loop fence would buy contiguity and nothing else, and
+                // contiguity is not a property this engine promises. If someone
+                // proposes one again, the burden is to name a reader that
+                // requires a journal's rows to be adjacent -- there is none.
+                if (!cli::fence::append_fenced(area) || !area.readCurrent()) { ++stats.skipped; continue; }
             } else {
-                if (recno > area.recCount64()) continue;
-                if (!area.gotoRec64(recno) || !area.readCurrent()) continue;
+                if (recno > area.recCount64()) { ++stats.skipped; continue; }
+                if (!area.gotoRec64(recno) || !area.readCurrent()) { ++stats.skipped; continue; }
             }
 
             std::string pair;
@@ -1031,14 +1074,22 @@ bool recover_table_buffer_journal(xbase::DbArea& area) {
                     if (area.set(field, val)) wrote = true;
                 }
             }
-            if (wrote) (void)area.writeCurrent();
+            if (wrote) {
+                if (area.writeCurrent()) ++stats.applied; else ++stats.skipped;
+            } else {
+                // Nothing decoded. A redo record that set no field is not a
+                // record that landed, and counting it as applied is how a
+                // replay comes to report a success it did not have.
+                ++stats.skipped;
+            }
         } else if (rec_tag == "D") {
             std::istringstream is(ln);
             std::string tag;
             std::uint64_t recno = 0;
             is >> tag >> recno;                  // "D" <recno>
-            if (recno == 0 || recno > area.recCount64()) continue;
-            if (area.gotoRec64(recno) && area.readCurrent()) (void)area.deleteCurrent();
+            if (recno == 0 || recno > area.recCount64()) { ++stats.skipped; continue; }
+            if (area.gotoRec64(recno) && area.readCurrent() && area.deleteCurrent()) ++stats.applied;
+            else ++stats.skipped;
         }
         // Header, C, P, R lines: ignored HERE, and only here. Every one of
         // them was read above -- the header by the version gate, C and P by
@@ -1073,8 +1124,33 @@ bool recover_table_buffer_journal(xbase::DbArea& area) {
             std::cout << "RECOVER: warning -- journal replayed but the table was"
                          " not synced to durable media (" << sync_err << "); the"
                          " journal is KEPT and replays again at the next USE\n";
+            stats.log_kept = true;
             return true;   // replayed; log deliberately retained
         }
+    }
+
+    // OI-044: A SKIPPED RECORD IS A COMMITTED ROW THAT DID NOT LAND, AND THE
+    // LOG IS THE ONLY EVIDENCE IT EVER EXISTED.
+    //
+    // What stood here was `std::remove(path.c_str()); return true;` with no
+    // count of anything. A replay that skipped every record it carried deleted
+    // its log and reported success, indistinguishably from one that applied
+    // every record -- measured 2026-09-19, one committed row gone in silence.
+    //
+    // The durable_sync branch immediately above already keeps the log for a
+    // LESSER failure and says so in the same breath. This is that rule applied
+    // to the larger one. The note over the remove -- "idempotent replay is the
+    // property that makes recovery safe" -- is true only while the table has
+    // not changed, which is exactly the case a skip reports.
+    if (stats.skipped > 0) {
+        std::cout << "RECOVER: " << stats.applied << " redo record(s) applied, "
+                  << stats.skipped << " NOT PLACED -- " << path << "\n"
+                     "  A skipped record is a COMMITTED row that did not land.\n"
+                     "  THE LOG IS KEPT so the rows are not lost with it. A replay\n"
+                     "  cannot place a record whose table has changed underneath it;\n"
+                     "  inspect the table and the log rather than re-running USE.\n";
+        stats.log_kept = true;
+        return true;
     }
 
     std::remove(path.c_str());
@@ -1106,6 +1182,27 @@ TableBuffer& get_tb(int area0) {
 const TableBuffer& get_tb_const(int area0) {
     if (!in_range(area0)) throw std::out_of_range("Invalid area index");
     return state_store()[area0].tb;
+}
+
+// The staged-insert buffer key. See the header for why this is a function and
+// not two copies of four lines.
+//
+// OUT-OF-RANGE RETURNS rec_count + 1 RATHER THAN THROWING. A caller with no
+// buffer has no staged inserts to skip past, so the physical answer IS the
+// right answer, and the alternative would put a throw in the path of a verb
+// that is about to decide it is not buffering at all.
+std::uint64_t next_insert_key(int area0, std::uint64_t rec_count) {
+    std::uint64_t key = rec_count + 1;
+    if (!in_range(area0)) return key;
+    for (const auto& entry : state_store()[area0].tb.changes) {
+        if (entry.second.dirty_flags & CHANGE_INSERT) {
+            // entry.first + 1, NOT ++key: the keys already staged need not be
+            // contiguous with each other or with the file, and stepping by one
+            // per entry would collide the moment they are not.
+            key = std::max(key, entry.first + 1);
+        }
+    }
+    return key;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

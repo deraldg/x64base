@@ -366,6 +366,9 @@ void cmd_SETPATH(xbase::DbArea&, std::istringstream& iss)
         } else {
             dottalk::paths::reset();
         }
+        // RESET retargets the current workspace just like a path assignment.
+        // Otherwise SWITCH away/back resurrects that workspace's old roots.
+        cli::workspace_roots_bind_from_slots(xbase::workspace::current_handle());
         cli::cmdout::print_prefixed_message(
             "SETPATH",
             dottalk::helpdata::MessageId::SetPathResetText);

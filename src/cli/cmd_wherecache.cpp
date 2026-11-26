@@ -15,7 +15,7 @@
 // owner: DOT|WHERECACHE
 // command: WHERECACHE
 // category: diagnostics
-// status: experimental
+// status: supported
 // noargs: report
 // effect: mixed
 // mutates: where-cache

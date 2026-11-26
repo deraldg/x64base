@@ -64,6 +64,7 @@
 //
 
 #include "xbase.hpp"
+#include "cli/append_fence.hpp"
 #include "xbase_64.hpp"
 #include "xbase/dbf_create.hpp"
 #include "xbase/field_name_policy.hpp"
@@ -974,7 +975,7 @@ static bool import_rows(DbArea& area,
                 }
             }
 
-            if (!area.appendBlank()) {
+            if (!cli::fence::append_fenced(area)) {
                 err = cli::cmdout::message_text(
                     dottalk::helpdata::MessageId::AutoDbfAppendBlankFailed,
                     {{"line", std::to_string(lineNumber)}});

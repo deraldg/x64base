@@ -12,7 +12,7 @@
 // owner: DOT|SQLVER
 // command: SQLVER
 // category: sql
-// status: experimental
+// status: supported
 // noargs: report
 // effect: report
 // mutates: none

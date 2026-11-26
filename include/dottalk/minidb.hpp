@@ -16,6 +16,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <charconv>
 
 // AIF-120. The MINIDB 1 container reader, separated from what a reader DOES
 // with it.
@@ -133,6 +134,12 @@ inline std::string lower_ascii(std::string s) {
     return s;
 }
 
+inline bool byte_length(const std::string& text, std::size_t& value) {
+    if (text.empty()) return false;
+    const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value);
+    return parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size();
+}
+
 } // namespace detail
 
 inline Scan scan(const std::string& payload) {
@@ -160,9 +167,10 @@ inline Scan scan(const std::string& payload) {
         const std::string low = detail::lower_ascii(t);
 
         if (low.rfind("posture ", 0) == 0) {
-            const std::size_t len =
-                static_cast<std::size_t>(std::strtoull(t.substr(8).c_str(), nullptr, 10));
-            if (pos + len > payload.size()) { r.error = "truncated posture"; return r; }
+            std::size_t len = 0;
+            if (!detail::byte_length(detail::trim_ascii(t.substr(8)), len) || len > payload.size() - pos) {
+                r.error = "invalid or truncated posture length"; return r;
+            }
             r.posture = payload.substr(pos, len);
             pos += len;
         } else if (low.rfind("file ", 0) == 0) {
@@ -171,10 +179,10 @@ inline Scan scan(const std::string& payload) {
             const std::string rest = detail::trim_ascii(t.substr(5));
             const std::size_t sp = rest.find(' ');
             if (sp == std::string::npos) { r.error = "bad FILE section"; return r; }
-            const std::size_t len =
-                static_cast<std::size_t>(std::strtoull(rest.substr(0, sp).c_str(), nullptr, 10));
+            std::size_t len = 0;
+            if (!detail::byte_length(rest.substr(0, sp), len)) { r.error = "invalid FILE length"; return r; }
             const std::string rel = detail::trim_ascii(rest.substr(sp + 1));
-            if (rel.empty() || pos + len > payload.size()) {
+            if (rel.empty() || len > payload.size() - pos) {
                 r.error = "bad FILE section";
                 return r;
             }

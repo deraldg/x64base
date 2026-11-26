@@ -49,6 +49,8 @@ public:
     std::string path() const override;
 
     MemoOpResult open(const std::string& sidecar_path, OpenMode mode) override;
+    // Inspection only: never creates a sidecar or rewrites its header on close.
+    MemoOpResult open_read_only(const std::string& sidecar_path);
     MemoOpResult flush() override;
     void close() noexcept override;
 
@@ -127,6 +129,7 @@ private:
     };
 
     std::fstream _fp;
+    bool _read_only{false};
     std::string _path;
     dtx::DtxHeader _hdr{};
 

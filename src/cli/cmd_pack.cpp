@@ -15,6 +15,9 @@
 //   - legacy memo tables are still refused
 //   - x64 M(8) memo tables are packed by rebuilding BOTH the DBF and the DTX sidecar
 //   - x64 memo object ids are remapped to fresh ids in the new DTX
+//   - x64 memo fields of ANY OTHER WIDTH are refused (2026-10-13). M(16) holds a
+//     MemoRef token, not an id slot; the memo-aware path cannot see it, and the
+//     plain path would strand every payload the removed rows named.
 //
 // POLICY (2026):
 //   - Structural command (file-level operation)
@@ -46,14 +49,26 @@
 //   PACK USAGE prints usage before open-table checks.
 //   PACK rewrites the current DBF with only non-deleted records and closes the table on success.
 //   PACK supports x64 M(8) memo tables by rebuilding DBF and DTX together.
+//     CORRECTED 2026-10-20: this was advertised and did NOT work. PACK released
+//     the DBF handle and never the sidecar, so the DTX rename always failed and
+//     the pack aborted. Fixed at the close site in cmd_PACK; proven by
+//     m16_guard_regression.dts's M(8) arm. The sentence above was aspirational
+//     until that date and is left standing because it states the intent.
 //   Legacy memo tables are refused.
+//   An x64 table holding a memo field of any width other than 8 is REFUSED, and
+//     nothing is changed -- the table is not even closed. M(16) is a MemoRef
+//     token rather than an object-id slot, so the memo-aware path does not see
+//     it; the plain path would rewrite the DBF and leave the sidecar untouched,
+//     stranding the payloads the removed rows named. WORKSPACES.SNAPSHOT is the
+//     field this refusal exists for.
 //   Index containers must be rebuilt/rebound after PACK.
 //
 // risk:
 //   requires_open_table: yes except usage
 //   destructive_rewrite: yes
 //   mutates_table_file: yes
-//   mutates_memo_sidecar: x64 memo tables
+//   mutates_memo_sidecar: x64 M(8) memo tables only
+//   refuses_undecodable_memo_width: yes -- x64 M(n != 8), nothing changed
 //   closes_table: yes
 //   clears_order_state: yes
 //
@@ -76,10 +91,12 @@
 
 #include "xbase.hpp"
 #include "xbase_64.hpp"
+#include "xbase/x64_memo_slot.hpp"
 #include "textio.hpp"
 #include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
 #include "memo/memostore.hpp"
+#include "memo/memo_auto.hpp"   // cli_memo::memo_auto_on_close -- see the close site in cmd_PACK
 #include <cctype>
 
 // Optional path slot support (SETPATH)
@@ -387,16 +404,130 @@ static bool replace_two_files_with_backup(const fs::path& origDbf,
     return true;
 }
 
+// THE GATE FOUND THIS ONE, NOT THE CENSUS (R149, AIF-172). A hand sweep for
+// the NAME is_x64_memo_field missed it, because it spelled the predicate inline
+// with a bare 8. It is the function whose FALSE answer sent the M(16) catalog
+// down the plain pack path with its payloads stranded.
 static bool has_x64_memo_fields(const xbase::DbArea& a)
 {
     if (a.versionByte() != xbase::DBF_VERSION_64) return false;
 
     for (const auto& f : a.fields()) {
-        if ((f.type == 'M' || f.type == 'm') && f.length == 8) {
+        if (xbase::is_x64_memo_field(f, /*is_x64=*/true)) {
             return true;
         }
     }
     return false;
+}
+
+// AN M(8) SLOT IS EMPTY WHEN IT IS ALL ZEROS *OR* ALL SPACES, and only the first
+// of those was recognised. APPEND leaves the slot as eight ASCII SPACES, so
+// read_u64_le returns 0x2020202020202020 -- decimal 2314885530818453536 -- which
+// is not 0, so the old code looked that "id" up, failed, and printed
+//
+//   PACK: warning -- memo object 2314885530818453536 not found, clearing reference
+//
+// once per appended row, on every successful memo pack. The OUTCOME was already
+// right (the slot is written as 0 either way); the DIAGNOSIS named an object that
+// never existed, and a warning that cries wolf on normal data teaches the reader
+// to skip warnings.
+//
+// THE TREE ALREADY KNEW ABOUT THIS SLOT STATE. AIF-163's reachability measurement
+// counts a slot reading 0 or 0x2020202020202020 as empty -- "the blank-slot
+// defect" -- and memo_verify.cpp reaches the same answer by a different road: it
+// reads the slot as a STRING, so eight spaces trim to empty and land in
+// empty_refs. PACK reads RAW BYTES, which is why it alone saw a number. The
+// asymmetry was the bug, not the data.
+//
+// Normalising to 0 on the way out is deliberate: the packed table gets clean
+// zeros where the source had spaces, which is what every other path here writes.
+static bool x64_memo_slot_is_empty(const std::uint8_t* p)
+{
+    bool all_zero = true;
+    bool all_space = true;
+    for (std::size_t i = 0; i < 8; ++i) {
+        if (p[i] != 0x00) all_zero  = false;
+        if (p[i] != 0x20) all_space = false;
+    }
+    return all_zero || all_space;
+}
+
+// THE DESCRIPTOR TERMINATOR IS NOT AT THE END OF AN x64 HEADER BLOCK, and the
+// check that assumed it was fired on EVERY x64 table -- including a plain one
+// PACK then compacted successfully, which is how it was finally diagnosed as a
+// false alarm rather than a property of memo tables.
+//
+// Classic/VFP: header_size points JUST PAST the 0x0D that ends the descriptor
+// area, so the last byte of the block IS the terminator and `back()` is right.
+//
+// x64: data_start_64 points past the descriptors AND past the optional X64M
+// metadata block, so the last byte of the block is normally METADATA. The
+// terminator sits at the end of the descriptor area -- descriptors begin at
+// LARGE_HEADER_SIZE and run in 32-byte steps -- which is where this looks.
+// Measured on WORKSPACES: descriptors from 96, terminator at 800, 22 fields.
+//
+// This REPLACES the assumption with the real question rather than silencing the
+// warning: a malformed x64 header with no terminator anywhere in the block still
+// warns.
+static bool header_block_has_terminator(const std::vector<std::uint8_t>& hdr)
+{
+    if (hdr.empty()) return false;
+
+    if (hdr[0] != xbase::DBF_VERSION_64) {
+        return hdr.back() == xbase::HEADER_TERM_BYTE;
+    }
+
+    for (std::size_t off = xbase::LARGE_HEADER_SIZE; off < hdr.size(); off += 32) {
+        if (hdr[off] == xbase::HEADER_TERM_BYTE) return true;
+    }
+    return false;
+}
+
+// MEMO-TYPED FIELDS THIS PACK PATH CANNOT DECODE, and why that is a refusal
+// rather than a fallback (measured 2026-10-13).
+//
+// Everything above gates on f.length == 8 -- the x64 uint64 object-id slot,
+// xbase::X64_MEMO_FIELD_LEN. A SECOND CONVENTION EXISTS AND THIS FILE CANNOT
+// READ IT: WORKSPACES.SNAPSHOT is M(16), holding a 16-hex MemoRef token rather
+// than an id slot. It is built that way deliberately (cmd_workspace.cpp sets
+// m.len = 16) and read back with get_by_name() like a character field. So
+// collect_x64_memo_fields() skips it, has_x64_memo_fields() returns false, and
+// the catalog has been taking the PLAIN path: DBF rewritten, DTX untouched.
+//
+// THE PLAIN PATH DOES NOT DELETE THE PAYLOADS -- IT STRANDS THEM, which is
+// harder to notice and harder to undo. Measured on the live catalog: 282 rows,
+// 148 delete-flagged, 121 SNAPSHOT tokens against exactly 121 DTX objects. A
+// plain pack drops the 148 rows and keeps every byte they named, so 110 objects
+// / 2,305,296 bytes become unreachable -- still on disk, no longer named by any
+// row, and NOT collectable by MEMO GC either, because memo_verify.cpp gates on
+// this same width and takes an early return above its orphan computation.
+// Neither history nor garbage. PAYLOAD_SHA does not rescue them: the identity
+// lives in the row the pack just removed.
+//
+// A SECOND, INDEPENDENT HAZARD sits on the same table and is already recorded
+// in include/xbase_64.hpp: "this slot must not gate a PACK ... a pack that
+// renumbers without a live sequence reissues WS_IDs, and it does so without
+// printing anything."
+//
+// WIDENING THE PREDICATE IS NOT THE FIX HERE. It would let MEMO GC begin
+// COLLECTING those 110 objects, and whether a retired workspace's snapshot is
+// garbage is a retention ruling (D10.3 says retirement leaves a record rather
+// than a hole). A guard does not get to decide that. Refuse, and let the ruling
+// arrive on its own schedule.
+static std::vector<std::string> undecodable_x64_memo_fields(const xbase::DbArea& a)
+{
+    std::vector<std::string> out;
+    if (a.versionByte() != xbase::DBF_VERSION_64) return out;
+
+    // ONE OWNER FOR THE WIDTH QUESTION (R149). This loop used to spell the test
+    // `type == 'M' && length != 8` inline, which is the same predicate in the
+    // negative -- and the ninth place it was written down.
+    for (const auto& f : a.fields()) {
+        if (xbase::is_undecodable_x64_memo_field(f, /*is_x64=*/true)) {
+            out.push_back(f.name);
+        }
+    }
+    return out;
 }
 
 static std::vector<MemoFieldInfo> collect_x64_memo_fields(const xbase::DbArea& a)
@@ -408,7 +539,7 @@ static std::vector<MemoFieldInfo> collect_x64_memo_fields(const xbase::DbArea& a
     const auto& fsf = a.fields();
     for (std::size_t i = 0; i < fsf.size(); ++i) {
         const auto& f = fsf[i];
-        if ((f.type == 'M' || f.type == 'm') && f.length == 8) {
+        if (xbase::is_x64_memo_field(f, /*is_x64=*/true)) {
             out.push_back(MemoFieldInfo{
                 static_cast<int>(i) + 1,
                 off
@@ -522,7 +653,7 @@ static bool pack_x64_memo_table(const fs::path& origPath,
     }
     src.close();
 
-    if (headerBlock.size() > 0 && headerBlock.back() != xbase::HEADER_TERM_BYTE) {
+    if (!header_block_has_terminator(headerBlock)) {
         cli::cmdout::print_prefixed_message("Warning", dottalk::helpdata::MessageId::PackHeaderNoTerminatorText);
     }
 
@@ -616,12 +747,12 @@ static bool pack_x64_memo_table(const fs::path& origPath,
                 return false;
             }
 
-            const std::uint64_t old_id = read_u64_le(recbuf.data() + mf.row_offset);
-
-            if (old_id == 0) {
+            if (x64_memo_slot_is_empty(recbuf.data() + mf.row_offset)) {
                 write_u64_le(recbuf.data() + mf.row_offset, 0);
                 continue;
             }
+
+            const std::uint64_t old_id = read_u64_le(recbuf.data() + mf.row_offset);
 
             std::string text;
             std::string memo_err;
@@ -720,6 +851,17 @@ static bool pack_x64_memo_table(const fs::path& origPath,
 
     if (!replace_two_files_with_backup(origPath, tmpPath, bakPath, origDtx, tmpDtx, bakDtx)) {
         err = "failed replacing original DBF/DTX with packed pair";
+
+        // A FAILED REPLACE MUST NOT LEAVE ITS TEMPS. Every other error path in
+        // this function removes them; this one did not, so the aborted pack of
+        // 2026-10-20 left PK8T.pack.tmp.dbf and PK8T.pack.tmp.dtx on disk beside
+        // the table it had not changed. replace_two_files_with_backup already
+        // rolls the ORIGINALS back, which is why nothing was damaged -- the gap
+        // was only the two files it had built and no longer needed.
+        std::error_code ec_tmp;
+        fs::remove(tmpPath, ec_tmp);
+        ec_tmp.clear();
+        fs::remove(tmpDtx, ec_tmp);
         return false;
     }
 
@@ -777,6 +919,34 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
         return;
     }
 
+    // THE GATE ABOVE CANNOT CATCH THIS ONE, which is why the guard is separate
+    // rather than folded into it. MemoKind is NONE/FPT/DBT -- LEGACY SIDECARS
+    // ONLY, there is no DTX kind -- so for every x64 memo table memoKind() is
+    // NONE and that refusal never fires. x64_memo_pack then merely SELECTS a
+    // path, with no arm for an x64 memo table the path cannot read.
+    //
+    // Refuse here, BEFORE orderstate is cleared and the area is closed, so a
+    // refusal costs the caller nothing. See undecodable_x64_memo_fields above.
+    {
+        const std::vector<std::string> blind = undecodable_x64_memo_fields(A);
+        if (!blind.empty()) {
+            std::string names;
+            for (std::size_t i = 0; i < blind.size(); ++i) {
+                if (i) names += ", ";
+                names += blind[i];
+            }
+            cli::cmdout::print_info("PACK",
+                "refused -- this table holds memo field(s) PACK cannot decode: "
+                + names
+                + ". These are M(n) with n != 8, so the memo-aware path does not"
+                  " see them and the plain path would rewrite the DBF while"
+                  " leaving the sidecar untouched -- stranding every payload the"
+                  " removed rows named: unreachable, still on disk, and not"
+                  " collectable by MEMO GC. Nothing was changed.");
+            return;
+        }
+    }
+
     std::string orderContainer;
     try { orderContainer = orderstate::orderName(A); } catch (...) {}
 
@@ -784,6 +954,31 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
     const std::vector<MemoFieldInfo> memoFields = collect_x64_memo_fields(A);
 
     try { orderstate::clearOrder(A); } catch (...) {}
+
+    // RELEASE THE SIDECAR, NOT JUST THE DBF. A.close() drops the DBF handle and
+    // nothing else; the AREA's MemoStore lives in cli_memo's g_store, put there
+    // by memo_auto_on_use when the table was opened, and it keeps the .dtx OPEN.
+    //
+    // WITHOUT THIS LINE THE x64 MEMO PACK COULD NEVER SUCCEED, and it is not a
+    // race or a stale lock -- it is structural. pack_x64_memo_table closes its
+    // own oldStore and newStore immediately before the rename, so the handle
+    // that blocks it is the area's, and PACK REQUIRES AN OPEN TABLE, so for an
+    // x64 memo table that handle is ALWAYS present. Measured 2026-10-20 on build
+    // Oct 15 09:32:22 by m16_guard_regression.dts's contrast arm:
+    //
+    //   PACK: Failed to rename original DTX to backup: The process cannot
+    //         access the file because it is being used by another process.
+    //   PACK: failed replacing original DBF/DTX with packed pair
+    //   PACK: operation aborted. Table remains closed.
+    //
+    // The usage block above has advertised "x64 M(8) memo tables are packed by
+    // rebuilding BOTH the DBF and the DTX sidecar" since the feature was
+    // written. It appears never to have worked on a table with deleted rows:
+    // the two earlier runtime measurements both missed it, one having zero
+    // deleted rows and the other being the catalog, which takes the plain path.
+    //
+    // The idiom is cmd_workspace.cpp's, used there twice (:1386, :1759).
+    try { cli_memo::memo_auto_on_close(A); } catch (...) {}
     try { A.close(); } catch (...) {}
 
     fs::path origPath = resolve_dbf_slot_path(fs::path(dbf_path_str));
@@ -855,7 +1050,7 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
             return;
         }
 
-        if (headerBlock.size() > 0 && headerBlock.back() != xbase::HEADER_TERM_BYTE) {
+        if (!header_block_has_terminator(headerBlock)) {
             cli::cmdout::print_prefixed_message("Warning", dottalk::helpdata::MessageId::PackHeaderNoTerminatorText);
         }
 

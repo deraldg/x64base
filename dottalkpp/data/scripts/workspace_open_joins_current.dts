@@ -67,8 +67,11 @@ SET PATH DBF DBF
 * open a directory. R131 says the opened table joins OJCWS.
 WORKSPACE NEW OJCWS
 WORKSPACE SWITCH OJCWS
-WORKSPACE ADD DBF/SANDBOX/OJCA/OJCT1.dbf
-WORKSPACE OPEN DBF/SANDBOX/OJCB
+* Targets below are relative to the configured DBF slot. Prefixing them with
+* DBF made this spec depend on starting in dottalkpp/data; the canonical capture
+* starts in dottalkpp and correctly exposed the doubled DBF/DBF path (AIF-165).
+WORKSPACE ADD SANDBOX/OJCA/OJCT1.dbf
+WORKSPACE OPEN SANDBOX/OJCB
 * G3 -- the open happened at all, and the table is where a reader would look.
 * GREEN ON BOTH BUILDS AND NOT A DISCRIMINATOR, stated rather than implied: a
 * reader counting green arms would otherwise credit it with proving placement.
@@ -85,7 +88,7 @@ WORKSPACE SWITCH OJCWS
 WORKSPACE SAVE ojcscope MEMO
 WORKSPACE CLOSE ALL
 WORKSPACE LOAD ojcscope MEMO
-WORKSPACE ADD DBF/SANDBOX/OJCC/OJCT3.dbf
+WORKSPACE ADD SANDBOX/OJCC/OJCT3.dbf
 SELECT 1
 ? "OJC_T1_opened_table_was_in_the_current_workspace:" + (ALLTRIM(MARK) = "BBB")
 * T2 -- the placement half. WEAKER THAN T1 BY CONSTRUCTION: under the old
@@ -107,13 +110,13 @@ SELECT 2
 WORKSPACE CLOSE ALL
 WORKSPACE NEW OJCWS2
 WORKSPACE SWITCH OJCWS2
-WORKSPACE ADD DBF/SANDBOX/OJCA/OJCT1.dbf
-WORKSPACE OPEN DBF/SANDBOX/OJCB AS OJCASWS
+WORKSPACE ADD SANDBOX/OJCA/OJCT1.dbf
+WORKSPACE OPEN SANDBOX/OJCB AS OJCASWS
 WORKSPACE SWITCH OJCWS2
 WORKSPACE SAVE ojcasscope MEMO
 WORKSPACE CLOSE ALL
 WORKSPACE LOAD ojcasscope MEMO
-WORKSPACE ADD DBF/SANDBOX/OJCC/OJCT3.dbf
+WORKSPACE ADD SANDBOX/OJCC/OJCT3.dbf
 SELECT 1
 ? "OJC_T3_AS_kept_the_open_out_of_the_current_workspace:" + (ALLTRIM(MARK) = "CCC")
 * ---------------------------------------------------------------------------

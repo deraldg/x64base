@@ -579,12 +579,23 @@ message(STATUS "dottalkpp: DOTTALK_WITH_GUI = ${DOTTALK_WITH_GUI}")
 message(STATUS "dottalkpp: DOTTALK_WITH_WX  = ${DOTTALK_WITH_WX}")
 
 # DD-089H guarded Data Dictionary helper source wiring.
+add_executable(ddict_export
+  tools/ddict_export_main.cpp
+  datadict/ddict_catalog_view.cpp
+  datadict/ddict_dbf_reader.cpp
+  datadict/ddict_read_helpers.cpp
+)
+target_compile_features(ddict_export PRIVATE cxx_std_20)
+target_include_directories(ddict_export PRIVATE "${CMAKE_SOURCE_DIR}/include")
+target_link_libraries(ddict_export PRIVATE xbase memo)
+
 # These files support the refactored DDICT read-only catalog command surface.
 if(TARGET dottalkpp)
   target_sources(dottalkpp PRIVATE
     datadict/ddict_read_helpers.cpp
     datadict/ddict_catalog_paths.cpp
     datadict/ddict_dbf_reader.cpp
+    datadict/ddict_catalog_view.cpp
     datadict/ddict_object_resolver.cpp
   )
 endif()

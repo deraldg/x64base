@@ -28,6 +28,26 @@
 //   IMPORTSQL CREATE <file> TO <table> [DELIM PIPE|TAB|COMMA]
 //   IMPORTSQL FILE <file> TO <table> [DELIM PIPE|TAB|COMMA]
 //   IMPORTSQL MAP <subcommand> <mapfile>
+// notes:
+//   IMPORTSQL FILE TAKES THE TABLE FENCE ONCE, BEFORE THE FIRST ROW (OI-043,
+//   2026-09-19), and refuses with "IMPORTSQL: table locked (<reason>)" when
+//   another process holds the target. It did not until that date: measured
+//   against a planted foreign lock it reported "IMPORT: OK / Rows imported: 1"
+//   while APPEND BLANK, SQLSEL INSERT and REPLACE were all refused by name.
+//   The target may be the table this session already has open --
+//   current_area_matches_target() exists for exactly that -- so the table it
+//   grows can be the one another engine is holding.
+//
+//   IMPORTSQL FILE ENFORCES PRIMARY-KEY POLICY (AIF-156, 2026-09-23, owner
+//   ruling: identity is house-owned, meaning is data). On a table whose key
+//   is declared PRIMARY: an import whose positional columns would land on
+//   the key column is REFUSED BEFORE THE FIRST ROW ("IMPORT: REFUSED",
+//   naming the key and instructing demotion to a data column); every row's
+//   columns are asked of xbase::cli::gateFieldWrites() BEFORE the append;
+//   and rows imported past the key come out MINTED by the same generator
+//   APPEND uses, never blank. A source key with embedded meaning (a VIN)
+//   is imported as an ordinary data column, never as the house key.
+//   PKPOLICY arms PKP_G8/G9/T9/T10 are the runtime proof.
 //
 // examples:
 //   IMPORTSQL PREVIEW data\students.psv
@@ -39,11 +59,14 @@
 //   IMPORTSQL USAGE returns before file/table work.
 //   IMPORTSQL PREVIEW/VALIDATE/SCHEMA read input files.
 //   IMPORTSQL CREATE/FILE may create tables and import records.
+//   IMPORTSQL FILE refuses to feed a declared PRIMARY key and mints it
+//   instead (2026-09-23; see the enforcement note above).
 //
 // risk:
 //   reads_filesystem: IMPORTSQL PREVIEW/VALIDATE/SCHEMA/CREATE/FILE
 //   writes_filesystem: IMPORTSQL CREATE
 //   mutates_table_data: IMPORTSQL FILE/CREATE where implemented
+//   refuses: IMPORTSQL FILE when source columns would cover a PRIMARY key
 //
 // related:
 //   USE
@@ -64,6 +87,9 @@
 #include "import/import_normalize.hpp"
 #include "import/import_profile.hpp"
 #include "xbase.hpp"
+#include "xbase_cli.hpp"
+#include "cli/append_fence.hpp"
+#include "cli/append_support.hpp"
 #include <algorithm>
 #include <cctype>
 
@@ -672,6 +698,54 @@ namespace
             return;
         }
 
+        // PKPOLICY (AIF-156, 2026-09-23, owner ruling): IDENTITY IS HOUSE-OWNED;
+        // MEANING IS DATA. A primary key is minted at append and never imported.
+        // A source database's key may embed meaning (a VIN does); that meaning is
+        // preserved by DEMOTING the source key to an ordinary data column, never
+        // by letting it feed the house key. Columns map BY POSITION here (source
+        // column i feeds table field i+1), so whether this import would feed the
+        // stamped key column is knowable from the column count alone, before any
+        // row lands -- and a refusal before the first row costs nothing, the
+        // same argument the whole-import fence below stands on.
+        int import_pk1 = 0;
+        try { import_pk1 = area.primaryFieldIndex(); } catch (...) { import_pk1 = 0; }
+        if (import_pk1 >= 1 &&
+            scan.expectedColumns >= static_cast<std::size_t>(import_pk1))
+        {
+            const std::string key_name =
+                area.fields()[static_cast<std::size_t>(import_pk1) - 1].name;
+            std::cout << "IMPORT: REFUSED\n";
+            std::cout << "  " << key_name
+                      << " is this table's primary key; keys are minted at append, never imported.\n";
+            std::cout << "  Source column " << import_pk1
+                      << " would land on it (columns map by position).\n";
+            std::cout << "  Demote the source key to a data column (a field named for its meaning,"
+                         " e.g. SRC_" << key_name << ") or import into a table whose key"
+                         " field sits beyond the imported columns.\n";
+            return;
+        }
+
+        // OI-043: ONE FENCE FOR THE WHOLE IMPORT, before the first row.
+        //
+        // MEASURED 2026-09-19 as the THIRD command-surface door. With a foreign
+        // LIVE table lock planted beside the table, APPEND BLANK, SQLSEL INSERT
+        // and REPLACE were refused by name -- and this path reported
+        // "IMPORT: OK / Rows imported: 1" and left L6A on disk. current_area_
+        // matches_target() exists precisely so this can append into the table
+        // the session already has open, which is the table another engine may
+        // be holding.
+        //
+        // Taken here rather than per row for the reason cmd_import.cpp records:
+        // a refusal costs nothing instead of leaving a partial import, and the
+        // per-row append_fenced() calls below BORROW this fence rather than
+        // taking N locks.
+        cli::fence::TableFence importsql_fence(area);
+        if (!importsql_fence.ready)
+        {
+            std::cout << "IMPORTSQL: table locked (" << importsql_fence.error << ")\n";
+            return;
+        }
+
         std::size_t lineNumber = 1;
         std::size_t importedRows = 0;
 
@@ -710,7 +784,47 @@ namespace
                 }
             }
 
-            if (!area.appendBlank())
+            // GATE BEFORE THE APPEND, EVERY COLUMN BEFORE ANY (AIF-156,
+            // 2026-09-23) -- the all-or-nothing shape the gated multi-field
+            // writers share, and gated before appendBlank() for PKP_T7's
+            // reason: a refusal that leaves a blank record behind has still
+            // changed the table. Today no import column can target the key
+            // (refused above, before the first row), so this gate passes on
+            // every current import; it exists so a future constraint that
+            // consults values applies here without anyone rediscovering this
+            // loop.
+            std::vector<std::pair<int, std::string>> row_writes;
+            row_writes.reserve(converted.size());
+            for (std::size_t i = 0; i < converted.size(); ++i)
+                row_writes.emplace_back(static_cast<int>(i + 1), converted[i]);
+
+            std::string gate_err;
+            int refused_field1 = 0;
+            if (!xbase::cli::gateFieldWrites(area, row_writes, &gate_err, &refused_field1))
+            {
+                std::cout << "IMPORT: REFUSED\n";
+                std::cout << "  Line " << lineNumber << ": "
+                          << (gate_err.empty() ? std::string("write refused") : gate_err);
+                if (refused_field1 >= 1 &&
+                    refused_field1 <= static_cast<int>(area.fields().size()))
+                    std::cout << " (field "
+                              << area.fields()[static_cast<std::size_t>(refused_field1) - 1].name
+                              << ")";
+                std::cout << "\n";
+                return;
+            }
+
+            // MINT AT THE LAST NANOSECOND. dottalk_append_blank_raw_locked()
+            // appends under the fence this loop already holds (the lock is
+            // borrowed, not retaken) and runs the same key generator APPEND
+            // uses, so a stamped key field beyond the imported columns comes
+            // out minted rather than blank -- a stamped blank can never be
+            // filled, which is the state this line exists to prevent. The
+            // generator scans the table per append; a bulk import pays that
+            // scan per row, and correct-and-slow beats fast-and-blank here
+            // for the same reason it does in append_support.cpp.
+            std::uint32_t import_rn = 0;
+            if (!dottalk_append_blank_raw_locked(area, import_rn))
             {
                 std::cout << "IMPORT: FAILED\n";
                 std::cout << "  Line " << lineNumber
@@ -766,7 +880,11 @@ static void print_importsql_usage_contract()
         << "Notes:\n"
         << "  - IMPORTSQL USAGE returns before file or table work.\n"
         << "  - PREVIEW/VALIDATE/SCHEMA read input files.\n"
-        << "  - CREATE/FILE may create tables and import records.\n";
+        << "  - CREATE/FILE may create tables and import records.\n"
+        << "  - FILE never imports into a declared PRIMARY key: an import whose\n"
+        << "    columns would land on it is refused before the first row, and a\n"
+        << "    key field beyond the imported columns is minted at append.\n"
+        << "    Import a source key as an ordinary data column instead.\n";
 }
 
 static void print_exportsql_usage_contract()
