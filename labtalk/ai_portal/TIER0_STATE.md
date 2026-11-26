@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-11-26T14:24:56Z
+    generated_utc : 2026-11-26T14:27:00Z
     lane        : AIF-082 (6.1)
 
 Before relying on this snapshot, run the generator with --check.
@@ -10,9 +10,9 @@ Before relying on this snapshot, run the generator with --check.
 ## Tree
 
     branch        : development
-    HEAD          : b2d9d5948  (2026-11-26)
+    HEAD          : efe184c2a  (2026-11-26)
     upstream      : e9a20b674
-    unpushed      : 8 commit(s) ahead of upstream
+    unpushed      : 9 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -32,12 +32,13 @@ Before relying on this snapshot, run the generator with --check.
 
 - The global dated closeout, SESSION_CLOSEOUT_AIF171_PHASE8_REPAIR_PLAN_2026-10-15.md, is on disk but in no commit.
 - Untracked closeout(s): SESSION_CLOSEOUT_AIF171_PHASE8_M4_PLAN_2026-10-15.md, SESSION_CLOSEOUT_AIF171_PHASE8_M4_APPLY_M5_REMEASURE_2026-10-15.md (+15 more).
-- 8 commit(s) are unpushed and invisible to a clone.
+- 9 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-175 | command-provenance-search-limiter | member.ai.claude.cowork | yes |
 | AIF-174 | regression-process-groups-output | member.ai.codex | yes |
 | AIF-173 | repeatable-demos | member.ai.claude.cowork | yes |
 | AIF-172 | x64-memo-slot-predicate-one-owner | member.ai.claude.cowork | yes |
@@ -49,8 +50,7 @@ Before relying on this snapshot, run the generator with --check.
 | AIF-166 | partner-amicus-standing | member.derald | yes |
 | AIF-165 | Regression summary must distinguish graded PASS from transcript-only execution; add validators for the workspace family exposed as not graded by REGRESSION ALL | member.ai.codex | yes |
 | AIF-164 | x64-field-type-parity | member.derald | yes |
-| AIF-163 | memo-sidecar-reclamation | member.derald | yes |
-| ... | 93 older claims omitted | | |
+| ... | 94 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -66,6 +66,7 @@ Aside chains are ordered claims. Parent and birth UTC come from the lineage ledg
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
+| CLAUDE-20261126-ONBOARDING-FIXES | member.ai.claude.cowork | - | - | AIF-175 |
 | CODEX-20261121-REGRESSION | member.ai.codex | - | - | AIF-174 |
 | COWORK-20261022-001 | member.ai.claude.cowork | - | - | AIF-173 |
 | AIFGEN-20261020-131238 | member.ai.claude.cowork | - | - | AIF-172 |
@@ -73,7 +74,6 @@ Aside chains are ordered claims. Parent and birth UTC come from the lineage ledg
 | CODEX-20261012-DDICT-REPAIR-001 | member.ai.codex | - | - | AIF-170 |
 | AIPR-20260920-001 | member.ai.claude.cowork | - | - | AIF-167 -> AIF-168 -> AIF-169 |
 | AIFGEN-20260916-090054 | member.derald | - | - | AIF-166 |
-| CODEX-20260915-AIF165-REGGRADE-001 | member.ai.codex | - | - | AIF-165 |
-| ... | | | | 62 older run(s) omitted |
+| ... | | | | 63 older run(s) omitted |
 
 Use the source artifacts for detail. Regenerate instead of restating this snapshot.
