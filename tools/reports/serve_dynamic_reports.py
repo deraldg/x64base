@@ -21,7 +21,9 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import http.server
+import ipaddress
 import json
+import re
 import secrets
 import subprocess
 import sys
@@ -38,6 +40,7 @@ import maint_server  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import regression_index  # noqa: E402  (same dir; the live regression list surface)
 import ws_proxy  # noqa: E402  (same dir; carries WebSocket upgrades to upstream)
+import onboarding_view  # noqa: E402  (gateway-only; never a static report export)
 
 # /AI is the new name for the local report/console surface; /reports is kept as a
 # transitional alias so existing links and the site do not break during the rename.
@@ -88,7 +91,7 @@ NAV_BAR = (
 )
 
 
-def inject_nav(text: str) -> str:
+def inject_nav(text: str, *, show_onboarding: bool = False) -> str:
     """Insert a Home (/AI/) + Back bar into generated report HTML.
 
     The maintenance console now carries its own full operational navigation and is
@@ -101,10 +104,17 @@ def inject_nav(text: str) -> str:
     j = text.find(">", i)
     if j == -1:
         return text
-    return text[: j + 1] + NAV_BAR + text[j + 1 :]
+    nav = NAV_BAR
+    if show_onboarding:
+        link = (
+            f'<a href="{onboarding_view.ONBOARDING_PATH}" '
+            'style="color:#93c5fd;text-decoration:none;margin-left:16px">Onboarding</a>'
+        )
+        nav = nav.removesuffix("</div>") + link + "</div>"
+    return text[: j + 1] + nav + text[j + 1 :]
 
 
-def decorate_live_html(body: bytes, observed: str) -> bytes:
+def decorate_live_html(body: bytes, observed: str, *, show_onboarding: bool = False) -> bytes:
     """Make request-time status visible without altering static export files."""
     text = body.decode("utf-8", "replace")
     banner = (
@@ -119,7 +129,16 @@ def decorate_live_html(body: bytes, observed: str) -> bytes:
         opening_end = text.find(">", start)
         if opening_end != -1:
             text = text[: opening_end + 1] + banner + text[opening_end + 1 :]
-    return inject_nav(text).encode("utf-8")
+    return inject_nav(text, show_onboarding=show_onboarding).encode("utf-8")
+
+
+def local_onboarding_request(bind: str, peer: str, hosts: list[str]) -> bool:
+    """Keep this view on the loopback gateway, including the HTTP Host boundary."""
+    if len(hosts) != 1 or not re.fullmatch(
+        r"(?:localhost|127\.0\.0\.1|\[::1\])(?::[0-9]{1,5})?", hosts[0], re.IGNORECASE
+    ):
+        return False
+    return ipaddress.ip_address(bind).is_loopback and ipaddress.ip_address(peer).is_loopback
 
 
 def console_prefix_for_path(raw_path: str) -> str | None:
@@ -198,7 +217,7 @@ class DynamicReportServer(http.server.ThreadingHTTPServer):
             return
         super().handle_error(request, client_address)
 
-    def render_report(self, name: str) -> tuple[bytes, str]:
+    def render_report(self, name: str, *, show_onboarding: bool = False) -> tuple[bytes, str]:
         try:
             with self.render_lock, tempfile.TemporaryDirectory(
                 prefix="dottalk-live-reports-"
@@ -223,7 +242,9 @@ class DynamicReportServer(http.server.ThreadingHTTPServer):
                 if not target.is_file():
                     raise RuntimeError(f"report builder did not emit {name}")
                 observed = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-                body = decorate_live_html(target.read_bytes(), observed)
+                body = decorate_live_html(
+                    target.read_bytes(), observed, show_onboarding=show_onboarding
+                )
                 self.last_render_at = observed
                 self.last_render_error = ""
                 return body, observed
@@ -314,6 +335,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
     def _dispatch(self, *, include_body: bool):
         path = urllib.parse.urlsplit(self.path).path
+        if path.rstrip("/") == onboarding_view.ONBOARDING_PATH:
+            self._serve_onboarding(include_body=include_body)
+            return
         if path.rstrip("/") in ("/AI/health", "/reports/health"):
             payload = self.server.health_payload()
             self._send_json(
@@ -341,6 +365,24 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_error(404, "Unknown local report")
             return
         self._proxy(include_body=include_body)
+
+    def _onboarding_is_local(self) -> bool:
+        return local_onboarding_request(
+            self.server.server_address[0], self.client_address[0],
+            self.headers.get_all("Host", []),
+        )
+
+    def _serve_onboarding(self, *, include_body: bool):
+        if not self._onboarding_is_local():
+            self.send_error(404, "Unknown local report")
+            return
+        try:
+            html = onboarding_view.render(self.server.repo_root)
+        except (OSError, ValueError, KeyError) as exc:
+            self.log_error("onboarding sources unavailable: %s", exc)
+            self.send_error(503, "Local onboarding sources unavailable")
+            return
+        self._send_html(200, html, include_body=include_body, onboarding=True)
 
     def _serve_console(self, cpre: str, *, include_body: bool):
         path = urllib.parse.urlsplit(self.path).path
@@ -392,12 +434,17 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if include_body:
             self._write(body)
 
-    def _send_html(self, code, html, *, include_body: bool = True):
+    def _send_html(self, code, html, *, include_body: bool = True, onboarding: bool = False):
         body = html.encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
+        if onboarding:
+            self.send_header(
+                "Content-Security-Policy",
+                "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; form-action 'none'",
+            )
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         if include_body:
@@ -405,7 +452,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
     def _serve_report(self, name: str, *, include_body: bool):
         try:
-            body, observed = self.server.render_report(name)
+            body, observed = self.server.render_report(
+                name, show_onboarding=self._onboarding_is_local()
+            )
         except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
             message = (
                 "Dynamic report generation failed.\n\n"
