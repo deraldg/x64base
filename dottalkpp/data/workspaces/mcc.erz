@@ -1,0 +1,8 @@
+# mcc.erz
+# MCC relational browser preset (default x32)
+
+SETUP=x32
+WORKSPACE=mcc.dtschema
+ROOT=students
+LIMIT=10
+PATH=enroll,classes,tassign,teachers

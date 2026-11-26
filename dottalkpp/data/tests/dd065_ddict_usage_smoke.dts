@@ -1,0 +1,10 @@
+* DD-065 DDICT usage smoke
+* Requires runtime registration before this script can pass
+ddict help
+ddict status
+ddict tables
+ddict fields ddobject
+ddict tags ddattr
+ddict rel ddobject both
+ddict evidence ddrun
+ddict fields nosuchtable

@@ -1,0 +1,8 @@
+# mcc_x64.erz
+# MCC relational browser preset for x64/CDX-LMDB
+
+SETUP=x64
+WORKSPACE=mcc_x64.dtschema
+ROOT=students
+LIMIT=10
+PATH=enroll,classes,tassign,teachers

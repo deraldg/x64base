@@ -1,0 +1,43 @@
+* ============================================================
+* SYSTEM_METADATA_VALIDATE_v4_safe10_FIXED2.dts
+*
+* Purpose:
+*   Read back seeded metadata rows through indexed x64/CDX/LMDB paths.
+* ============================================================
+
+SET ECHO OFF
+SET PAGING OFF
+
+DO metadata
+
+? "===== VALIDATE SYSCMD ====="
+USE SYSCMD
+SET INDEX TO SYSCMD
+SET ORDER TO CAN_NAME
+LIST
+
+? "===== VALIDATE SYSSUBCMD ====="
+USE SYSSUBCMD
+SET INDEX TO SYSSUBCMD
+SET ORDER TO QUAL_NAME
+LIST
+
+? "===== VALIDATE SYSENTVAR ====="
+USE SYSENTVAR
+SET INDEX TO SYSENTVAR
+SET ORDER TO TOKEN
+LIST
+
+? "===== VALIDATE SYSHELP MEMOS ====="
+USE SYSHELP
+SET INDEX TO SYSHELP
+SET ORDER TO OWNER_NAM
+DISPLAY
+
+? "===== VALIDATE SYSFLDDIC MEMOS ====="
+USE SYSFLDDIC
+SET INDEX TO SYSFLDDIC
+SET ORDER TO LOG_NAME
+DISPLAY
+
+? "===== SYSTEM METADATA VALIDATE FIXED2 COMPLETE ====="

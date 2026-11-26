@@ -1,0 +1,56 @@
+* One-off dev script.
+* Rebuild DD058 datadict promotion backup LMDB envs to the default distribution mapsize.
+* These backups stay in dottalkpp during active development and should not be copied into x64base staging.
+
+ECHO ===== DD058 DATADICT PROMOTION BACKUP =====
+SETPATH DBF datadict\datadict_promotion_backups\DD058-controlled-active-catalog-promotion-execute-v0_20260527-203115\active_metadata_datadict
+SETPATH INDEXES datadict\datadict_promotion_backups\DD058-controlled-active-catalog-promotion-execute-v0_20260527-203115\indexes
+SETPATH LMDB datadict\datadict_promotion_backups\DD058-controlled-active-catalog-promotion-execute-v0_20260527-203115\lmdb
+WORKSPACE CLOSE
+WORKSPACE OPEN DBF CDX
+
+SELECT DDARTIF
+SET INDEX TO DDARTIF.cdx
+BUILDLMDB CLEAN YES
+
+SELECT DDATTR
+SET INDEX TO DDATTR.cdx
+BUILDLMDB CLEAN YES
+
+SELECT DDBASE
+SET INDEX TO DDBASE.cdx
+BUILDLMDB CLEAN YES
+
+SELECT DDEDGE
+SET INDEX TO DDEDGE.cdx
+BUILDLMDB CLEAN YES
+
+SELECT DDEVID
+SET INDEX TO DDEVID.cdx
+BUILDLMDB CLEAN YES
+
+SELECT DDGATE
+SET INDEX TO DDGATE.cdx
+BUILDLMDB CLEAN YES
+
+SELECT DDOBJECT
+SET INDEX TO DDOBJECT.cdx
+BUILDLMDB CLEAN YES
+
+SELECT DDPROFILE
+SET INDEX TO DDPROFILE.cdx
+BUILDLMDB CLEAN YES
+
+SELECT DDREVIEW
+SET INDEX TO DDREVIEW.cdx
+BUILDLMDB CLEAN YES
+
+SELECT DDRUN
+SET INDEX TO DDRUN.cdx
+BUILDLMDB CLEAN YES
+
+SELECT DDSOURCE
+SET INDEX TO DDSOURCE.cdx
+BUILDLMDB CLEAN YES
+
+ECHO ===== DONE =====

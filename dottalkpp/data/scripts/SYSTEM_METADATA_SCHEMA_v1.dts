@@ -1,0 +1,270 @@
+* ============================================================
+* SYSTEM_METADATA_SCHEMA_v1.dts
+*
+* Purpose:
+*   Create the DotTalk++ x64 metadata catalog tables.
+*
+* Critical workflow rule:
+*   This script DOES NOT set DBF / INDEXES / LMDB paths.
+*   The metadata environment is owned by:
+*
+*       DO metadata
+*
+* Required run sequence:
+*
+*       DO metadata
+*       DO system_metadata_schema_v1
+*
+* Safety:
+*   This script creates SYSTEM_* tables. Run only in a clean
+*   metadata lane, or expect CREATE/CDX existing-file errors.
+*
+* Design:
+*   - x64 standard vector tables
+*   - descriptive x64 metadata field names
+*   - memo fields included from the start
+*   - CDX logical tags
+*   - LMDB backend via BUILDLMDB CLEAN YES
+* ============================================================
+
+SET ECHO OFF
+ECHO ===== SYSTEM METADATA SCHEMA V1 START =====
+
+* Show current paths for verification. Do not mutate them here.
+SETPATH
+
+* ------------------------------------------------------------
+* SYSTEM_COMMANDS
+* ------------------------------------------------------------
+CREATE X64 SYSTEM_COMMANDS ( '
+    COMMAND_ID C(32), '
+    CANONICAL_NAME C(80), '
+    DISPLAY_NAME C(80), '
+    ENTRY_KIND C(24), '
+    IMPLEMENTATION_STATUS C(24), '
+    VISIBILITY_TIER C(24), '
+    OWNER_SUBSYSTEM C(48), '
+    REGISTRATION_RING C(48), '
+    LIFECYCLE_PHASE C(32), '
+    SOURCE_AUTHORITY C(48), '
+    SOURCE_PREFIX_HINT C(24), '
+    SOURCE_FILE_PATH C(160), '
+    HANDLER_NAME C(80), '
+    HAS_DIRECT_HANDLER L, '
+    DISPATCH_REACHABLE L, '
+    PUBLIC_SURFACE L, '
+    SELF_REGISTERED L, '
+    SUPPORTS_TIMER L, '
+    USES_OUTPUT_ROUTER L, '
+    USES_MESSAGE_CATALOG L, '
+    ACTIVE L, '
+    LAST_VERIFIED_AT C(24), '
+    NOTES M '
+)
+USE SYSTEM_COMMANDS
+STRUCT
+CDX CREATE
+CDX ADDTAG COMMAND_ID
+CDX ADDTAG CANONICAL_NAME
+CDX ADDTAG ENTRY_KIND
+CDX ADDTAG IMPLEMENTATION_STATUS
+CDX ADDTAG VISIBILITY_TIER
+CDX ADDTAG OWNER_SUBSYSTEM
+CDX ADDTAG REGISTRATION_RING
+CDX ADDTAG SOURCE_AUTHORITY
+BUILDLMDB CLEAN YES
+
+* ------------------------------------------------------------
+* SYSTEM_ENTRY_VARIANTS
+* ------------------------------------------------------------
+CREATE X64 SYSTEM_ENTRY_VARIANTS ( '
+    VARIANT_ID C(32), '
+    TOKEN C(80), '
+    VARIANT_KIND C(24), '
+    CANONICAL_TARGET C(120), '
+    CANONICAL_HELP_OWNER C(120), '
+    SOURCE_AUTHORITY C(48), '
+    SOURCE_FILE_PATH C(160), '
+    SHADOWS_REGISTRY_KEY L, '
+    DISPATCH_REACHABLE L, '
+    PUBLIC_SURFACE L, '
+    ACTIVE L, '
+    LAST_VERIFIED_AT C(24), '
+    NOTES M '
+)
+USE SYSTEM_ENTRY_VARIANTS
+STRUCT
+CDX CREATE
+CDX ADDTAG VARIANT_ID
+CDX ADDTAG TOKEN
+CDX ADDTAG VARIANT_KIND
+CDX ADDTAG CANONICAL_TARGET
+CDX ADDTAG CANONICAL_HELP_OWNER
+CDX ADDTAG SOURCE_AUTHORITY
+BUILDLMDB CLEAN YES
+
+* ------------------------------------------------------------
+* SYSTEM_SUBCOMMANDS
+* ------------------------------------------------------------
+CREATE X64 SYSTEM_SUBCOMMANDS ( '
+    SUBCOMMAND_ID C(32), '
+    PARENT_COMMAND C(80), '
+    SUBCOMMAND_NAME C(80), '
+    QUALIFIED_NAME C(120), '
+    DISPATCH_STYLE C(32), '
+    IMPLEMENTATION_STATUS C(24), '
+    VISIBILITY_TIER C(24), '
+    OWNER_SUBSYSTEM C(48), '
+    REGISTRATION_RING C(48), '
+    LIFECYCLE_PHASE C(32), '
+    SOURCE_AUTHORITY C(48), '
+    SOURCE_FILE_PATH C(160), '
+    HANDLER_NAME C(80), '
+    PUBLIC_SURFACE L, '
+    DISPATCH_REACHABLE L, '
+    USES_OUTPUT_ROUTER L, '
+    USES_MESSAGE_CATALOG L, '
+    ACTIVE L, '
+    LAST_VERIFIED_AT C(24), '
+    NOTES M '
+)
+USE SYSTEM_SUBCOMMANDS
+STRUCT
+CDX CREATE
+CDX ADDTAG SUBCOMMAND_ID
+CDX ADDTAG PARENT_COMMAND
+CDX ADDTAG SUBCOMMAND_NAME
+CDX ADDTAG QUALIFIED_NAME
+CDX ADDTAG DISPATCH_STYLE
+CDX ADDTAG VISIBILITY_TIER
+CDX ADDTAG OWNER_SUBSYSTEM
+BUILDLMDB CLEAN YES
+
+* ------------------------------------------------------------
+* SYSTEM_FUNCTIONS
+* ------------------------------------------------------------
+CREATE X64 SYSTEM_FUNCTIONS ( '
+    FUNCTION_ID C(32), '
+    CANONICAL_NAME C(80), '
+    DISPLAY_NAME C(80), '
+    FUNCTION_CATEGORY C(32), '
+    MIN_ARGS N(4,0), '
+    MAX_ARGS N(4,0), '
+    IMPLEMENTATION_STATUS C(24), '
+    VISIBILITY_TIER C(24), '
+    OWNER_SUBSYSTEM C(48), '
+    SOURCE_AUTHORITY C(48), '
+    SOURCE_FILE_PATH C(160), '
+    HANDLER_NAME C(80), '
+    CALLABLE_FROM_CALC L, '
+    PUBLIC_SURFACE L, '
+    SELF_REGISTERED L, '
+    USES_MESSAGE_CATALOG L, '
+    ACTIVE L, '
+    LAST_VERIFIED_AT C(24), '
+    NOTES M '
+)
+USE SYSTEM_FUNCTIONS
+STRUCT
+CDX CREATE
+CDX ADDTAG FUNCTION_ID
+CDX ADDTAG CANONICAL_NAME
+CDX ADDTAG FUNCTION_CATEGORY
+CDX ADDTAG IMPLEMENTATION_STATUS
+CDX ADDTAG VISIBILITY_TIER
+CDX ADDTAG OWNER_SUBSYSTEM
+BUILDLMDB CLEAN YES
+
+* ------------------------------------------------------------
+* SYSTEM_MESSAGES
+* ------------------------------------------------------------
+CREATE X64 SYSTEM_MESSAGES ( '
+    MESSAGE_ID C(32), '
+    SYMBOL C(96), '
+    ENUM_NAME C(64), '
+    SEVERITY C(16), '
+    FACILITY C(32), '
+    SHORT_TEXT C(160), '
+    IMPLEMENTATION_STATUS C(24), '
+    VISIBILITY_TIER C(24), '
+    OWNER_SUBSYSTEM C(48), '
+    SOURCE_AUTHORITY C(48), '
+    SOURCE_FILE_PATH C(160), '
+    PUBLIC_SURFACE L, '
+    USED_BY_RUNTIME L, '
+    ACTIVE L, '
+    LAST_VERIFIED_AT C(24), '
+    SUGGESTED_ACTION M, '
+    NOTES M '
+)
+USE SYSTEM_MESSAGES
+STRUCT
+CDX CREATE
+CDX ADDTAG MESSAGE_ID
+CDX ADDTAG SYMBOL
+CDX ADDTAG ENUM_NAME
+CDX ADDTAG SEVERITY
+CDX ADDTAG FACILITY
+CDX ADDTAG OWNER_SUBSYSTEM
+BUILDLMDB CLEAN YES
+
+* ------------------------------------------------------------
+* SYSTEM_HELP_TEXT
+* ------------------------------------------------------------
+CREATE X64 SYSTEM_HELP_TEXT ( '
+    HELP_TEXT_ID C(32), '
+    OWNER_KIND C(24), '
+    OWNER_NAME C(120), '
+    TEXT_KIND C(24), '
+    SEQ N(8,0), '
+    SOURCE_AUTHORITY C(48), '
+    SOURCE_FILE_PATH C(160), '
+    GENERATED L, '
+    CURATED L, '
+    ACTIVE L, '
+    LAST_VERIFIED_AT C(24), '
+    TEXT_BODY M, '
+    NOTES M '
+)
+USE SYSTEM_HELP_TEXT
+STRUCT
+CDX CREATE
+CDX ADDTAG HELP_TEXT_ID
+CDX ADDTAG OWNER_KIND
+CDX ADDTAG OWNER_NAME
+CDX ADDTAG TEXT_KIND
+CDX ADDTAG SEQ
+CDX ADDTAG SOURCE_AUTHORITY
+BUILDLMDB CLEAN YES
+
+* ------------------------------------------------------------
+* SYSTEM_ARGUMENTS
+* ------------------------------------------------------------
+CREATE X64 SYSTEM_ARGUMENTS ( '
+    ARGUMENT_ID C(32), '
+    OWNER_KIND C(24), '
+    OWNER_NAME C(120), '
+    ARGUMENT_NAME C(80), '
+    ARGUMENT_KIND C(24), '
+    VALUE_SHAPE C(48), '
+    REQUIRED L, '
+    REPEATABLE L, '
+    SOURCE_AUTHORITY C(48), '
+    SOURCE_FILE_PATH C(160), '
+    ACTIVE L, '
+    LAST_VERIFIED_AT C(24), '
+    NOTES M '
+)
+USE SYSTEM_ARGUMENTS
+STRUCT
+CDX CREATE
+CDX ADDTAG ARGUMENT_ID
+CDX ADDTAG OWNER_KIND
+CDX ADDTAG OWNER_NAME
+CDX ADDTAG ARGUMENT_NAME
+CDX ADDTAG ARGUMENT_KIND
+CDX ADDTAG VALUE_SHAPE
+BUILDLMDB CLEAN YES
+
+WORKSPACE
+ECHO ===== SYSTEM METADATA SCHEMA V1 END =====

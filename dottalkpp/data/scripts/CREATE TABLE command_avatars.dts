@@ -1,0 +1,10 @@
+CREATE X64 TABLE command_avatars ( ;
+    avatar_id      C(20),  ;
+    cmd_id         C(20),  ;
+    token          C(32),  ;
+    avatar_kind    C(16),  ; 
+    source         C(32),  ;  
+    priority       N(4,0), ;
+    active         L,      ;
+    notes          C(20)   ;
+) 

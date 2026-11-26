@@ -1,0 +1,29 @@
+CLOSE
+USE dbf\x32\students.dbf
+SETINDEX indexes\x32\students.inx
+ASCEND
+SEEK LNAME 'CLARK'
+LIST 1
+SEEK LNAME 'WHITE'
+LIST 1
+DESCEND
+SEEK LNAME ''
+LIST 1
+SEEK LNAME 'temp'
+LIST 1
+CLOSE
+USE dbf\x32\students.dbf
+SETCNX indexes\x32\students.cnx
+SETORDER indexes\x32\students.cnx LNAME --asc
+SEEK LNAME 'AARDVARK'
+LIST 1
+SETORDER indexes\x32\students.cnx LNAME --desc
+SEEK LNAME 'HARRIS'
+LIST 1
+SETORDER indexes\x32\students.cnx GPA --asc
+SEEK GPA 4.00
+LIST 3
+SETORDER indexes\x32\students.cnx GPA --desc
+SEEK GPA 1.00
+LIST 1
+QUIT

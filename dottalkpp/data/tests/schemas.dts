@@ -1,0 +1,3 @@
+* Deprecated migration wrapper.
+* Canonical runtime workspace-load regression lives under scripts/canaries.
+DO scripts\canaries\workspace_load_x64_canary

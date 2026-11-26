@@ -1,0 +1,18 @@
+DTSHEMA 1
+AREA 0 | dbf=dbf\x64\BUILDING.DBF | index=none | alias=BUILDING
+AREA 1 | dbf=dbf\x64\CLASSES.DBF | index=none | alias=CLASSES
+AREA 2 | dbf=dbf\x64\COURSES.DBF | index=none | alias=COURSES
+AREA 3 | dbf=dbf\x64\DEPT.DBF | index=none | alias=DEPT
+AREA 4 | dbf=dbf\x64\ENROLL.DBF | index=none | alias=ENROLL
+AREA 5 | dbf=dbf\x64\MAJORS.DBF | index=none | alias=MAJORS
+AREA 6 | dbf=dbf\x64\ROOMS.DBF | index=none | alias=ROOMS
+AREA 7 | dbf=dbf\x64\STUD_MAJ.DBF | index=none | alias=STUD_MAJ
+AREA 8 | dbf=dbf\x64\STUDENTS.DBF | index=none | alias=STUDENTS
+AREA 9 | dbf=dbf\x64\TASSIGN.DBF | index=none | alias=TASSIGN
+AREA 10 | dbf=dbf\x64\TEACHERS.DBF | index=none | alias=TEACHERS
+AREA 11 | dbf=dbf\x64\TERMS.DBF | index=none | alias=TERMS
+RELATION STUDENTS ENROLL ON SID
+RELATION ENROLL CLASSES ON CLS_ID
+RELATION CLASSES TASSIGN ON CLS_ID
+RELATION TASSIGN TEACHERS ON TID
+

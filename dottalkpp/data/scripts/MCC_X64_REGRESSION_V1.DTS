@@ -1,0 +1,171 @@
+SET ECHO OFF
+* ============================================================
+* MCC_X64_REGRESSION_V1.DTS
+*
+* Purpose:
+*   Clean x64-only regression for XDBF + CDX + LMDB.
+*
+* Contract:
+*   - DBF path must point to XDBF
+*   - Only x64 tables are in scope
+*   - LMDB is x64-only
+*   - No legacy/v32 expectations in this script
+*
+* Current first target:
+*   X64SAMPLE
+*
+* Scope:
+*   - open x64 table
+*   - attach x64 CDX
+*   - activate tag
+*   - ordered LIST / TOP
+*   - INDEXSEEK
+*   - LMDB INFO / USE / SEEK / SCAN
+*   - REPLACE + COMMIT (create/modify path only)
+*
+* Out of scope:
+*   - delete propagation
+*   - legacy DBF/INX
+*   - mixed v32/v64 workflows
+* ============================================================
+
+ECHO ===== X64 REGRESSION V1 START =====
+COLOR DEFAULT
+VERSION
+
+ECHO ===== INIT / X64 PATH =====
+INIT
+SET PATH
+SETPATH DBF XDBF
+SET PATH
+
+SCHEMAS CLOSE
+REL CLEAR ALL
+
+ECHO ===== X64 TABLE OPEN =====
+USE X64SAMPLE
+AREA
+STRUCT
+COUNT
+TOP
+RECNO
+LIST 5
+
+ECHO ===== ATTACH X64 INDEX =====
+SET INDEX TO X64SAMPLE.cdx
+AREA
+SHOW INDEX
+
+ECHO ===== TAG DISCOVERY =====
+ECHO [ACTION] Inspect SHOW INDEX / AREA output and confirm real tag names for X64SAMPLE.
+AREA
+SHOW INDEX
+
+ECHO ===== PRIMARY ORDER TEST =====
+* Replace PRIMARY_TAG with a real tag name from SHOW INDEX
+SET ORDER TO TAG PRIMARY_TAG
+AREA
+SHOW INDEX
+TOP
+RECNO
+LIST 5
+RECNO
+
+ECHO ===== SECONDARY ORDER TEST =====
+* Replace SECONDARY_TAG with a second real tag name if available
+SET ORDER TO TAG SECONDARY_TAG
+AREA
+SHOW INDEX
+TOP
+RECNO
+LIST 5
+RECNO
+
+ECHO ===== ORDER RESET =====
+SET ORDER TO 0
+AREA
+SHOW INDEX
+TOP
+RECNO
+LIST 5
+
+ECHO ===== INDEXSEEK TESTS =====
+* Replace KEY1 / KEY2 with real keys matching active tag type
+SET ORDER TO TAG PRIMARY_TAG
+TOP
+INDEXSEEK "KEY1"
+LIST 1
+INDEXSEEK "KEY2"
+LIST 1
+
+ECHO ===== LMDB DIRECT OPEN =====
+LMDB
+LMDB OPEN X64SAMPLE.cdx.d
+LMDB INFO
+
+ECHO ===== LMDB DIRECT TAG / SEEK =====
+* Replace PRIMARY_TAG and KEY1 with real values
+LMDB USE PRIMARY_TAG
+LMDB INFO
+LMDB SEEK KEY1
+
+ECHO ===== LMDB RANGE SCAN =====
+* Adjust bounds to match the tag type
+LMDB SCAN A Z
+
+ECHO ===== LMDB CLOSE =====
+LMDB CLOSE
+
+ECHO ===== BUFFERED MODIFY / COMMIT =====
+SET ORDER TO TAG PRIMARY_TAG
+TOP
+LIST 1
+TUPLE *
+
+TABLE ON
+* Replace FIELDNAME / VALUE1 / VALUE2 with a safe non-key field/value pair
+REPLACE FIELDNAME WITH "VALUE1"
+ECHO [BUF] TUPLE should show buffered value:
+TUPLE *
+ECHO [BUF] LIST may still show persisted value until COMMIT:
+LIST 1
+
+COMMIT
+ECHO [POST-COMMIT] Verify ordered/indexed path still works:
+TOP
+LIST 5
+INDEXSEEK "KEY1"
+
+REPLACE FIELDNAME WITH "VALUE2"
+COMMIT
+TOP
+LIST 5
+
+TABLE OFF
+
+ECHO ===== KEY-FIELD MODIFY (OPTIONAL) =====
+ECHO [OPTIONAL] Only run if key-field update is currently in scope for create/modify path.
+* Example skeleton:
+* TABLE ON
+* LOCATE ...
+* REPLACE KEYFIELD WITH "NEWKEY"
+* COMMIT
+* TOP
+* LIST 5
+* INDEXSEEK "NEWKEY"
+* TABLE OFF
+
+ECHO ===== REINDEX / REBUILD OBSERVATION =====
+SET INDEX TO X64SAMPLE.cdx
+SET ORDER TO TAG PRIMARY_TAG
+SHOW INDEX
+REINDEX
+SHOW INDEX
+INDEXSEEK "KEY1"
+
+ECHO ===== CLEAN SHUTDOWN =====
+SET ORDER TO 0
+AREA
+SHOW INDEX
+ECHO ===== X64 REGRESSION V1 END =====
+QUIT

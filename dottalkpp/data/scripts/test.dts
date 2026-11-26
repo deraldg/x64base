@@ -1,0 +1,10 @@
+* MDO-371F native shell command discovery execution script
+* Non-mutating HELP/discovery only.
+* No USE, IMPORT, CREATE, CDX, LMDB, or active MAN* mutation.
+* Final blank line is intentional.
+
+HELP CREATE
+HELP SCHEMA
+HELP STRUCTURE
+HELP IMPORT
+QUIT

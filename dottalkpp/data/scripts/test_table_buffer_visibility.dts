@@ -1,0 +1,76 @@
+ECHO ============================================================
+ECHO TABLE BUFFER VISIBILITY / ROLLBACK / PERSISTENCE STUB TEST
+ECHO ============================================================
+
+DO x64
+
+SCHEMAS OPEN DBF
+
+SELECT STUDENTS
+TOP
+
+ECHO ------------------------------------------------------------
+ECHO BASELINE - committed physical/current visible value
+ECHO ------------------------------------------------------------
+LIST 1
+TUP
+
+ECHO ------------------------------------------------------------
+ECHO RAM BUFFER OVERLAY TEST
+ECHO Expected: LIST and SMARTLIST show ROLLTEST
+ECHO ------------------------------------------------------------
+TABLE BUFFER ON
+REPLACE LNAME WITH "ROLLTEST"
+LIST 1
+SMARTLIST 1
+TUP
+
+ECHO ------------------------------------------------------------
+ECHO ROLLBACK TEST
+ECHO Expected: value returns to prior committed value
+ECHO ------------------------------------------------------------
+ROLLBACK
+LIST 1
+SMARTLIST 1
+TUP
+
+ECHO ------------------------------------------------------------
+ECHO PERSISTENCE STUB COMMAND TEST
+ECHO Expected: commands accepted; no real journal behavior yet
+ECHO ------------------------------------------------------------
+TABLE BUFFER ON PERSISTENT
+TABLE BUFFER STATUS
+TABLE BUFFER JOURNAL OFF
+TABLE BUFFER STATUS
+TABLE BUFFER JOURNAL ON
+TABLE BUFFER STATUS
+TABLE BUFFER ON RAM
+TABLE BUFFER STATUS
+
+ECHO ------------------------------------------------------------
+ECHO COMMIT TEST WITH TEMP VALUE
+ECHO Expected: COMMIT writes COMMITTEST
+ECHO ------------------------------------------------------------
+TABLE BUFFER ON
+REPLACE LNAME WITH "COMMITTEST"
+LIST 1
+SMARTLIST 1
+COMMIT
+LIST 1
+SMARTLIST 1
+TUP
+
+ECHO ------------------------------------------------------------
+ECHO RESTORE TEST VALUE BACK TO ZZZTEST
+ECHO Expected: final committed value is ZZZTEST
+ECHO ------------------------------------------------------------
+TABLE BUFFER ON
+REPLACE LNAME WITH "ZZZTEST"
+COMMIT
+LIST 1
+SMARTLIST 1
+TUP
+
+ECHO ============================================================
+ECHO END TABLE BUFFER TEST
+ECHO ============================================================

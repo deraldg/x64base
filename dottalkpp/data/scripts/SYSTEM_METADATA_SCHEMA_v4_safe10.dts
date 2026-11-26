@@ -1,0 +1,306 @@
+* ============================================================
+* SYSTEM_METADATA_SCHEMA_v4_safe10.dts
+*
+* Purpose:
+*   Create the first DotTalk++ x64 metadata catalog tables.
+*
+* Contract:
+*   - Use X64 standard vector tables.
+*   - Use semicolon DTS continuation.
+*   - Keep command-addressed field tokens <= 10 visible chars.
+*   - Store long logical field names in SYSTEM_FIELD_DICT.
+*   - Include memo fields immediately to prove x64 memo behavior.
+*   - Use CDX logical tags backed by LMDB.
+* ============================================================
+
+SET ECHO OFF
+SET PAGING OFF
+
+DO metadata
+
+* ------------------------------------------------------------
+* Reset old catalog tables/indexes in the metadata lane
+* ------------------------------------------------------------
+ERASE SYSTEM_COMMANDS.DBF CONFIRM
+ERASE SYSTEM_COMMANDS.CDX CONFIRM
+ERASE SYSTEM_ENTRY_VARIANTS.DBF CONFIRM
+ERASE SYSTEM_ENTRY_VARIANTS.CDX CONFIRM
+ERASE SYSTEM_SUBCOMMANDS.DBF CONFIRM
+ERASE SYSTEM_SUBCOMMANDS.CDX CONFIRM
+ERASE SYSTEM_FUNCTIONS.DBF CONFIRM
+ERASE SYSTEM_FUNCTIONS.CDX CONFIRM
+ERASE SYSTEM_MESSAGES.DBF CONFIRM
+ERASE SYSTEM_MESSAGES.CDX CONFIRM
+ERASE SYSTEM_HELP_TEXT.DBF CONFIRM
+ERASE SYSTEM_HELP_TEXT.CDX CONFIRM
+ERASE SYSTEM_ARGUMENTS.DBF CONFIRM
+ERASE SYSTEM_ARGUMENTS.CDX CONFIRM
+ERASE SYSTEM_FIELD_DICT.DBF CONFIRM
+ERASE SYSTEM_FIELD_DICT.CDX CONFIRM
+
+* ------------------------------------------------------------
+* SYSTEM_COMMANDS
+* ------------------------------------------------------------
+CREATE X64 SYSTEM_COMMANDS ( ;
+    CMD_ID      C(32), ;
+    CAN_NAME    C(80), ;
+    DISP_NAME   C(80), ;
+    ENTRY_KIND  C(10), ;
+    IMPL_STAT   C(32), ;
+    VIS_TIER    C(32), ;
+    OWNER       C(64), ;
+    REG_RING    C(64), ;
+    LIFE_PH     C(48), ;
+    SRC_AUTH    C(64), ;
+    SRC_HINT    C(32), ;
+    SRC_FILE    C(180), ;
+    HANDLER     C(96), ;
+    HAS_HDLR    L, ;
+    DISP_REACH  L, ;
+    PUB_SURF    L, ;
+    SELF_REG    L, ;
+    TIMER       L, ;
+    OUT_ROUTE   L, ;
+    MSG_CAT     L, ;
+    ACTIVE      L, ;
+    VER_AT      C(24), ;
+    NOTES       M ;
+)
+
+USE SYSTEM_COMMANDS
+STRUCT
+CDX CREATE
+CDX ADDTAG CMD_ID
+CDX ADDTAG CAN_NAME
+CDX ADDTAG ENTRY_KIND
+CDX ADDTAG IMPL_STAT
+CDX ADDTAG VIS_TIER
+CDX ADDTAG OWNER
+CDX ADDTAG REG_RING
+CDX ADDTAG SRC_AUTH
+BUILDLMDB CLEAN YES
+
+* ------------------------------------------------------------
+* SYSTEM_ENTRY_VARIANTS
+* ------------------------------------------------------------
+CREATE X64 SYSTEM_ENTRY_VARIANTS ( ;
+    VAR_ID      C(32), ;
+    TOKEN       C(80), ;
+    VAR_KIND    C(32), ;
+    CAN_TARG    C(120), ;
+    HELP_OWNR   C(120), ;
+    SRC_AUTH    C(64), ;
+    SRC_FILE    C(180), ;
+    SHADOWS     L, ;
+    DISP_REACH  L, ;
+    PUB_SURF    L, ;
+    ACTIVE      L, ;
+    VER_AT      C(24), ;
+    NOTES       M ;
+)
+
+USE SYSTEM_ENTRY_VARIANTS
+STRUCT
+CDX CREATE
+CDX ADDTAG VAR_ID
+CDX ADDTAG TOKEN
+CDX ADDTAG VAR_KIND
+CDX ADDTAG CAN_TARG
+CDX ADDTAG HELP_OWNR
+CDX ADDTAG SRC_AUTH
+BUILDLMDB CLEAN YES
+
+* ------------------------------------------------------------
+* SYSTEM_SUBCOMMANDS
+* ------------------------------------------------------------
+CREATE X64 SYSTEM_SUBCOMMANDS ( ;
+    SUB_ID      C(32), ;
+    PARENT      C(80), ;
+    SUB_NAME    C(80), ;
+    QUAL_NAME   C(140), ;
+    DISP_STYL   C(32), ;
+    IMPL_STAT   C(32), ;
+    VIS_TIER    C(32), ;
+    OWNER       C(64), ;
+    REG_RING    C(64), ;
+    LIFE_PH     C(48), ;
+    SRC_AUTH    C(64), ;
+    SRC_FILE    C(180), ;
+    HANDLER     C(96), ;
+    PUB_SURF    L, ;
+    DISP_REACH  L, ;
+    OUT_ROUTE   L, ;
+    MSG_CAT     L, ;
+    ACTIVE      L, ;
+    VER_AT      C(24), ;
+    NOTES       M ;
+)
+
+USE SYSTEM_SUBCOMMANDS
+STRUCT
+CDX CREATE
+CDX ADDTAG SUB_ID
+CDX ADDTAG PARENT
+CDX ADDTAG SUB_NAME
+CDX ADDTAG QUAL_NAME
+CDX ADDTAG DISP_STYL
+CDX ADDTAG OWNER
+CDX ADDTAG VIS_TIER
+BUILDLMDB CLEAN YES
+
+* ------------------------------------------------------------
+* SYSTEM_FUNCTIONS
+* ------------------------------------------------------------
+CREATE X64 SYSTEM_FUNCTIONS ( ;
+    FUNC_ID     C(32), ;
+    CAN_NAME    C(80), ;
+    DISP_NAME   C(80), ;
+    FUNC_CAT    C(40), ;
+    MIN_ARGS    N(4,0), ;
+    MAX_ARGS    N(4,0), ;
+    IMPL_STAT   C(32), ;
+    VIS_TIER    C(32), ;
+    OWNER       C(64), ;
+    SRC_AUTH    C(64), ;
+    SRC_FILE    C(180), ;
+    HANDLER     C(96), ;
+    CALC_CALL   L, ;
+    PUB_SURF    L, ;
+    SELF_REG    L, ;
+    MSG_CAT     L, ;
+    ACTIVE      L, ;
+    VER_AT      C(24), ;
+    NOTES       M ;
+)
+
+USE SYSTEM_FUNCTIONS
+STRUCT
+CDX CREATE
+CDX ADDTAG FUNC_ID
+CDX ADDTAG CAN_NAME
+CDX ADDTAG FUNC_CAT
+CDX ADDTAG IMPL_STAT
+CDX ADDTAG OWNER
+CDX ADDTAG SRC_AUTH
+BUILDLMDB CLEAN YES
+
+* ------------------------------------------------------------
+* SYSTEM_MESSAGES
+* ------------------------------------------------------------
+CREATE X64 SYSTEM_MESSAGES ( ;
+    MSG_ID      C(32), ;
+    SYMBOL      C(120), ;
+    ENUM_NAME   C(80), ;
+    SEVERITY    C(24), ;
+    FACILITY    C(48), ;
+    SHORT_TXT   C(180), ;
+    IMPL_STAT   C(32), ;
+    VIS_TIER    C(32), ;
+    OWNER       C(64), ;
+    SRC_AUTH    C(64), ;
+    SRC_FILE    C(180), ;
+    PUB_SURF    L, ;
+    USED_RUN    L, ;
+    ACTIVE      L, ;
+    VER_AT      C(24), ;
+    SUG_ACT     M, ;
+    NOTES       M ;
+)
+
+USE SYSTEM_MESSAGES
+STRUCT
+CDX CREATE
+CDX ADDTAG MSG_ID
+CDX ADDTAG SYMBOL
+CDX ADDTAG ENUM_NAME
+CDX ADDTAG SEVERITY
+CDX ADDTAG FACILITY
+CDX ADDTAG OWNER
+BUILDLMDB CLEAN YES
+
+* ------------------------------------------------------------
+* SYSTEM_HELP_TEXT
+* ------------------------------------------------------------
+CREATE X64 SYSTEM_HELP_TEXT ( ;
+    HLP_TXT_ID  C(32), ;
+    OWNER_KND   C(32), ;
+    OWNER_NAM   C(140), ;
+    TEXT_KIND   C(32), ;
+    SEQ         N(8,0), ;
+    SRC_AUTH    C(64), ;
+    SRC_FILE    C(180), ;
+    GENERATED   L, ;
+    CURATED     L, ;
+    ACTIVE      L, ;
+    VER_AT      C(24), ;
+    TEXT_BODY   M, ;
+    NOTES       M ;
+)
+
+USE SYSTEM_HELP_TEXT
+STRUCT
+CDX CREATE
+CDX ADDTAG HLP_TXT_ID
+CDX ADDTAG OWNER_KND
+CDX ADDTAG OWNER_NAM
+CDX ADDTAG TEXT_KIND
+CDX ADDTAG SEQ
+CDX ADDTAG SRC_AUTH
+BUILDLMDB CLEAN YES
+
+* ------------------------------------------------------------
+* SYSTEM_ARGUMENTS
+* ------------------------------------------------------------
+CREATE X64 SYSTEM_ARGUMENTS ( ;
+    ARG_ID      C(32), ;
+    OWNER_KND   C(32), ;
+    OWNER_NAM   C(140), ;
+    ARG_NAME    C(80), ;
+    ARG_KIND    C(32), ;
+    VAL_SHAPE   C(48), ;
+    REQUIRED    L, ;
+    REPEAT      L, ;
+    SRC_AUTH    C(64), ;
+    SRC_FILE    C(180), ;
+    ACTIVE      L, ;
+    VER_AT      C(24), ;
+    NOTES       M ;
+)
+
+USE SYSTEM_ARGUMENTS
+STRUCT
+CDX CREATE
+CDX ADDTAG ARG_ID
+CDX ADDTAG OWNER_KND
+CDX ADDTAG OWNER_NAM
+CDX ADDTAG ARG_NAME
+CDX ADDTAG ARG_KIND
+CDX ADDTAG VAL_SHAPE
+BUILDLMDB CLEAN YES
+
+* ------------------------------------------------------------
+* SYSTEM_FIELD_DICT
+* Maps safe physical field tokens to long logical names.
+* ------------------------------------------------------------
+CREATE X64 SYSTEM_FIELD_DICT ( ;
+    TABLE_NAME  C(80), ;
+    FIELD_NAME  C(10), ;
+    LOG_NAME    C(80), ;
+    FIELD_ROLE  C(32), ;
+    VALUE_KIND  C(48), ;
+    ACTIVE      L, ;
+    VER_AT      C(24), ;
+    DESCR       M, ;
+    NOTES       M ;
+)
+
+USE SYSTEM_FIELD_DICT
+STRUCT
+CDX CREATE
+CDX ADDTAG TABLE_NAME
+CDX ADDTAG FIELD_NAME
+CDX ADDTAG LOG_NAME
+CDX ADDTAG FIELD_ROLE
+BUILDLMDB CLEAN YES
+
+? "===== SYSTEM METADATA SCHEMA V4 SAFE10 COMPLETE ====="

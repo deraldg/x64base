@@ -1,0 +1,9 @@
+DTSHEMA 2
+AREA 0 | dbf=SYSARGS.dbf | index=SYSARGS.cdx | indextype=CDX | tag=none | alias=SYSARGS
+AREA 1 | dbf=SYSCMD.dbf | index=SYSCMD.cdx | indextype=CDX | tag=CAN_NAME | alias=SYSCMD
+AREA 2 | dbf=SYSENTVAR.dbf | index=SYSENTVAR.cdx | indextype=CDX | tag=HELP_OWNR | alias=SYSENTVAR
+AREA 3 | dbf=SYSFLDDIC.dbf | index=SYSFLDDIC.cdx | indextype=CDX | tag=none | alias=SYSFLDDIC
+AREA 4 | dbf=SYSFUNC.dbf | index=SYSFUNC.cdx | indextype=CDX | tag=none | alias=SYSFUNC
+AREA 5 | dbf=SYSHELP.dbf | index=SYSHELP.cdx | indextype=CDX | tag=OWNER_NAM | alias=SYSHELP
+AREA 6 | dbf=SYSMSG.dbf | index=SYSMSG.cdx | indextype=CDX | tag=none | alias=SYSMSG
+AREA 7 | dbf=SYSSUBCMD.dbf | index=SYSSUBCMD.cdx | indextype=CDX | tag=PARENT | alias=SYSSUBCMD

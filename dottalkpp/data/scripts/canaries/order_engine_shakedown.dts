@@ -1,0 +1,48 @@
+CLOSE
+USE dbf\x32\students.dbf NOINDEX
+STATUS
+LIST 1
+SETINDEX indexes\x32\students.inx
+STATUS
+ASCEND
+LIST 3
+DESCEND
+LIST 3
+TOP
+LIST 1
+SEEK LNAME 'WHITE'
+LIST 1
+TOP
+SEEK LNAME 'CLARK'
+LIST 1
+CLOSE
+USE dbf\x32\students.dbf
+SETCNX indexes\x32\students.cnx
+STATUS
+SETORDER indexes\x32\students.cnx LNAME --asc
+STATUS
+LIST 3
+SETORDER indexes\x32\students.cnx LNAME --desc
+STATUS
+LIST 3
+SETORDER indexes\x32\students.cnx GPA --asc
+STATUS
+LIST 3
+SETORDER indexes\x32\students.cnx GPA --desc
+STATUS
+LIST 3
+SETORDER indexes\x32\students.cnx NOTATAG
+STATUS
+LIST 1
+CLOSE
+USE dbf\x32\students.dbf NOINDEX
+STATUS
+LIST 1
+ASCEND
+LIST 1
+DESCEND
+LIST 1
+TOP
+BOTTOM
+LIST 1
+QUIT

@@ -1,0 +1,8 @@
+# mcc_sandbox.erz
+# MCC relational browser preset for sandbox/CDX
+
+SETUP=sandbox
+WORKSPACE=mcc_sandbox.dtschema
+ROOT=students
+LIMIT=10
+PATH=enroll,classes,tassign,teachers

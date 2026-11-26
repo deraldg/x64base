@@ -1,0 +1,3 @@
+* Deprecated migration wrapper.
+* Canonical runtime relation/enum regression lives under scripts/canaries.
+DO scripts\canaries\rel_enum_x64

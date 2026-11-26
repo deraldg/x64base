@@ -1,0 +1,2 @@
+BASEID,STATUS,FINGER,RUNID,MANIFEST,PROFILE,NOTES
+DDBASE-stable-v2,ACCEPTED_BASELINE,6ec7f5fa815691e89501494854ff40fe47ee9235ff414579496457a241f1d1b8,DD027-DDBASE-stable-v2-acceptance,docs/datadict/baselines/DDBASE-stable-v2/dd027_baseline_acceptance_manifest.json,"ENGINE,PROFESSIONAL",Accepted baseline projected from DD-027 manifest.

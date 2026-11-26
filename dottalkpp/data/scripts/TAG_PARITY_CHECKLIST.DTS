@@ -1,0 +1,81 @@
+* ============================================================
+* TAG_PARITY_CHECKLIST.DTS
+* ============================================================
+
+SET ECHO ON
+ECHO ===== TAG PARITY CHECK START =====
+
+* ============================================================
+* V32
+* ============================================================
+SCHEMAS CLOSE
+REL CLEAR ALL
+SET ORDER TO 0
+
+SETPATH DBF dbf
+SETPATH INDEXES indexes\x32
+SETPATH LMDB lmdb\v32
+SCHEMAS OPEN DBF
+
+ECHO ===== V32 / STUDENTS =====
+SELECT STUDENTS
+SET INDEX TO students.cnx
+CNX INFO
+AREA
+SHOW INDEX
+
+ECHO ===== V32 / TEACHERS =====
+SELECT TEACHERS
+SET INDEX TO teachers.cnx
+CNX INFO
+AREA
+SHOW INDEX
+
+ECHO ===== V32 / CLASSES =====
+SELECT CLASSES
+SET INDEX TO classes.cnx
+CNX INFO
+AREA
+SHOW INDEX
+
+* ============================================================
+* V64
+* ============================================================
+SCHEMAS CLOSE
+REL CLEAR ALL
+SET ORDER TO 0
+
+SETPATH DBF xdbf
+SETPATH INDEXES indexes
+SETPATH LMDB lmdb
+SCHEMAS OPEN xDBF
+
+ECHO ===== V64 / STUDENTS =====
+SELECT STUDENTS
+SET INDEX TO students.cdx
+AREA
+SHOW INDEX
+SET ORDER TO TAG LNAME
+SET ORDER TO TAG FNAME
+SET ORDER TO TAG DOB
+SET ORDER TO TAG GPA
+
+ECHO ===== V64 / TEACHERS =====
+SELECT TEACHERS
+SET INDEX TO teachers.cdx
+AREA
+SHOW INDEX
+SET ORDER TO TAG LNAME
+SET ORDER TO TAG HIRE_DATE
+SET ORDER TO TAG TID
+
+ECHO ===== V64 / CLASSES =====
+SELECT CLASSES
+SET INDEX TO classes.cdx
+AREA
+SHOW INDEX
+SET ORDER TO TAG CLS_ID
+SET ORDER TO TAG TID
+
+ECHO ===== TAG PARITY CHECK END =====
+QUIT

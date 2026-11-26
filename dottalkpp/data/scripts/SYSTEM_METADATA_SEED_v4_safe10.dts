@@ -1,0 +1,358 @@
+* ============================================================
+* SYSTEM_METADATA_SEED_v4_safe10.dts
+*
+* Purpose:
+*   Seed the first truth rows into the x64 metadata catalog.
+*
+* Proof goals:
+*   - Use safe <=10-character field tokens.
+*   - Write real memo content into SYSTEM_HELP_TEXT and NOTES.
+*   - Exercise CDX/LMDB lookup after seeded rows exist.
+* ============================================================
+
+SET ECHO OFF
+SET PAGING OFF
+
+DO metadata
+
+* ------------------------------------------------------------
+* Seed SYSTEM_COMMANDS
+* ------------------------------------------------------------
+USE SYSTEM_COMMANDS
+
+APPEND
+MULTIREP ;
+    CMD_ID WITH "CMD_SET", ;
+    CAN_NAME WITH "SET", ;
+    DISP_NAME WITH "SET", ;
+    ENTRY_KIND WITH "command", ;
+    IMPL_STAT WITH "partial", ;
+    VIS_TIER WITH "core", ;
+    OWNER WITH "command_router", ;
+    REG_RING WITH "core_settings", ;
+    LIFE_PH WITH "session", ;
+    SRC_AUTH WITH "registry", ;
+    SRC_HINT WITH "cmd", ;
+    SRC_FILE WITH "shell_commands.cpp", ;
+    HANDLER WITH "cmd_SET", ;
+    HAS_HDLR WITH T, ;
+    DISP_REACH WITH T, ;
+    PUB_SURF WITH T, ;
+    SELF_REG WITH F, ;
+    TIMER WITH T, ;
+    OUT_ROUTE WITH T, ;
+    MSG_CAT WITH F, ;
+    ACTIVE WITH T, ;
+    VER_AT WITH "2026-05-04"
+REPLACE NOTES WITH "SET is a command family and router. SET PATH, SET INDEX, SET ORDER, and related forms should be modeled as subcommands or re-expressions, not as independent flat commands."
+
+APPEND
+MULTIREP ;
+    CMD_ID WITH "CMD_REL", ;
+    CAN_NAME WITH "REL", ;
+    DISP_NAME WITH "REL", ;
+    ENTRY_KIND WITH "command", ;
+    IMPL_STAT WITH "implemented", ;
+    VIS_TIER WITH "core", ;
+    OWNER WITH "relation_engine", ;
+    REG_RING WITH "relations", ;
+    LIFE_PH WITH "session", ;
+    SRC_AUTH WITH "registry", ;
+    SRC_HINT WITH "cmd", ;
+    SRC_FILE WITH "shell_commands.cpp", ;
+    HANDLER WITH "cmd_REL", ;
+    HAS_HDLR WITH T, ;
+    DISP_REACH WITH T, ;
+    PUB_SURF WITH T, ;
+    SELF_REG WITH F, ;
+    TIMER WITH T, ;
+    OUT_ROUTE WITH T, ;
+    MSG_CAT WITH F, ;
+    ACTIVE WITH T, ;
+    VER_AT WITH "2026-05-04"
+REPLACE NOTES WITH "REL owns relation commands and relational enumeration surfaces. REL ENUM belongs under REL as a subcommand-level surface."
+
+APPEND
+MULTIREP ;
+    CMD_ID WITH "CMD_HELP", ;
+    CAN_NAME WITH "HELP", ;
+    DISP_NAME WITH "HELP", ;
+    ENTRY_KIND WITH "command", ;
+    IMPL_STAT WITH "implemented", ;
+    VIS_TIER WITH "core", ;
+    OWNER WITH "help_system", ;
+    REG_RING WITH "help_meta", ;
+    LIFE_PH WITH "diagnostics", ;
+    SRC_AUTH WITH "registry", ;
+    SRC_HINT WITH "cmd", ;
+    SRC_FILE WITH "shell_commands.cpp", ;
+    HANDLER WITH "cmd_HELP", ;
+    HAS_HDLR WITH T, ;
+    DISP_REACH WITH T, ;
+    PUB_SURF WITH T, ;
+    SELF_REG WITH F, ;
+    TIMER WITH F, ;
+    OUT_ROUTE WITH T, ;
+    MSG_CAT WITH F, ;
+    ACTIVE WITH T, ;
+    VER_AT WITH "2026-05-04"
+REPLACE NOTES WITH "HELP should render from reflected structures where available, then fall back to legacy/help catalog sources."
+
+APPEND
+MULTIREP ;
+    CMD_ID WITH "CMD_CHELPCHK", ;
+    CAN_NAME WITH "CMDHELPCHK", ;
+    DISP_NAME WITH "CMDHELPCHK", ;
+    ENTRY_KIND WITH "command", ;
+    IMPL_STAT WITH "partial", ;
+    VIS_TIER WITH "dev", ;
+    OWNER WITH "help_validator", ;
+    REG_RING WITH "help_meta", ;
+    LIFE_PH WITH "diagnostics", ;
+    SRC_AUTH WITH "registry", ;
+    SRC_HINT WITH "cmd", ;
+    SRC_FILE WITH "cmd_helpchk.cpp", ;
+    HANDLER WITH "cmd_CMDHELPCHK", ;
+    HAS_HDLR WITH T, ;
+    DISP_REACH WITH T, ;
+    PUB_SURF WITH T, ;
+    SELF_REG WITH F, ;
+    TIMER WITH F, ;
+    OUT_ROUTE WITH T, ;
+    MSG_CAT WITH F, ;
+    ACTIVE WITH T, ;
+    VER_AT WITH "2026-05-04"
+REPLACE NOTES WITH "CMDHELPCHK should evolve into the congruence validator across registry, ReferenceCollection, SYSTEM_* metadata, legacy help DBFs, functions, messages, and diagrams."
+
+* ------------------------------------------------------------
+* Seed SYSTEM_SUBCOMMANDS
+* ------------------------------------------------------------
+USE SYSTEM_SUBCOMMANDS
+
+APPEND
+MULTIREP ;
+    SUB_ID WITH "SUB_SET_PATH", ;
+    PARENT WITH "SET", ;
+    SUB_NAME WITH "PATH", ;
+    QUAL_NAME WITH "SET PATH", ;
+    DISP_STYL WITH "routed", ;
+    IMPL_STAT WITH "implemented", ;
+    VIS_TIER WITH "core", ;
+    OWNER WITH "runtime_paths", ;
+    REG_RING WITH "core_settings", ;
+    LIFE_PH WITH "session", ;
+    SRC_AUTH WITH "router", ;
+    SRC_FILE WITH "cmd_set.cpp", ;
+    HANDLER WITH "cmd_SETPATH", ;
+    PUB_SURF WITH T, ;
+    DISP_REACH WITH T, ;
+    OUT_ROUTE WITH T, ;
+    MSG_CAT WITH F, ;
+    ACTIVE WITH T, ;
+    VER_AT WITH "2026-05-04"
+REPLACE NOTES WITH "SET PATH is a routed SET subcommand. Re-expressions such as SETPATH should normalize to this qualified canonical target."
+
+APPEND
+MULTIREP ;
+    SUB_ID WITH "SUB_SET_ORDER", ;
+    PARENT WITH "SET", ;
+    SUB_NAME WITH "ORDER", ;
+    QUAL_NAME WITH "SET ORDER", ;
+    DISP_STYL WITH "routed", ;
+    IMPL_STAT WITH "implemented", ;
+    VIS_TIER WITH "core", ;
+    OWNER WITH "order_state", ;
+    REG_RING WITH "index_order", ;
+    LIFE_PH WITH "session", ;
+    SRC_AUTH WITH "router", ;
+    SRC_FILE WITH "cmd_set.cpp", ;
+    HANDLER WITH "cmd_SETORDER", ;
+    PUB_SURF WITH T, ;
+    DISP_REACH WITH T, ;
+    OUT_ROUTE WITH T, ;
+    MSG_CAT WITH F, ;
+    ACTIVE WITH T, ;
+    VER_AT WITH "2026-05-04"
+REPLACE NOTES WITH "SET ORDER is a routed SET subcommand. It should not be flattened into an independent command in the semantic catalog."
+
+APPEND
+MULTIREP ;
+    SUB_ID WITH "SUB_REL_ENUM", ;
+    PARENT WITH "REL", ;
+    SUB_NAME WITH "ENUM", ;
+    QUAL_NAME WITH "REL ENUM", ;
+    DISP_STYL WITH "routed", ;
+    IMPL_STAT WITH "implemented", ;
+    VIS_TIER WITH "core", ;
+    OWNER WITH "tuple_engine", ;
+    REG_RING WITH "relations", ;
+    LIFE_PH WITH "command_execution", ;
+    SRC_AUTH WITH "router", ;
+    SRC_FILE WITH "cmd_rel.cpp", ;
+    HANDLER WITH "cmd_REL", ;
+    PUB_SURF WITH T, ;
+    DISP_REACH WITH T, ;
+    OUT_ROUTE WITH T, ;
+    MSG_CAT WITH F, ;
+    ACTIVE WITH T, ;
+    VER_AT WITH "2026-05-04"
+REPLACE NOTES WITH "REL ENUM is an implemented subcommand surface used by relation enumeration, tuple projection, and relational browser flows."
+
+* ------------------------------------------------------------
+* Seed SYSTEM_ENTRY_VARIANTS
+* ------------------------------------------------------------
+USE SYSTEM_ENTRY_VARIANTS
+
+APPEND
+MULTIREP ;
+    VAR_ID WITH "VAR_SETPATH", ;
+    TOKEN WITH "SETPATH", ;
+    VAR_KIND WITH "reexpression", ;
+    CAN_TARG WITH "SET PATH", ;
+    HELP_OWNR WITH "SET PATH", ;
+    SRC_AUTH WITH "shortcut_resolver", ;
+    SRC_FILE WITH "shortcut_resolver.hpp", ;
+    SHADOWS WITH F, ;
+    DISP_REACH WITH T, ;
+    PUB_SURF WITH T, ;
+    ACTIVE WITH T, ;
+    VER_AT WITH "2026-05-04"
+REPLACE NOTES WITH "SETPATH is an accepted compact surface that should normalize to the qualified SET PATH subcommand."
+
+APPEND
+MULTIREP ;
+    VAR_ID WITH "VAR_SL", ;
+    TOKEN WITH "SL", ;
+    VAR_KIND WITH "shortcut", ;
+    CAN_TARG WITH "SMARTLIST", ;
+    HELP_OWNR WITH "SMARTLIST", ;
+    SRC_AUTH WITH "shortcut_resolver", ;
+    SRC_FILE WITH "shortcut_resolver.hpp", ;
+    SHADOWS WITH F, ;
+    DISP_REACH WITH T, ;
+    PUB_SURF WITH T, ;
+    ACTIVE WITH T, ;
+    VER_AT WITH "2026-05-04"
+REPLACE NOTES WITH "SL is a shortcut. Shortcuts shorten; they do not rename the canonical command."
+
+APPEND
+MULTIREP ;
+    VAR_ID WITH "VAR_DDL", ;
+    TOKEN WITH "DDL", ;
+    VAR_KIND WITH "alias", ;
+    CAN_TARG WITH "SCHEMA", ;
+    HELP_OWNR WITH "SCHEMA", ;
+    SRC_AUTH WITH "registry", ;
+    SRC_FILE WITH "shell_commands.cpp", ;
+    SHADOWS WITH F, ;
+    DISP_REACH WITH T, ;
+    PUB_SURF WITH T, ;
+    ACTIVE WITH T, ;
+    VER_AT WITH "2026-05-04"
+REPLACE NOTES WITH "DDL is treated here as an alias candidate for SCHEMA. This remains a truth-audit decision point until runtime doctrine is finalized."
+
+* ------------------------------------------------------------
+* Seed SYSTEM_HELP_TEXT with real memo content
+* ------------------------------------------------------------
+USE SYSTEM_HELP_TEXT
+
+APPEND
+MULTIREP ;
+    HLP_TXT_ID WITH "HT_SET_SUMMARY", ;
+    OWNER_KND WITH "command", ;
+    OWNER_NAM WITH "SET", ;
+    TEXT_KIND WITH "summary", ;
+    SEQ WITH 1, ;
+    SRC_AUTH WITH "curated_seed", ;
+    SRC_FILE WITH "SYSTEM_METADATA_SEED_v4_safe10.dts", ;
+    GENERATED WITH F, ;
+    CURATED WITH T, ;
+    ACTIVE WITH T, ;
+    VER_AT WITH "2026-05-04"
+REPLACE TEXT_BODY WITH "SET is the DotTalk++ command family for session and environment settings. It is a router: SET PATH, SET INDEX, SET ORDER, and related forms belong under SET as subcommands or re-expressions. The metadata catalog records this hierarchy so HELP and CMDHELPCHK do not confuse routed forms with independent commands."
+REPLACE NOTES WITH "This memo is deliberately long enough to prove x64 memo storage in the metadata catalog."
+
+APPEND
+MULTIREP ;
+    HLP_TXT_ID WITH "HT_REL_ENUM", ;
+    OWNER_KND WITH "subcommand", ;
+    OWNER_NAM WITH "REL ENUM", ;
+    TEXT_KIND WITH "summary", ;
+    SEQ WITH 1, ;
+    SRC_AUTH WITH "curated_seed", ;
+    SRC_FILE WITH "SYSTEM_METADATA_SEED_v4_safe10.dts", ;
+    GENERATED WITH F, ;
+    CURATED WITH T, ;
+    ACTIVE WITH T, ;
+    VER_AT WITH "2026-05-04"
+REPLACE TEXT_BODY WITH "REL ENUM is the relation enumeration surface. It supports relational traversal and tuple-oriented browser work. In the semantic catalog it is implemented as a REL subcommand, not as a missing direct command."
+REPLACE NOTES WITH "Used to prove subcommand-owned help text and memo round-trip."
+
+* ------------------------------------------------------------
+* Seed SYSTEM_FIELD_DICT with long logical meanings
+* ------------------------------------------------------------
+USE SYSTEM_FIELD_DICT
+
+APPEND
+MULTIREP ;
+    TABLE_NAME WITH "SYSTEM_COMMANDS", ;
+    FIELD_NAME WITH "CAN_NAME", ;
+    LOG_NAME WITH "CANONICAL_NAME", ;
+    FIELD_ROLE WITH "identity", ;
+    VALUE_KIND WITH "command_name", ;
+    ACTIVE WITH T, ;
+    VER_AT WITH "2026-05-04"
+REPLACE DESCR WITH "Canonical command name. This is the semantic owner for HELP and validation."
+REPLACE NOTES WITH "Physical token remains <=10 until long-name vector lookup is active."
+
+APPEND
+MULTIREP ;
+    TABLE_NAME WITH "SYSTEM_COMMANDS", ;
+    FIELD_NAME WITH "IMPL_STAT", ;
+    LOG_NAME WITH "IMPLEMENTATION_STATUS", ;
+    FIELD_ROLE WITH "classification", ;
+    VALUE_KIND WITH "status", ;
+    ACTIVE WITH T, ;
+    VER_AT WITH "2026-05-04"
+REPLACE DESCR WITH "Implementation status such as implemented, partial, planned, deprecated, experimental, or documentation_only."
+REPLACE NOTES WITH "Replaces vague legacy implemented/supported interpretation."
+
+APPEND
+MULTIREP ;
+    TABLE_NAME WITH "SYSTEM_COMMANDS", ;
+    FIELD_NAME WITH "DISP_REACH", ;
+    LOG_NAME WITH "DISPATCH_REACHABLE", ;
+    FIELD_ROLE WITH "runtime", ;
+    VALUE_KIND WITH "boolean", ;
+    ACTIVE WITH T, ;
+    VER_AT WITH "2026-05-04"
+REPLACE DESCR WITH "True when the entry is reachable through the current dispatch path."
+REPLACE NOTES WITH "Helps distinguish registry entries from actual user-entry surfaces."
+
+APPEND
+MULTIREP ;
+    TABLE_NAME WITH "SYSTEM_HELP_TEXT", ;
+    FIELD_NAME WITH "TEXT_BODY", ;
+    LOG_NAME WITH "TEXT_BODY", ;
+    FIELD_ROLE WITH "memo", ;
+    VALUE_KIND WITH "long_text", ;
+    ACTIVE WITH T, ;
+    VER_AT WITH "2026-05-04"
+REPLACE DESCR WITH "Memo field containing long help, summary, notes, examples, or documentation body text."
+REPLACE NOTES WITH "This is the main memo proof field for the metadata catalog."
+
+* ------------------------------------------------------------
+* Proof lists
+* ------------------------------------------------------------
+USE SYSTEM_COMMANDS
+LIST
+USE SYSTEM_SUBCOMMANDS
+LIST
+USE SYSTEM_ENTRY_VARIANTS
+LIST
+USE SYSTEM_HELP_TEXT
+DISPLAY
+USE SYSTEM_FIELD_DICT
+DISPLAY
+
+? "===== SYSTEM METADATA SEED V4 SAFE10 COMPLETE ====="

@@ -1,0 +1,146 @@
+* ============================================================
+* REBUILD_V64_CDX_LMDB_CLEAN.DTS
+*
+* Purpose:
+*   Rebuild v64 CDX containers and LMDB envs from xdbf only.
+*
+* WARNING:
+*   Destructive to existing v64 CDX/LMDB artifacts for listed tables.
+* ============================================================
+
+SET ECHO ON
+ECHO ===== V64 CLEAN REBUILD START =====
+
+SCHEMAS CLOSE
+REL CLEAR ALL
+SET ORDER TO 0
+
+SETPATH DBF dbf/x64
+SETPATH INDEXES indexes/x64
+SET PATH
+
+SCHEMAS OPEN DBF
+
+* ------------------------------
+* BUILDING
+* ------------------------------
+ECHO ===== REBUILD BUILDING =====
+SELECT BUILDING
+AREA
+SET INDEX TO building.cdx
+BUILDLMDB YES
+SHOW INDEX
+
+* ------------------------------
+* CLASSES
+* ------------------------------
+ECHO ===== REBUILD CLASSES =====
+SELECT CLASSES
+AREA
+SET INDEX TO classes.cdx
+BUILDLMDB YES
+SHOW INDEX
+
+* ------------------------------
+* COURSES
+* ------------------------------
+ECHO ===== REBUILD COURSES =====
+SELECT COURSES
+AREA
+SET INDEX TO courses.cdx
+BUILDLMDB YES
+SHOW INDEX
+
+* ------------------------------
+* DEPT
+* ------------------------------
+ECHO ===== REBUILD DEPT =====
+SELECT DEPT
+AREA
+SET INDEX TO dept.cdx
+BUILDLMDB YES
+SHOW INDEX
+
+* ------------------------------
+* ENROLL
+* ------------------------------
+ECHO ===== REBUILD ENROLL =====
+SELECT ENROLL
+AREA
+SET INDEX TO enroll.cdx
+BUILDLMDB YES
+SHOW INDEX
+
+* ------------------------------
+* MAJORS
+* ------------------------------
+ECHO ===== REBUILD MAJORS =====
+SELECT MAJORS
+AREA
+SET INDEX TO majors.cdx
+BUILDLMDB YES
+SHOW INDEX
+
+* ------------------------------
+* ROOMS
+* ------------------------------
+ECHO ===== REBUILD ROOMS =====
+SELECT ROOMS
+AREA
+SET INDEX TO rooms.cdx
+BUILDLMDB YES
+SHOW INDEX
+
+* ------------------------------
+* STUD_MAJ
+* ------------------------------
+ECHO ===== REBUILD STUD_MAJ =====
+SELECT STUD_MAJ
+AREA
+SET INDEX TO stud_maj.cdx
+BUILDLMDB YES
+SHOW INDEX
+
+* ------------------------------
+* STUDENTS
+* ------------------------------
+ECHO ===== REBUILD STUDENTS =====
+SELECT STUDENTS
+AREA
+SET INDEX TO students.cdx
+BUILDLMDB YES
+SHOW INDEX
+
+* ------------------------------
+* TASSIGN
+* ------------------------------
+ECHO ===== REBUILD TASSIGN =====
+SELECT TASSIGN
+AREA
+SET INDEX TO tassign.cdx
+BUILDLMDB YES
+SHOW INDEX
+
+* ------------------------------
+* TEACHERS
+* ------------------------------
+ECHO ===== REBUILD TEACHERS =====
+SELECT TEACHERS
+AREA
+SET INDEX TO teachers.cdx
+BUILDLMDB YES
+SHOW INDEX
+
+* ------------------------------
+* TERMS
+* ------------------------------
+ECHO ===== REBUILD TERMS =====
+SELECT TERMS
+AREA
+SET INDEX TO terms.cdx
+BUILDLMDB YES
+SHOW INDEX
+
+ECHO ===== V64 CLEAN REBUILD END =====
+SCHEMAS CLOSE
+QUIT

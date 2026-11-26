@@ -1,0 +1,59 @@
+* stage_mcc_vfp_from_x32.dts
+* Build a VFP-flavor MCC table lane from the canonical x32 source tables.
+* Intended for staging/runtime prep where we want actual VFP DBFs under data\dbf\vfp.
+
+ECHO ============================================================
+ECHO STAGE MCC VFP FROM X32
+ECHO ============================================================
+
+DO x32
+
+ECHO [1/12] BUILDING -> dbf/vfp/BUILDING.dbf
+USE BUILDING
+COPY TO dbf/vfp/BUILDING AS VFP OVERWRITE
+
+ECHO [2/12] CLASSES -> dbf/vfp/CLASSES.dbf
+USE CLASSES
+COPY TO dbf/vfp/CLASSES AS VFP OVERWRITE
+
+ECHO [3/12] COURSES -> dbf/vfp/COURSES.dbf
+USE COURSES
+COPY TO dbf/vfp/COURSES AS VFP OVERWRITE
+
+ECHO [4/12] DEPT -> dbf/vfp/DEPT.dbf
+USE DEPT
+COPY TO dbf/vfp/DEPT AS VFP OVERWRITE
+
+ECHO [5/12] ENROLL -> dbf/vfp/ENROLL.dbf
+USE ENROLL
+COPY TO dbf/vfp/ENROLL AS VFP OVERWRITE
+
+ECHO [6/12] MAJORS -> dbf/vfp/MAJORS.dbf
+USE MAJORS
+COPY TO dbf/vfp/MAJORS AS VFP OVERWRITE
+
+ECHO [7/12] ROOMS -> dbf/vfp/ROOMS.dbf
+USE ROOMS
+COPY TO dbf/vfp/ROOMS AS VFP OVERWRITE
+
+ECHO [8/12] STUD_MAJ -> dbf/vfp/STUD_MAJ.dbf
+USE STUD_MAJ
+COPY TO dbf/vfp/STUD_MAJ AS VFP OVERWRITE
+
+ECHO [9/12] STUDENTS -> dbf/vfp/STUDENTS.dbf
+USE STUDENTS
+COPY TO dbf/vfp/STUDENTS AS VFP OVERWRITE
+
+ECHO [10/12] TASSIGN -> dbf/vfp/TASSIGN.dbf
+USE TASSIGN
+COPY TO dbf/vfp/TASSIGN AS VFP OVERWRITE
+
+ECHO [11/12] TEACHERS -> dbf/vfp/TEACHERS.dbf
+USE TEACHERS
+COPY TO dbf/vfp/TEACHERS AS VFP OVERWRITE
+
+ECHO [12/12] TERMS -> dbf/vfp/TERMS.dbf
+USE TERMS
+COPY TO dbf/vfp/TERMS AS VFP OVERWRITE
+
+ECHO STAGE MCC VFP FROM X32 COMPLETE

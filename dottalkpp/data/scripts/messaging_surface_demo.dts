@@ -1,0 +1,97 @@
+* ============================================================
+* DotTalk++ Messaging Surface Demo
+* ============================================================
+* Run with:
+*   DO messaging_surface_demo
+*
+* Purpose:
+*   Demonstrate the messaging/catalog work completed so far:
+*   - locale selection and active message spine
+*   - controlled message emission with placeholders
+*   - real runtime localized pathways (unknown command, MSGMGR)
+*   - command surfaces now routed through the shared message catalog
+*
+* Safety:
+*   - read-only / diagnostic only
+*   - no DBF/CDX/LMDB rebuild
+*   - no HELP/manual/datadict mutation
+* ============================================================
+
+ECHO ============================================================
+ECHO MESSAGING SURFACE DEMO
+ECHO ============================================================
+
+ECHO
+ECHO --- 00. Catalog / provider / proof baseline ---
+SET MESSAGE CATALOG CHECK
+SET MESSAGE PROOF CHECK
+SET LANGUAGE
+SET LANGUAGE CHECK
+
+ECHO
+ECHO --- 01. Controlled message emission (default locale) ---
+SET MESSAGE EMIT HELP_HINT_COMMAND ARG command USE
+SET MESSAGE EMIT UNKNOWN_COMMAND ARG command DEMO_UNKNOWN
+SET MESSAGE EMIT UNSUPPORTED_MESSAGE_LOCALE ARG locale zz-ZZ
+
+ECHO
+ECHO --- 02. Live locale switches through real runtime pathways ---
+ECHO --- locale: es ---
+SET LANGUAGE TO es
+NOSUCHCOMMAND
+MSGMGR STATUS
+SET MESSAGE EMIT HELP_HINT_COMMAND ARG command USE
+
+ECHO --- locale: fr ---
+SET LANGUAGE TO fr
+NOSUCHCOMMAND
+MSGMGR STATUS
+SET MESSAGE EMIT HELP_HINT_COMMAND ARG command USE
+
+ECHO --- locale: de ---
+SET LANGUAGE TO de
+NOSUCHCOMMAND
+MSGMGR STATUS
+SET MESSAGE EMIT HELP_HINT_COMMAND ARG command USE
+
+ECHO --- locale: it ---
+SET LANGUAGE TO it
+NOSUCHCOMMAND
+MSGMGR STATUS
+SET MESSAGE EMIT HELP_HINT_COMMAND ARG command USE
+
+ECHO
+ECHO --- 03. Return to default locale ---
+SET LANGUAGE TO DEFAULT
+SET LANGUAGE CHECK
+
+ECHO
+ECHO --- 04. Routed command surfaces (currently catalog-backed; many still fall back to en-US) ---
+CLOSE
+MSGMGR USAGE
+BBOX MESSAGING
+MAINT BOUNDARY
+DDICT USAGE
+DISPLAY
+GO USAGE
+GOTO USAGE
+SKIP USAGE
+TOP USAGE
+BOTTOM USAGE
+FIRST USAGE
+LAST USAGE
+NEXT USAGE
+PRIOR USAGE
+USE USAGE
+
+ECHO
+ECHO --- 05. Proof mode toggle ---
+SET MESSAGE PROOF ON
+SET MESSAGE PROOF CHECK
+SET MESSAGE PROOF OFF
+SET MESSAGE PROOF CHECK
+
+ECHO
+ECHO --- 06. Closing state ---
+SET MESSAGE CATALOG CHECK
+SET LANGUAGE

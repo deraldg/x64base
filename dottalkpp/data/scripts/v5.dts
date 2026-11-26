@@ -1,0 +1,473 @@
+* ============================================================
+* ALPHA_5_0_SHAKEDOWN_V32_V64_SPLIT.DTS
+*
+* Purpose:
+*   Clean split shake-down for DotTalk++ v32 vs v64 environments.
+*
+* Goals:
+*   1) Prove path separation is correct
+*   2) Prove v32 does not accidentally drift into CDX/LMDB
+*   3) Prove v64 resolves CDX + LMDB correctly
+*   4) Collect regressions by batch, not by guesswork
+*
+* Notes:
+*   - This script is intentionally repetitive.
+*   - Repetition is preferred over ambiguous environment state.
+*   - This is a shake-down, not a destructive rebuild script.
+*   - Manual rebuild probes are at the end and commented out.
+* ============================================================
+
+SET ECHO ON
+ECHO ===== ALPHA 5.0 SHAKE-DOWN START =====
+COLOR DEFAULT
+VERSION
+
+* ============================================================
+* SECTION 0 - HARD RESET / BASELINE
+* ============================================================
+ECHO ===== SECTION 0 - HARD RESET =====
+SCHEMAS CLOSE
+REL CLEAR ALL
+SET ORDER TO 0
+STATUS
+WSREPORT
+
+* ============================================================
+* SECTION 1 - V32 ENVIRONMENT
+* ============================================================
+ECHO ===== SECTION 1 - V32 ENVIRONMENT =====
+
+SETPATH DBF dbf
+SETPATH INDEXES indexes\x32
+SETPATH LMDB lmdb\v32
+SET PATH
+
+ECHO [V32 CHECK] WSREPORT should show DBF=dbf INDEXES=indexes\x32 LMDB=lmdb\v32
+WSREPORT
+
+ECHO [V32 CHECK] DIR indexes\x32
+DIR indexes\x32
+
+ECHO [V32 CHECK] open DBF flavor tables from v32 root
+SCHEMAS CLOSE
+REL CLEAR ALL
+SCHEMAS OPEN DBF
+SCHEMAS
+
+* ------------------------------
+* V32 / BUILDING
+* ------------------------------
+ECHO ===== V32 / BUILDING =====
+SELECT BUILDING
+AREA
+STATUS
+STRUCT
+COUNT
+RECNO
+SMARTLIST 3
+TOP
+RECNO
+SKIP 1
+RECNO
+BOTTOM
+RECNO
+TOP
+RECNO
+
+ECHO [V32 INDEX] Expect CNX/INX behavior only
+SET INDEX TO building.cnx
+AREA
+SHOW INDEX
+SET ORDER TO TAG BLDG
+AREA
+TOP
+RECNO
+SMARTLIST 3
+SET ORDER TO 0
+SHOW INDEX
+
+* ------------------------------
+* V32 / STUDENTS
+* ------------------------------
+ECHO ===== V32 / STUDENTS =====
+SELECT STUDENTS
+AREA
+STATUS
+STRUCT
+COUNT
+RECNO
+SMARTLIST 5
+TOP
+RECNO
+
+ECHO [V32 INDEX] Expect CNX/INX behavior only
+SET INDEX TO students.cnx
+AREA
+SHOW INDEX
+SET ORDER TO TAG LNAME
+AREA
+TOP
+RECNO
+SMARTLIST 5
+
+ECHO [V32 SEEK / FIND / LOCATE]
+LOCATE LNAME = Taylor
+RECNO
+TUPLE *
+TOP
+FIND Taylor
+TOP
+SEEK Davis
+RECNO
+TUPLE *
+
+ECHO [V32 TAG SWITCH]
+SET ORDER TO TAG FNAME
+AREA
+TOP
+RECNO
+SMARTLIST 5
+SEEK Ava
+RECNO
+TUPLE *
+SET ORDER TO TAG LNAME
+TOP
+RECNO
+
+ECHO [V32 DATA TYPE TAGS]
+SET ORDER TO TAG DOB
+AREA
+TOP
+RECNO
+SMARTLIST 5
+SET ORDER TO TAG GPA
+AREA
+TOP
+RECNO
+SMARTLIST 5
+SET ORDER TO 0
+SHOW INDEX
+
+* ------------------------------
+* V32 / TEACHERS
+* ------------------------------
+ECHO ===== V32 / TEACHERS =====
+SELECT TEACHERS
+AREA
+STATUS
+STRUCT
+COUNT
+SMARTLIST 5
+
+SET INDEX TO teachers.cnx
+AREA
+SHOW INDEX
+SET ORDER TO TAG LNAME
+AREA
+TOP
+RECNO
+SMARTLIST 5
+FIND WILSON
+SEEK WILSON
+RECNO
+TUPLE *
+
+ECHO [V32 DATE / NUMERIC TAGS]
+SET ORDER TO TAG HIRE_DATE
+AREA
+TOP
+RECNO
+SMARTLIST 5
+SET ORDER TO TAG TID
+AREA
+TOP
+RECNO
+SMARTLIST 5
+SET ORDER TO 0
+SHOW INDEX
+
+* ------------------------------
+* V32 / CLASSES
+* ------------------------------
+ECHO ===== V32 / CLASSES =====
+SELECT CLASSES
+AREA
+STRUCT
+COUNT
+SMARTLIST 5
+
+SET INDEX TO classes.cnx
+AREA
+SHOW INDEX
+SET ORDER TO TAG CLS_ID
+AREA
+TOP
+RECNO
+SMARTLIST 5
+SET ORDER TO TAG TID
+AREA
+TOP
+RECNO
+SMARTLIST 5
+SET ORDER TO 0
+SHOW INDEX
+
+* ============================================================
+* SECTION 2 - V32 REGRESSION BATCH NOTES
+* ============================================================
+ECHO ===== SECTION 2 - V32 REGRESSION BATCH NOTES =====
+ECHO [BATCH V32-1] Path / attach failures
+ECHO [BATCH V32-2] Navigation TOP/BOTTOM/SKIP
+ECHO [BATCH V32-3] Ordered display SMARTLIST
+ECHO [BATCH V32-4] SEEK / FIND / LOCATE
+ECHO [BATCH V32-5] Date / Numeric tag behavior
+ECHO [BATCH V32-6] STATUS / AREA / SHOW INDEX reporting
+
+* ============================================================
+* SECTION 3 - HARD RESET BEFORE V64
+* ============================================================
+ECHO ===== SECTION 3 - HARD RESET BEFORE V64 =====
+SCHEMAS CLOSE
+REL CLEAR ALL
+SET ORDER TO 0
+STATUS
+WSREPORT
+
+* ============================================================
+* SECTION 4 - V64 ENVIRONMENT
+* ============================================================
+ECHO ===== SECTION 4 - V64 ENVIRONMENT =====
+
+SETPATH DBF xdbf
+SETPATH INDEXES indexes
+SETPATH LMDB lmdb
+SET PATH
+
+ECHO [V64 CHECK] WSREPORT should show DBF=xdbf INDEXES=indexes LMDB=lmdb
+WSREPORT
+
+ECHO [V64 CHECK] DIR indexes
+DIR indexes
+
+ECHO [V64 CHECK] DIR lmdb
+DIR lmdb
+
+ECHO [V64 CHECK] open XDBF flavor tables from v64 root
+SCHEMAS CLOSE
+REL CLEAR ALL
+SCHEMAS OPEN xDBF
+SCHEMAS
+
+* ------------------------------
+* V64 / BUILDING
+* ------------------------------
+ECHO ===== V64 / BUILDING =====
+SELECT BUILDING
+AREA
+STATUS
+STRUCT
+COUNT
+RECNO
+SMARTLIST 3
+TOP
+RECNO
+SKIP 1
+RECNO
+BOTTOM
+RECNO
+TOP
+RECNO
+
+ECHO [V64 INDEX] Expect CDX + LMDB behavior
+SET INDEX TO building.cdx
+AREA
+SHOW INDEX
+SET ORDER TO TAG BLDG
+AREA
+TOP
+RECNO
+SMARTLIST 3
+SET ORDER TO 0
+SHOW INDEX
+
+* ------------------------------
+* V64 / STUDENTS
+* ------------------------------
+ECHO ===== V64 / STUDENTS =====
+SELECT STUDENTS
+AREA
+STATUS
+STRUCT
+COUNT
+RECNO
+SMARTLIST 5
+TOP
+RECNO
+
+ECHO [V64 INDEX] Expect CDX + LMDB behavior
+SET INDEX TO students.cdx
+AREA
+SHOW INDEX
+SET ORDER TO TAG LNAME
+AREA
+TOP
+RECNO
+SMARTLIST 5
+
+ECHO [V64 SEEK / FIND / LOCATE]
+LOCATE LNAME = Anderson
+RECNO
+TUPLE *
+TOP
+LOCATE LNAME = Taylor
+RECNO
+TUPLE *
+TOP
+FIND Taylor
+TOP
+SEEK Davis
+RECNO
+TUPLE *
+
+ECHO [V64 TAG SWITCH]
+SET ORDER TO TAG FNAME
+AREA
+TOP
+RECNO
+SMARTLIST 5
+SEEK Ava
+RECNO
+TUPLE *
+SET ORDER TO TAG LNAME
+TOP
+RECNO
+
+ECHO [V64 DATA TYPE TAGS]
+SET ORDER TO TAG DOB
+AREA
+TOP
+RECNO
+SMARTLIST 5
+SET ORDER TO TAG GPA
+AREA
+TOP
+RECNO
+SMARTLIST 5
+SET ORDER TO 0
+SHOW INDEX
+
+* ------------------------------
+* V64 / TEACHERS
+* ------------------------------
+ECHO ===== V64 / TEACHERS =====
+SELECT TEACHERS
+AREA
+STATUS
+STRUCT
+COUNT
+SMARTLIST 5
+
+SET INDEX TO teachers.cdx
+AREA
+SHOW INDEX
+SET ORDER TO TAG LNAME
+AREA
+TOP
+RECNO
+SMARTLIST 5
+FIND WILSON
+SEEK WILSON
+INDEXSEEK "WILSON"
+RECNO
+TUPLE *
+
+ECHO [V64 DATE / NUMERIC TAGS]
+SET ORDER TO TAG HIRE_DATE
+AREA
+TOP
+RECNO
+SMARTLIST 5
+SET ORDER TO TAG TID
+AREA
+TOP
+RECNO
+SMARTLIST 5
+SET ORDER TO 0
+SHOW INDEX
+
+* ------------------------------
+* V64 / CLASSES
+* ------------------------------
+ECHO ===== V64 / CLASSES =====
+SELECT CLASSES
+AREA
+STRUCT
+COUNT
+SMARTLIST 5
+
+SET INDEX TO classes.cdx
+AREA
+SHOW INDEX
+SET ORDER TO TAG CLS_ID
+AREA
+TOP
+RECNO
+SMARTLIST 5
+SET ORDER TO TAG TID
+AREA
+TOP
+RECNO
+SMARTLIST 5
+SET ORDER TO 0
+SHOW INDEX
+
+* ============================================================
+* SECTION 5 - V64 REGRESSION BATCH NOTES
+* ============================================================
+ECHO ===== SECTION 5 - V64 REGRESSION BATCH NOTES =====
+ECHO [BATCH V64-1] Path / attach failures
+ECHO [BATCH V64-2] Metadata mismatch / wrong flavor attach
+ECHO [BATCH V64-3] Navigation TOP/BOTTOM/SKIP
+ECHO [BATCH V64-4] Ordered display SMARTLIST
+ECHO [BATCH V64-5] SEEK / FIND / LOCATE / INDEXSEEK
+ECHO [BATCH V64-6] Date / Numeric tag behavior
+ECHO [BATCH V64-7] STATUS / AREA / SHOW INDEX / LMDB reporting
+
+* ============================================================
+* SECTION 6 - CROSS-CHECK / NO-GUESS OBSERVATIONS
+* ============================================================
+ECHO ===== SECTION 6 - CROSS-CHECK / NO-GUESS OBSERVATIONS =====
+
+ECHO [OBSERVE] If v32 SET INDEX TO *.cnx tries to attach CDX/LMDB, routing is wrong.
+ECHO [OBSERVE] If v64 SET INDEX TO *.cdx resolves but SET ORDER TO TAG fails with metadata mismatch, flavor/path pairing is wrong.
+ECHO [OBSERVE] If AREA/STATUS/SHOW INDEX disagree on current order or index file, reporting is wrong.
+ECHO [OBSERVE] If TOP/SEEK land on correct recno but SMARTLIST shows a different first row, cursor restore/display path is wrong.
+ECHO [OBSERVE] If char tags work but date/numeric tags do not, collect under datatype normalization batch.
+
+* ============================================================
+* SECTION 7 - OPTIONAL MANUAL REBUILD PROBES
+* Leave commented until you want destructive confirmation.
+* ============================================================
+ECHO ===== SECTION 7 - OPTIONAL MANUAL REBUILD PROBES =====
+ECHO [MANUAL ONLY] Uncomment when ready:
+ECHO   SELECT STUDENTS
+ECHO   SET INDEX TO students.cnx
+ECHO   REBUILD
+ECHO   SET ORDER TO TAG LNAME
+ECHO   SMARTLIST 5
+ECHO
+ECHO   SELECT STUDENTS
+ECHO   SET INDEX TO students.cdx
+ECHO   BUILDLMDB YES
+ECHO   SET ORDER TO TAG LNAME
+ECHO   SMARTLIST 5
+
+* ============================================================
+* SECTION 8 - CLEAN SHUTDOWN
+* ============================================================
+ECHO ===== SECTION 8 - CLEAN SHUTDOWN =====
+SET ORDER TO 0
+SCHEMAS
+SCHEMAS CLOSE
+ECHO ===== ALPHA 5.0 SHAKE-DOWN END =====
+QUIT

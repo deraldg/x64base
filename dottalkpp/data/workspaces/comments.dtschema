@@ -1,0 +1,9 @@
+DTSHEMA 2
+AREA 0 | dbf=MEMO_LINES.dbf | index=none | indextype=NONE | tag=none | alias=MEMO_LINES
+AREA 1 | dbf=SRCALIAS.dbf | index=none | indextype=NONE | tag=none | alias=SRCALIAS
+AREA 2 | dbf=SRCBLOCK.dbf | index=none | indextype=NONE | tag=none | alias=SRCBLOCK
+AREA 3 | dbf=SRCCLASS.dbf | index=none | indextype=NONE | tag=none | alias=SRCCLASS
+AREA 4 | dbf=SRCDISP.dbf | index=none | indextype=NONE | tag=none | alias=SRCDISP
+AREA 5 | dbf=SRCFILE.dbf | index=none | indextype=NONE | tag=none | alias=SRCFILE
+AREA 6 | dbf=SRCLINE.dbf | index=none | indextype=NONE | tag=none | alias=SRCLINE
+AREA 7 | dbf=SRCUSAGE.dbf | index=none | indextype=NONE | tag=none | alias=SRCUSAGE

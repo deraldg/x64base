@@ -1,0 +1,77 @@
+* DD-055 guarded catalog CDX/tag execution script
+* Target: staging catalog only.
+* Do not promote active catalog from this script.
+setpath dbf metadata\datadict_canonical_rebuild_v0
+
+* ---- DDRUN ----
+use ddrun
+index on RUNID tag RUNID
+index on BASEID tag BASEID
+index on STATUS tag STATUS
+
+* ---- DDBASE ----
+use ddbase
+index on BASEID tag BASEID
+index on RUNID tag RUNID
+index on STATUS tag STATUS
+
+* ---- DDSOURCE ----
+use ddsource
+index on SRCID tag SRCID
+index on SHA256 tag SHA256
+index on KIND tag KIND
+
+* ---- DDOBJECT ----
+use ddobject
+index on OBJID tag OBJID
+index on OBJTYPE tag OBJTYPE
+index on SRCID tag SRCID
+index on NAME tag NAME
+
+* ---- DDATTR ----
+use ddattr
+index on ATTRID tag ATTRID
+index on OBJID tag OBJID
+index on ATTRNAME tag ATTRNAME
+index on EVID tag EVID
+
+* ---- DDEDGE ----
+use ddedge
+index on EDGEID tag EDGEID
+index on FROMOBJ tag FROMOBJ
+index on TOOBJ tag TOOBJ
+index on EDGETYPE tag EDGETYPE
+
+* ---- DDEVID ----
+use ddevid
+index on EVID tag EVID
+index on OBJID tag OBJID
+index on SRCID tag SRCID
+index on KIND tag KIND
+
+* ---- DDGATE ----
+use ddgate
+index on GATEID tag GATEID
+index on RUNID tag RUNID
+index on GATENAME tag GATENAME
+index on STATUS tag STATUS
+
+* ---- DDREVIEW ----
+use ddreview
+index on REVID tag REVID
+index on RUNID tag RUNID
+index on SEVERITY tag SEVERITY
+index on LANE tag LANE
+
+* ---- DDARTIF ----
+use ddartif
+index on ARTID tag ARTID
+index on RUNID tag RUNID
+index on KIND tag KIND
+index on STATUS tag STATUS
+
+* ---- DDPROFILE ----
+use ddprofile
+index on PROFID tag PROFID
+index on NAME tag NAME
+index on VISIBLE tag VISIBLE

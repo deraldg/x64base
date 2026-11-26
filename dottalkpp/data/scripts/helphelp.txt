@@ -1,0 +1,187 @@
+PS D:\code\ccode> help help
+
+NAME
+    Get-Help
+
+SYNTAX
+    Get-Help [[-Name] <string>] [-Path <string>] [-Category {Alias | Cmdlet | Provider | General |
+    FAQ | Glossary | HelpFile | ScriptCommand | Function | Filter | ExternalScript | All |
+    DefaultHelp | DscResource | Class | Configuration}] [-Full] [-Component <string[]>]
+    [-Functionality <string[]>] [-Role <string[]>] [<CommonParameters>]
+
+    Get-Help [[-Name] <string>] -Detailed [-Path <string>] [-Category {Alias | Cmdlet | Provider |
+    General | FAQ | Glossary | HelpFile | ScriptCommand | Function | Filter | ExternalScript | All |
+    DefaultHelp | DscResource | Class | Configuration}] [-Component <string[]>] [-Functionality
+    <string[]>] [-Role <string[]>] [<CommonParameters>]
+
+    Get-Help [[-Name] <string>] -Examples [-Path <string>] [-Category {Alias | Cmdlet | Provider |
+    General | FAQ | Glossary | HelpFile | ScriptCommand | Function | Filter | ExternalScript | All |
+    DefaultHelp | DscResource | Class | Configuration}] [-Component <string[]>] [-Functionality
+    <string[]>] [-Role <string[]>] [<CommonParameters>]
+
+    Get-Help [[-Name] <string>] -Parameter <string[]> [-Path <string>] [-Category {Alias | Cmdlet |
+    Provider | General | FAQ | Glossary | HelpFile | ScriptCommand | Function | Filter |
+    ExternalScript | All | DefaultHelp | DscResource | Class | Configuration}] [-Component
+    <string[]>] [-Functionality <string[]>] [-Role <string[]>] [<CommonParameters>]
+
+    Get-Help [[-Name] <string>] -Online [-Path <string>] [-Category {Alias | Cmdlet | Provider |
+    General | FAQ | Glossary | HelpFile | ScriptCommand | Function | Filter | ExternalScript | All |
+    DefaultHelp | DscResource | Class | Configuration}] [-Component <string[]>] [-Functionality
+    <string[]>] [-Role <string[]>] [<CommonParameters>]
+
+    Get-Help [[-Name] <string>] -ShowWindow [-Path <string>] [-Category {Alias | Cmdlet | Provider |
+    General | FAQ | Glossary | HelpFile | ScriptCommand | Function | Filter | ExternalScript | All |
+    DefaultHelp | DscResource | Class | Configuration}] [-Component <string[]>] [-Functionality
+    <string[]>] [-Role <string[]>] [<CommonParameters>]
+
+
+PARAMETERS
+    -Category <string[]>
+
+        Required?                    false
+        Position?                    Named
+        Accept pipeline input?       false
+        Parameter set name           (All)
+        Aliases                      None
+        Dynamic?                     false
+        Accept wildcard characters?  false
+
+    -Component <string[]>
+
+        Required?                    false
+        Position?                    Named
+        Accept pipeline input?       false
+        Parameter set name           (All)
+        Aliases                      None
+        Dynamic?                     false
+        Accept wildcard characters?  false
+
+    -Detailed
+
+        Required?                    true
+        Position?                    Named
+        Accept pipeline input?       false
+        Parameter set name           DetailedView
+        Aliases                      None
+        Dynamic?                     false
+        Accept wildcard characters?  false
+
+    -Examples
+
+        Required?                    true
+        Position?                    Named
+        Accept pipeline input?       false
+        Parameter set name           Examples
+        Aliases                      None
+        Dynamic?                     false
+        Accept wildcard characters?  false
+
+    -Full
+
+        Required?                    false
+        Position?                    Named
+        Accept pipeline input?       false
+        Parameter set name           AllUsersView
+        Aliases                      None
+        Dynamic?                     false
+        Accept wildcard characters?  false
+
+    -Functionality <string[]>
+
+        Required?                    false
+        Position?                    Named
+        Accept pipeline input?       false
+        Parameter set name           (All)
+        Aliases                      None
+        Dynamic?                     false
+        Accept wildcard characters?  false
+
+    -Name <string>
+
+        Required?                    false
+        Position?                    0
+        Accept pipeline input?       true (ByPropertyName)
+        Parameter set name           (All)
+        Aliases                      None
+        Dynamic?                     false
+        Accept wildcard characters?  false
+
+    -Online
+
+        Required?                    true
+        Position?                    Named
+        Accept pipeline input?       false
+        Parameter set name           Online
+        Aliases                      None
+        Dynamic?                     false
+        Accept wildcard characters?  false
+
+    -Parameter <string[]>
+
+        Required?                    true
+        Position?                    Named
+        Accept pipeline input?       false
+        Parameter set name           Parameters
+        Aliases                      None
+        Dynamic?                     false
+        Accept wildcard characters?  false
+
+    -Path <string>
+
+        Required?                    false
+        Position?                    Named
+        Accept pipeline input?       false
+        Parameter set name           (All)
+        Aliases                      None
+        Dynamic?                     false
+        Accept wildcard characters?  false
+
+    -Role <string[]>
+
+        Required?                    false
+        Position?                    Named
+        Accept pipeline input?       false
+        Parameter set name           (All)
+        Aliases                      None
+        Dynamic?                     false
+        Accept wildcard characters?  false
+
+    -ShowWindow
+
+        Required?                    true
+        Position?                    Named
+        Accept pipeline input?       false
+        Parameter set name           ShowWindow
+        Aliases                      None
+        Dynamic?                     false
+        Accept wildcard characters?  false
+
+    <CommonParameters>
+        This cmdlet supports the common parameters: Verbose, Debug,
+        ErrorAction, ErrorVariable, WarningAction, WarningVariable,
+        OutBuffer, PipelineVariable, and OutVariable. For more information, see
+        about_CommonParameters (https://go.microsoft.com/fwlink/?LinkID=113216).
+
+
+INPUTS
+    System.String
+
+
+OUTPUTS
+    System.Object
+
+ALIASES
+    None
+
+
+REMARKS
+    Get-Help cannot find the Help files for this cmdlet on this computer. It is displaying only
+    partial help.
+        -- To download and install Help files for the module that includes this cmdlet, use
+    Update-Help.
+        -- To view the Help topic for this cmdlet online, type: "Get-Help Get-Help -Online" or
+           go to https://go.microsoft.com/fwlink/?LinkID=2096483.
+
+
+
+PS D:\code\ccode>

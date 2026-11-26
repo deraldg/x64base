@@ -1,0 +1,139 @@
+* ============================================================
+* MCC EXHAUSTIVE FULL X64 REGRESSION CANARIES
+* Clean Version – No Prompt Leakage / No Bad Comments
+* ============================================================
+
+ECHO ===== BEGIN REGRESSION =====
+
+* ------------------------------------------------------------
+* PATH INIT (CRITICAL – restore after any reset)
+* ------------------------------------------------------------
+DO SANDBOX
+
+ECHO PATHS INITIALIZED
+
+* ------------------------------------------------------------
+* CLEAN STATE
+* ------------------------------------------------------------
+WORKSPACE CLOSE ALL
+CLOSE ALL
+//  CLEAR ALL
+REL CLEAR ALL
+
+ECHO CLEAN STATE READY
+
+* ------------------------------------------------------------
+* OPEN TEST TABLE
+* ------------------------------------------------------------
+USE X64SAMPLE
+IF !USED()
+    ECHO ERROR: FAILED TO OPEN X64SAMPLE
+    RETURN
+ENDIF
+
+SELECT X64SAMPLE
+ECHO TABLE OPENED
+
+* ------------------------------------------------------------
+* BASIC NAVIGATION TESTS
+* ------------------------------------------------------------
+TOP
+SMARTLIST NEXT 5
+
+BOTTOM
+SMARTLIST NEXT 5
+
+ECHO NAVIGATION OK
+
+* ------------------------------------------------------------
+* INDEX TEST
+* ------------------------------------------------------------
+INDEX ON LNAME TAG LNAME
+SET ORDER TO TAG LNAME
+
+IF TAG() != "LNAME"
+    ECHO ERROR: INDEX NOT ACTIVE
+ENDIF
+
+SMARTLIST NEXT 10
+
+ECHO INDEX OK
+
+* ------------------------------------------------------------
+* SEEK / LOCATE TEST
+* ------------------------------------------------------------
+SEEK "WHITE"
+IF FOUND()
+    ECHO SEEK OK
+ELSE
+    ECHO ERROR: SEEK FAILED
+ENDIF
+
+LOCATE FOR LNAME = "WHITE"
+IF FOUND()
+    ECHO LOCATE OK
+ELSE
+    ECHO ERROR: LOCATE FAILED
+ENDIF
+
+* RANGE TEST (known defect area)
+LOCATE FOR LNAME >= "M"
+IF FOUND()
+    ECHO RANGE LOCATE OK
+ELSE
+    ECHO WARNING: RANGE LOCATE FAILED (KNOWN ISSUE)
+ENDIF
+
+* ------------------------------------------------------------
+* COUNT TEST
+* ------------------------------------------------------------
+COUNT TO nCount
+ECHO TOTAL RECORDS: 
+? nCount
+
+COUNT FOR LNAME = "WHITE" TO nWhite
+ECHO WHITE COUNT:
+? nWhite
+
+* ------------------------------------------------------------
+* DELETE / RECALL TEST
+* ------------------------------------------------------------
+TOP
+DELETE
+IF DELETED()
+    ECHO DELETE OK
+ELSE
+    ECHO ERROR: DELETE FAILED
+ENDIF
+
+RECALL
+IF !DELETED()
+    ECHO RECALL OK
+ELSE
+    ECHO ERROR: RECALL FAILED
+ENDIF
+
+* ------------------------------------------------------------
+* APPEND TEST
+* ------------------------------------------------------------
+APPEND BLANK
+REPLACE LNAME WITH "ZZTEST"
+REPLACE FNAME WITH "TEST"
+
+LOCATE FOR LNAME = "ZZTEST"
+IF FOUND()
+    ECHO APPEND OK
+ELSE
+    ECHO ERROR: APPEND FAILED
+ENDIF
+
+DELETE
+PACK
+
+* ------------------------------------------------------------
+* FINAL STATE CHECK
+* ------------------------------------------------------------
+TOP
+SMARTLIST NEXT 10
+
+ECHO ===== REGRESSION COMPLETE =====

@@ -1,0 +1,7 @@
+GATEID,RUNID,GATENAME,STATUS,DETAIL
+GATE_EF0D5EE649CB1B29F5A0,DD040-catalog-row-projection-v0,CATALOG_DEFINITION_REVIEWED,PROJECTED_NOT_EXECUTED,Catalog DBF/DDL definition reviewed
+GATE_1846AD4BBC83C07221C0,DD040-catalog-row-projection-v0,SANDBOX_PATH_CONFIRMED,PROJECTED_NOT_EXECUTED,Sandbox path confirmed
+GATE_E83717E4BDB5840DBD23,DD040-catalog-row-projection-v0,ROW_PROJECTION_DRY_RUN_GREEN,PROJECTED_NOT_EXECUTED,Rows projected with exact counts and no blocking conflicts
+GATE_48B786B2E1E8C3A7F228,DD040-catalog-row-projection-v0,WRITE_AUTHORIZED,PROJECTED_NOT_EXECUTED,User explicitly authorizes sandbox DBF creation
+GATE_656EEF15DE7CB0921E1C,DD040-catalog-row-projection-v0,READBACK_VALIDATED,PROJECTED_NOT_EXECUTED,DBF readback matches projected rows and hashes
+GATE_4DFDB0505276DB8EC4F5,DD040-catalog-row-projection-v0,PROMOTION_AUTHORIZED,PROJECTED_NOT_EXECUTED,User explicitly authorizes promotion from sandbox to active catalog

@@ -1,0 +1,167 @@
+SET ECHO OFF
+* ============================================================
+* MCC_OBSERVATION_CANARIES_V7.DTS
+*
+* Purpose:
+*   Observation-only canaries for known current gaps, transitional
+*   behaviors, and deliberately incomplete areas.
+*
+* Contract:
+*   - These are NOT hard pass/fail regressions.
+*   - Output is inspected for drift or improvement.
+*   - Expected failures should remain explicit.
+*
+* Scope:
+*   - date comparison anomalies
+*   - transitional public index workflow observations
+*   - metadata mismatch observations
+*   - command-surface gaps / usage-only probes
+*   - delete/index propagation deferred areas
+* ============================================================
+
+ECHO ===== V7 OBSERVATION CANARIES START =====
+COLOR DEFAULT
+VERSION
+INIT
+SET PATH
+
+ECHO ===== DATE COMPARISON CANARIES (KNOWN CURRENT FAILURES) =====
+ECHO [KNOWN-FAIL] CURRENT EXPECT .F.:
+CALC ((DATE() + 2) > DATE())
+ECHO [KNOWN-FAIL] CURRENT EXPECT .F.:
+CALC ((DATE() - 2) < DATE())
+ECHO [KNOWN-FAIL] CURRENT EXPECT .F.:
+CALC (CTOD("2000-01-01") + 1 = CTOD("2000-01-02"))
+ECHO [KNOWN-FAIL] CURRENT EXPECT .F.:
+CALC (CTOD("2000-01-01") - 1 = CTOD("1999-12-31"))
+ECHO [KNOWN-FAIL] CURRENT EXPECT .F.:
+CALC (DATEDIFF(DOB, DATE()) = -(DATE() - DOB))
+
+ECHO ===== SHOW / DISPLAY SURFACE OBSERVATIONS =====
+SCHEMAS OPEN DBF
+SELECT STUDENTS
+SHOW TABLE
+SHOW COLUMNS
+SHOW INDEX
+DBAREA
+AREA
+STATUS
+WSREPORT
+
+ECHO ===== COMMAND-SURFACE GAPS / OBSERVATIONS =====
+DBAREAS
+FIND Taylor
+FIND White
+SEEK Davis
+SEEK Alex
+PTALK DUMP
+
+ECHO ===== TRANSITIONAL PUBLIC INDEX WORKFLOW (LEGACY TABLE VS X64 INDEX) =====
+SELECT STUDENTS
+SET INDEX TO STUDENTS.cdx
+SET ORDER TO TAG LNAME
+AREA
+SHOW INDEX
+TOP
+RECNO
+LIST 5
+
+SET ORDER TO TAG FNAME
+AREA
+SHOW INDEX
+TOP
+RECNO
+LIST 5
+
+SET ORDER TO TAG LNAME
+AREA
+SHOW INDEX
+TOP
+RECNO
+
+ECHO ===== TEACHERS METADATA MISMATCH OBSERVATION =====
+SELECT TEACHERS
+SET INDEX TO TEACHERS.cdx
+SET ORDER TO TAG LNAME
+AREA
+SHOW INDEX
+TOP
+LIST 3
+INDEXSEEK "WILSON"
+
+ECHO ===== LMDB OPEN / USE OBSERVATION (ONLY IF CURRENT CONTRACT EXPECTS FAILURE) =====
+LMDB
+LMDB OPEN indexes/STUDENTS.cdx.d
+LMDB USE LNAME
+LMDB INFO
+LMDB SEEK WILSON
+LMDB SCAN A D
+LMDB CLOSE
+
+LMDB OPEN indexes/STUDENTS.cdx.d
+LMDB USE FNAME
+LMDB INFO
+LMDB SEEK AVA
+LMDB SCAN M Z
+LMDB CLOSE
+
+ECHO ===== WHERE / SHOW FILTER OBSERVATION =====
+SELECT STUDENTS
+SET INDEX TO STUDENTS.cdx
+SET ORDER TO TAG LNAME
+TOP
+LOCATE lname = Taylor
+WHERE GPA >= 3.5
+SHOW TABLE
+SHOW INDEX
+COUNT
+TOP
+SMARTLIST 5 FOR GPA >= 3.5
+
+ECHO ===== FILTER + ORDER OBSERVATIONS =====
+SET FILTER TO LNAME = "TAYLOR"
+COUNT
+TOP
+LIST 20
+SET FILTER TO
+
+SET FILTER TO LNAME = "ANDERSON"
+COUNT
+TOP
+LIST 20
+SET FILTER TO
+
+SET FILTER TO FNAME = "AVA"
+COUNT
+TOP
+LIST 20
+SET FILTER TO
+
+ECHO ===== BUFFER / INDEX DELETE GAP (DOCUMENTED DEFERRED AREA) =====
+ECHO [DEFERRED] Index update coverage currently includes create/modify only.
+ECHO [DEFERRED] Delete propagation is not yet implemented.
+ECHO [DEFERRED] Algorithms in cmd_delete.cpp should be considered later.
+
+SELECT STUDENTS
+SET INDEX TO STUDENTS.cdx
+SET ORDER TO TAG LNAME
+LOCATE lname = Taylor
+TABLE ON
+DELETE NEXT 1
+COUNT DELETED
+RECALL NEXT 1
+COUNT DELETED
+TABLE OFF
+
+ECHO ===== SCRIPT ASSUMPTION DRIFT CHECK =====
+ECHO [OBSERVE] Some DTS scripts still assume:
+ECHO [OBSERVE]   - DBF and XDBF are interchangeable
+ECHO [OBSERVE]   - index containers and LMDB envs are the same thing
+ECHO [OBSERVE] Review any failures here before blaming engine code.
+
+ECHO ===== CLEAN SHUTDOWN =====
+SET ORDER TO 0
+SCHEMAS
+SCHEMAS CLOSE
+ECHO ===== V7 OBSERVATION CANARIES END =====
+QUIT

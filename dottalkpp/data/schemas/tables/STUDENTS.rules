@@ -1,0 +1,9 @@
+# DotTalk++ table RULE bindings.
+# Location: dottalkpp/data/SCHEMAS/tables/STUDENTS.rules
+
+[TABLE STUDENTS]
+SID=POSITIVE_ID
+GPA=GPA_4_0
+GENDER=GENDER_CODE
+MAJOR=MAJOR_CODE
+EMAIL=EMAIL_ADDR
