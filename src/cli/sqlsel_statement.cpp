@@ -1182,12 +1182,19 @@ bool execute_join(const std::string& select_list,
     const std::uint64_t left_count = static_cast<std::uint64_t>(left.area->recCount());
     const std::uint64_t right_count = static_cast<std::uint64_t>(right.area->recCount());
     std::vector<bool> right_matched(static_cast<std::size_t>(right_count) + 1, false);
+#if DOTTALK_HAS_XINDEX
     xindex::IndexManager* inner_index = xindex::manager_if_attached(*right.area);
     const bool index_candidate = join_kind != JoinKind::Cross && simple_equi_on &&
                                  inner_index != nullptr &&
                                  inner_index->isCdx() &&
                                  inner_index->activeTagMatchesField(
                                      static_cast<int>(on_right.field_index) + 1);
+#else
+    // Index mode NONE links no xindex, so the inner side is always scanned.
+    // Before this guard the core presets (core-vcpkg, windows-core) failed to
+    // LINK on these calls, which is why CI on main was red (2026-11-26).
+    const bool index_candidate = false;
+#endif
     std::size_t index_probes = 0;
     std::size_t index_candidates = 0;
     std::size_t scan_probes = 0;
@@ -1244,6 +1251,7 @@ bool execute_join(const std::string& select_list,
 
         bool used_index_for_outer = false;
         std::vector<std::uint64_t> probe_right_matches;
+#if DOTTALK_HAS_XINDEX
         if (index_candidate) {
             const std::size_t rows_before_probe = rows.size();
             try {
@@ -1296,6 +1304,7 @@ bool execute_join(const std::string& select_list,
                 used_index_for_outer = false;
             }
         }
+#endif
 
         if (used_index_for_outer) {
             for (const auto ri : probe_right_matches) {
@@ -1380,14 +1389,20 @@ bool execute_join(const std::string& select_list,
         });
     }
 
+#if DOTTALK_HAS_XINDEX
+    const std::string inner_tag =
+        (index_probes > 0 && inner_index != nullptr) ? inner_index->activeTag() : std::string();
+#else
+    const std::string inner_tag;
+#endif
     if (index_probes > 0 && scan_probes == 0) {
         std::cout << "SQLSEL: " << join_name << " JOIN access path -- CDX seek (inner="
-                  << right.name << ", tag=" << inner_index->activeTag()
+                  << right.name << ", tag=" << inner_tag
                   << ", probes=" << index_probes
                   << ", candidates=" << index_candidates << ").\n";
     } else if (index_probes > 0) {
         std::cout << "SQLSEL: " << join_name << " JOIN access path -- hybrid CDX seek + nested-loop scan"
-                  << " (inner=" << right.name << ", tag=" << inner_index->activeTag()
+                  << " (inner=" << right.name << ", tag=" << inner_tag
                   << ", index probes=" << index_probes
                   << ", scan probes=" << scan_probes << ").\n";
     } else {
