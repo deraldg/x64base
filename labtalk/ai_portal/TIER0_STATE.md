@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-11-26T21:51:18Z
+    generated_utc : 2026-11-26T21:55:32Z
     lane        : AIF-082 (6.1)
 
 Before relying on this snapshot, run the generator with --check.
@@ -10,8 +10,8 @@ Before relying on this snapshot, run the generator with --check.
 ## Tree
 
     branch        : development
-    HEAD          : 17d9d21fd  (2026-11-26)
-    upstream      : 17d9d21fd
+    HEAD          : e7822400a  (2026-11-26)
+    upstream      : e7822400a
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target

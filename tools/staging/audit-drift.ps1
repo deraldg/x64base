@@ -113,6 +113,12 @@ foreach ($rel in $rels) {
   if ($rel -match $nonpubRegex)     { $nonpub += $rel; continue }
   # (no git-managed skip: source is projection now)
 
+  # STAGING-AUTHORED POINTERS (added 2026-11-26). main's AI_PORTAL.md and
+  # AI_README.md are deliberately NOT in PROMOTE.manifest: on main they are
+  # pointers to development, owned by docs/maintenance/AI_PORTAL_MAIN_POINTER_DRAFT_V1.md
+  # and AI_README_MAIN_POINTER_DRAFT_V1.md. Without this they read as
+  # off-projection and a purge would delete main's only onboarding route.
+  if ($rel -in @('AI_PORTAL.md', 'AI_README.md')) { $ok++; continue }
   if (-not (Test-OnAllowList $rel)) { $offProjection += $rel; continue }  # off-projection -> should be purged
 
   # on-manifest projection file: it must match development after a rebuild
