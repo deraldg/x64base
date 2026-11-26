@@ -582,3 +582,17 @@ scripts/build/
 /dottalkpp/bin-wsl/
 /dottalkpp/bin-wsl-lean/
 /dottalkpp/bin/bin-wsl/
+
+# Added 2026-11-26, cleanup plan section 3 (owner yes). Generated data
+# products and run outputs; ignoring deletes nothing and does not untrack
+# files already committed. A deliberate run record still lands with
+# `git add -f`. Plan: docs/agents/TREE_CLEANUP_PLAN_2026-11-26.md
+/dottalkpp/data/systems/
+/dottalkpp/data/dbf/cascade_og/
+/dottalkpp/data/dbf/cascade_dbf/
+/dottalkpp/data/dbf/sandbox/
+/dottalkpp/data/indexes/sandbox/
+/dottalkpp/docs/generated/
+/docs/maintenance/lanes/full_stack_documentation/runs/
+/dottalkpp/docs/Bible/*
+!/dottalkpp/docs/Bible/assemble_bible_zip.ps1

@@ -1,7 +1,13 @@
 # Shared-tree cleanup plan, 2026-11-26
 
     author   : member.ai.claude (project thread "onboarding fixes")
-    status   : PROPOSAL for member.derald. Nothing in sections 3-5 has been done.
+    status   : PROPOSAL for member.derald. Owner said yes 2026-11-26 15:42Z.
+               Applied: 3a-3c gitignore entries (untracked 7,353 -> 4,813).
+               NOT applied: the 3a "commit build scripts" half (lane-owned);
+               3d deletes (the help.bak-* dirs wait for AIF-171 Phase 8 to
+               close; `_to_delete/aif170_superseded/` was verified as the
+               charter AIF-175 replaces, but the agent was not permitted to
+               delete it, so the owner removes it by hand).
     measured : D:\code\ccode, Windows host, `git --no-optional-locks status --porcelain -uall`
                at 798c4c1e3, 2026-11-26 ~15:10Z
 
