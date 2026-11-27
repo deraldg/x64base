@@ -419,6 +419,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // should not alter table relation state unless their own implementation
     // explicitly documents and handles that behavior.
     registry().add("DIR",       [](DbArea& A, std::istringstream& S){ cmd_DIR(A,S);       });
+    registry().add("PWD",       [](DbArea& A, std::istringstream& S){ cmd_PWD(A,S);       });
     registry().add("BELL",      [](DbArea& A, std::istringstream& S){ cmd_BELL(A,S);      });
     registry().add("COLOR",     [](DbArea& A, std::istringstream& S){ cmd_COLOR(A,S);     });
 #if DOTTALK_COMPONENT_LABTALK
