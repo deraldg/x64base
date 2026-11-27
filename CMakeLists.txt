@@ -1108,6 +1108,11 @@ if(TARGET dottalkpp)
         # built it (release.yml asks for it), so a user can open the Cascade ERP
         # SQLite package outside DotTalk++. SQLite is public domain.
         if (DEFINED VCPKG_INSTALLED_DIR AND DEFINED VCPKG_TARGET_TRIPLET)
+            # vcpkg's sqlite3[tool] lands at tools/sqlite3.exe (measured
+            # 2026-11-27); tools/sqlite3/ is the per-port layout some ports use.
+            install(FILES
+                "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/sqlite3.exe"
+                DESTINATION bin OPTIONAL)
             install(FILES
                 "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/sqlite3/sqlite3.exe"
                 DESTINATION bin OPTIONAL)
