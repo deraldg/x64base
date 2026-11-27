@@ -34,7 +34,9 @@ permissions:
 
 jobs:
   windows-beta:
-    runs-on: windows-latest
+    # Pinned: windows-latest became windows-2025-vs2026 (Nov 2026), which has no
+    # Visual Studio 17 2022, the generator the presets and this job name.
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
       # pro-md is the build BUILDING.md tells a reader to make (LMDB indexing +

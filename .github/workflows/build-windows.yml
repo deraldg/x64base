@@ -33,7 +33,9 @@ on:
 
 jobs:
   build-msvc:
-    runs-on: windows-latest
+    # Pinned: windows-latest became windows-2025-vs2026 (Nov 2026), which has no
+    # Visual Studio 17 2022, the generator the presets and this job name.
+    runs-on: windows-2022
     timeout-minutes: 30
 
     # runner.temp is not available in job-level env (the run failed as a
