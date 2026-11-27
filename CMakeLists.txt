@@ -1091,6 +1091,12 @@ if(TARGET dottalkpp)
                 DESTINATION bin OPTIONAL)
         install(FILES "$<TARGET_FILE_DIR:dottalkpp>/sqlite3.dll"
                 DESTINATION bin OPTIONAL)
+        # libsodium has the same shape: unofficial-sodium is not reported by
+        # TARGET_RUNTIME_DLLS, so an installed tree had no libsodium.dll and
+        # dottalkpp.exe exited before printing anything (measured 2026-11-27,
+        # pro-md install from a fresh clone, exit code 53).
+        install(FILES "$<TARGET_FILE_DIR:dottalkpp>/libsodium.dll"
+                DESTINATION bin OPTIONAL)
     else()
         install(TARGETS dottalkpp RUNTIME DESTINATION bin)
     endif()

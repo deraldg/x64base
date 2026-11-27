@@ -37,17 +37,20 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      # pro-md is the build BUILDING.md tells a reader to make (LMDB indexing +
+      # Turbo Vision), so the download matches the source on main (owner ruling
+      # 2026-11-27). It was windows-core, which cannot run the quickstart.
       - name: Configure
-        run: cmake --preset windows-core
+        run: cmake --preset pro-md
       - name: Build and test
         run: |
-          cmake --build --preset windows-core --parallel
-          ctest --preset windows-core
+          cmake --build --preset pro-md-Release --parallel
+          ctest --preset pro-md-Release
       - name: Install
         shell: pwsh
         run: |
           $name = "x64base-$env:GITHUB_REF_NAME-windows-x64"
-          cmake --install build/windows-core --config Release --prefix "stage/$name"
+          cmake --install build --config Release --prefix "stage/$name"
           Copy-Item LICENSE,README.md,CHANGELOG.md,RELEASE_NOTES.md "stage/$name"
           Compress-Archive -Path "stage/$name" -DestinationPath "stage/$name.zip"
           (Get-FileHash "stage/$name.zip" -Algorithm SHA256).Hash.ToLower() + "  $name.zip" |

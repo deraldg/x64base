@@ -1,13 +1,16 @@
 # Changelog
 
-This project follows a lightweight form of Keep a Changelog. The first public
-beta release has not yet been cut.
+This project follows a lightweight form of Keep a Changelog.
 
-## Unreleased
+## 1.1.0-beta (beta 1.b) -- 2026-11-27
+
+First public beta. See `RELEASE_NOTES.md`.
 
 ### Added
 
-- Tentative root MIT license and public contribution/security policies.
+- Dual license: GPL-3.0-only, or a commercial license (`LICENSING.md`, decided
+  2026-08-08; an earlier tentative MIT designation is withdrawn), and public
+  contribution/security policies.
 - Cross-platform C++ build and test workflow for the public `main` branch.
 - Portable core build presets and optional dependency features.
 - Explicit public project status and release-readiness documentation.
