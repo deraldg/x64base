@@ -39,6 +39,18 @@ jobs:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
+      # The presets read VCPKG_INSTALLATION_ROOT / VCPKG_ROOT. The windows-2022
+      # image does not set them (the v1.1.0-beta run failed: "Could not find
+      # toolchain file: /scripts/buildsystems/vcpkg.cmake"), so bootstrap a
+      # vcpkg checkout the same way build-windows.yml does and export both.
+      - name: Bootstrap vcpkg
+        shell: pwsh
+        run: |
+          $v = Join-Path $env:RUNNER_TEMP 'vcpkg'
+          git clone https://github.com/microsoft/vcpkg $v
+          & "$v\bootstrap-vcpkg.bat" -disableMetrics
+          "VCPKG_INSTALLATION_ROOT=$v" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          "VCPKG_ROOT=$v" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
       # pro-md is the build BUILDING.md tells a reader to make (LMDB indexing +
       # Turbo Vision), so the download matches the source on main (owner ruling
       # 2026-11-27). It was windows-core, which cannot run the quickstart.

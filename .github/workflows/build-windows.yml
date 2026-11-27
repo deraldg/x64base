@@ -36,7 +36,9 @@ jobs:
     # Pinned: windows-latest became windows-2025-vs2026 (Nov 2026), which has no
     # Visual Studio 17 2022, the generator the presets and this job name.
     runs-on: windows-2022
-    timeout-minutes: 30
+    # tvision now builds from vcpkg on the runner (VCPKG_MANIFEST_FEATURES tv),
+    # which the 30-minute budget did not cover.
+    timeout-minutes: 60
 
     # runner.temp is not available in job-level env (the run failed as a
     # 'workflow file issue' in 0s, 2026-11-26), so steps use %RUNNER_TEMP%.
@@ -62,6 +64,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=%CONFIG%
           -DCMAKE_TOOLCHAIN_FILE=%RUNNER_TEMP%\vcpkg\scripts\buildsystems\vcpkg.cmake
           -DDOTTALK_WITH_TV=ON
+          "-DVCPKG_MANIFEST_FEATURES=tv;index"
           -DDOTTALK_WITH_INDEX=ON
           -DBUILD_PYDOTTALK=OFF
 
