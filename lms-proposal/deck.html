@@ -30,8 +30,8 @@
             mask-image:radial-gradient(120% 90% at 50% 30%,#000 25%,transparent 78%)}
 
   /* ---------------- top bar ---------------- */
-  .top{position:absolute;top:0;left:0;right:0;z-index:30;display:flex;align-items:center;gap:18px;
-       opacity:0;transition:opacity .3s;pointer-events:none;
+  .top{position:relative;flex:0 0 auto;flex-wrap:wrap;z-index:30;display:flex;align-items:center;gap:18px;
+       opacity:1;transition:opacity .3s;pointer-events:auto;
        padding:13px 26px;backdrop-filter:blur(14px);
        background:linear-gradient(180deg,rgba(10,20,32,.86),rgba(10,20,32,.62));
        border-bottom:1px solid var(--line)}
@@ -69,7 +69,7 @@
   .count b{color:var(--accent);font-weight:400}
 
   /* ---------------- stage ---------------- */
-  .stage{position:absolute;inset:0;z-index:10;display:grid;place-items:center;padding:0}
+  .stage{position:relative;flex:1;min-height:0;z-index:10;display:grid;place-items:center;padding:12px;overflow:hidden}
   .fit{position:relative;width:1280px;height:720px;transform-origin:center center;
        overflow:hidden}
   .fit iframe{position:absolute;inset:0;width:1280px;height:720px;border:0;display:block;background:#0d1b2a}
@@ -93,8 +93,8 @@
   @keyframes inL{from{opacity:0;transform:translateX(-38px) scale(.988)}to{opacity:1;transform:none}}
 
   /* ---------------- rail ---------------- */
-  .rail{position:absolute;bottom:0;left:0;right:0;z-index:30;display:flex;align-items:center;gap:6px;
-        opacity:0;transition:opacity .3s;pointer-events:none;
+  .rail{position:relative;flex:0 0 auto;z-index:30;display:flex;align-items:center;gap:6px;
+        opacity:1;transition:opacity .3s;pointer-events:auto;
         padding:10px 26px 14px;overflow-x:auto;backdrop-filter:blur(14px);
         background:linear-gradient(0deg,rgba(10,20,32,.88),rgba(10,20,32,.58));
         border-top:1px solid var(--line);scrollbar-width:none}
@@ -123,7 +123,7 @@
         padding:7px 9px;border-radius:999px;backdrop-filter:blur(16px);
         background:rgba(16,28,42,.80);border:1px solid rgba(127,168,201,.20);
         box-shadow:0 12px 34px rgba(0,0,0,.5);transition:opacity .45s}
-  .pill{display:flex}
+  .pill{display:none}
   .pill.idle{opacity:0}
   .pill button{width:34px;height:34px;padding:0;border-radius:50%;font-size:15px;
         background:transparent;border:0;color:var(--muted)}
@@ -151,6 +151,18 @@
         text-transform:uppercase;pointer-events:none;opacity:0;transition:opacity .4s}
   .deck.presenting .hint{opacity:1;animation:fade 3.4s 1.2s forwards}
   @keyframes fade{to{opacity:0}}
+  /* Keep navigation discoverable and reserve its space above the slide. */
+  .brand{display:none}
+  .top .base{white-space:normal;max-width:38rem;color:var(--muted)}
+  .ctl{flex-wrap:wrap}
+  button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  @media(max-width:700px){
+    .top{gap:10px;padding:10px 12px}
+    .top .base{width:100%;order:3;border:0;padding:0;font-size:11px}
+    .top .now,.top .spacer{display:none}
+    .ctl{margin-left:auto}
+    .rail{padding:8px 12px}
+  }
 </style>
 </head>
 <body>
@@ -171,15 +183,16 @@
       <button class="arrow" id="prev" title="Previous (left arrow)">&#8592;</button>
       <span class="count" id="count"></span>
       <button class="arrow" id="next" title="Next (right arrow)">&#8594;</button>
-      <button class="solid" id="mode" title="Fullscreen (F)">Present</button>
+      <button class="solid" id="mode" title="Launch fullscreen presentation (F)">Launch presentation</button>
     </div>
   </div>
+
+  <nav class="rail" id="rail" aria-label="Presentation sections"></nav>
 
   <div class="stage" id="stage">
     <div class="fit" id="fit"></div>
   </div>
 
-  <div class="rail" id="rail"></div>
   <div class="prog"><b id="bar"></b></div>
   <div class="pill" id="pill">
     <button id="pprev" title="Previous">&#8249;</button>
@@ -223,7 +236,8 @@ let lastG = null;
 const chips = SLIDES.map((s, k) => {
   if (s.g !== lastG) { lastG = s.g;
     if (k) { const sp = document.createElement("span"); sp.className = "sep"; rail.appendChild(sp); } }
-  const c = document.createElement("div");
+  const c = document.createElement("button");
+  c.type = "button";
   c.className = "chip";
   c.innerHTML = '<i>' + String(k + 1).padStart(2, "0") + '</i>' + s.t;
   c.onclick = () => go(k);
@@ -241,7 +255,7 @@ function fit(){
   deck.style.height = Math.max(430, window.innerHeight - top) + "px";
 
   const st = $("stage"), el = $("fit");
-  const pad = 0;
+  const pad = 24;
   const s = Math.min((st.clientWidth - pad) / 1280, (st.clientHeight - pad) / 720);
   el.style.transform = "scale(" + s + ")";
   el.style.margin = ((720 * s - 720) / 2) + "px " + ((1280 * s - 1280) / 2) + "px";
@@ -287,7 +301,8 @@ function go(k){
   $("prev").disabled    = (i === 0);
   $("next").disabled    = (i === SLIDES.length - 1);
   chips.forEach((c, k2) => c.classList.toggle("on", k2 === i));
-  chips[i].scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+  chips.forEach((c, k2) => c.setAttribute("aria-current", k2 === i ? "step" : "false"));
+  rail.scrollTo({ left: chips[i].offsetLeft - (rail.clientWidth - chips[i].offsetWidth) / 2, behavior: "smooth" });
   $("bar").style.width  = ((i + 1) / SLIDES.length * 100) + "%";
   $("pnum").textContent = i + 1;
   $("pprev").disabled   = (i === 0);
@@ -299,7 +314,7 @@ function go(k){
 function setMode(on){
   presenting = on;
   $("deck").classList.toggle("presenting", on);
-  $("mode").textContent = on ? "Exit" : "Present";
+  $("mode").textContent = on ? "Exit presentation" : "Launch presentation";
   if (on && !document.fullscreenElement) document.documentElement.requestFullscreen?.();
   if (!on && document.fullscreenElement) document.exitFullscreen?.();
   requestAnimationFrame(fit);
