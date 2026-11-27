@@ -16,12 +16,19 @@ replacement for a commercial xBase product.
 
 ## First run
 
-Unzip, open a shell in the unzipped folder, and build the x64 LMDB indexes
-once (they are derived files and are not shipped):
+Unzip, then start DotTalk++ with the launcher in the unzipped folder. The first
+time, add `-FirstRun` to build the x64 LMDB indexes (they are derived files and
+are not shipped):
+
+```powershell
+.\start.ps1 -FirstRun
+```
+
+`start.cmd` does the same for cmd.exe or a double-click (without the index
+build; run `DO scripts\mcc\mcc_build_x64_lmdb.dts` once inside the shell).
+Then, at the DotTalk++ prompt:
 
 ```text
-bin\dottalkpp.exe
-DO scripts\mcc\mcc_build_x64_lmdb.dts
 DO X64
 USE STUDENTS
 SET INDEX TO STUDENTS

@@ -854,6 +854,13 @@ endforeach()
 endif()
 
 install(FILES "${CMAKE_SOURCE_DIR}/LICENSE" DESTINATION ".")
+# Package-root launchers: the runtime must start from data\, which a reader of
+# an unzipped release had to know (owner, 2026-11-27).
+if (WIN32)
+    install(FILES "${CMAKE_SOURCE_DIR}/tools/packaging/start.ps1"
+                  "${CMAKE_SOURCE_DIR}/tools/packaging/start.cmd"
+            DESTINATION ".")
+endif()
 install(FILES "${DOTTALK_PACKAGE_MANIFEST}"
         DESTINATION "." RENAME "product.manifest")
 if (NOT DOTTALK_SKIP_PACKAGE_INVENTORY)
