@@ -32,19 +32,22 @@ ERP (they are derived files and are not shipped):
 
 `start.cmd` does the same for cmd.exe or a double-click, without the index
 build. From it, run `DO scripts\mcc\mcc_build_x64_lmdb.dts` once inside the
-shell and then `CLOSE ALL`: the build leaves all twelve x64 tables open, so a
-following `USE STUDENTS` would report the table as already open.
+shell, then `CLOSE ALL` so the session starts clean (the build leaves the twelve
+x64 tables open).
 Then, at the DotTalk++ prompt:
 
 ```text
-DO X64
-USE STUDENTS
-SET INDEX TO STUDENTS
+DO X64                    && sets the DBF, INDEXES and LMDB paths to the x64 lane
+WORKSPACE OPEN DBF CDX    && opens every x64 table with its CDX index set (LMDB-backed)
+SELECT STUDENTS
 SET ORDER TO TAG LNAME
 SMARTLIST 10
 ```
 
-Record 1 by `LNAME` should read `Anderson`.
+Record 1 by `LNAME` should read `Anderson`. `DO X64` sets the lane's paths;
+`WORKSPACE OPEN DBF CDX` opens its tables with their CDX index sets, whose tags
+are LMDB subindexes. `WORKSPACE LOAD <name>` instead restores a saved workspace,
+relations included -- see `cascade_all` below.
 
 ## Cascade ERP
 

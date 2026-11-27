@@ -109,17 +109,23 @@ shell and query:
 .\datarun.ps1
 ```
 ```text
-DO X64
-USE STUDENTS
-SET INDEX TO STUDENTS
+DO X64                    && sets the DBF, INDEXES and LMDB paths to the x64 lane
+WORKSPACE OPEN DBF CDX    && opens every x64 table with its CDX index set (LMDB-backed)
+SELECT STUDENTS
 SET ORDER TO TAG LNAME
 SMARTLIST 10
 ```
 
-`DO X64` first: the default DBF path is `data\dbf`, not a lane, so a bare
-`USE STUDENTS` won't find the table. `DO X64` points DBF/INDEXES/LMDB at the
-x64 lane (`DO X32` and `DO VFP` select the other flavors). Record 1 by `LNAME`
-should read `Anderson`.
+`DO X64` first: the default DBF path is `data\dbf`, not a lane. `DO X64` points
+DBF/INDEXES/LMDB at the x64 lane (`DO X32` and `DO VFP` select the other
+flavors). `WORKSPACE OPEN DBF CDX` then opens every table in that lane with its
+CDX index set, whose tags are LMDB subindexes, and `SELECT STUDENTS` makes
+STUDENTS current. Record 1 by `LNAME` should read `Anderson`.
+
+WORKSPACE also restores saved work: `WORKSPACE LOAD <name>` reopens a saved
+set of tables, indexes and relations. For example, after
+`DO systems/cascade_erp/scripts/cascade_erp.dts`, `WORKSPACE LOAD cascade_all`
+restores all 43 Cascade ERP tables and their 58 relations.
 
 Notes:
 - `datarun.ps1` copies the freshly-built `dottalkpp.exe` (and its runtime DLLs)
