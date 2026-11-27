@@ -1,0 +1,122 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "EMPLOYEE_I",
+      "length": 20,
+      "name": "Employee_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "EMPLOYEE_C",
+      "length": 4,
+      "name": "Employee_Code",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "FIRST_NAME",
+      "length": 6,
+      "name": "First_Name",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "LAST_NAME",
+      "length": 8,
+      "name": "Last_Name",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "DEPT_ID",
+      "length": 20,
+      "name": "Dept_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "POSITION",
+      "length": 21,
+      "name": "Position",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "HIRE_DATE",
+      "length": 10,
+      "name": "Hire_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "HOURLY_RAT",
+      "length": 20,
+      "name": "Hourly_Rate",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "ANNUAL_SAL",
+      "length": 20,
+      "name": "Annual_Salary",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PAY_TYPE",
+      "length": 6,
+      "name": "Pay_Type",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "STATUS",
+      "length": 6,
+      "name": "Status",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "REPORTS_TO",
+      "length": 20,
+      "name": "Reports_To",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "EMAIL",
+      "length": 29,
+      "name": "Email",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PHONE",
+      "length": 12,
+      "name": "Phone",
+      "type": "C"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Employees_1",
+      "order": [
+        "Employee_Code"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Employees"
+}

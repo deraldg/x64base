@@ -1,0 +1,111 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "PAYROLL_ID",
+      "length": 20,
+      "name": "Payroll_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "EMPLOYEE_I",
+      "length": 20,
+      "name": "Employee_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PERIOD_STA",
+      "length": 10,
+      "name": "Period_Start",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PERIOD_END",
+      "length": 10,
+      "name": "Period_End",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "HOURS_REGU",
+      "length": 20,
+      "name": "Hours_Regular",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "HOURS_OT",
+      "length": 20,
+      "name": "Hours_OT",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "GROSS_PAY",
+      "length": 20,
+      "name": "Gross_Pay",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "TAX_FEDERA",
+      "length": 20,
+      "name": "Tax_Federal",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "TAX_STATE",
+      "length": 20,
+      "name": "Tax_State",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "TAX_FICA",
+      "length": 20,
+      "name": "Tax_FICA",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "DEDUCTIONS",
+      "length": 20,
+      "name": "Deductions",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "NET_PAY",
+      "length": 20,
+      "name": "Net_Pay",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "RUN_DATE",
+      "length": 10,
+      "name": "Run_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CHECK_NUMB",
+      "length": 11,
+      "name": "Check_Number",
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Payroll_Runs"
+}

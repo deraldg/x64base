@@ -1,0 +1,9 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "CDX",
+  "indexes": [],
+  "table": "CASCADE_AP_Invoices",
+  "warnings": [
+    "Index declarations are metadata-only in this DDL milestone; no physical index was built."
+  ]
+}

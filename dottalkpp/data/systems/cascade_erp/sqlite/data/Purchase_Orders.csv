@@ -1,0 +1,7 @@
+PO_ID,PO_Number,Vendor_ID,Order_Date,Expected_Date,Status,Total_Amount,Approved_By,Notes
+1,PO-260001,1,2026-03-01,2026-03-14,RECEIVED,2600.0,3,Steel and fasteners
+2,PO-260002,2,2026-03-02,2026-03-23,PARTIAL,2110.0,3,Castings
+3,PO-260003,3,2026-03-03,2026-03-10,RECEIVED,1912.5,5,Seals and bearings
+4,PO-260004,4,2026-03-05,2026-04-02,SENT,3700.0,3,Motors and impellers
+5,PO-260005,5,2026-03-06,2026-03-12,RECEIVED,975.0,9,Cartons and fasteners
+6,PO-260006,6,2026-03-07,2026-03-15,RECEIVED,1010.0,3,Coolant and fittings

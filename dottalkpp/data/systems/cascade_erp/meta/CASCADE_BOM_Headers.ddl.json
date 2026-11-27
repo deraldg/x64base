@@ -1,0 +1,67 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "BOM_ID",
+      "length": 20,
+      "name": "BOM_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ITEM_ID",
+      "length": 20,
+      "name": "Item_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "BOM_NAME",
+      "length": 23,
+      "name": "BOM_Name",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "REVISION",
+      "length": 1,
+      "name": "Revision",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "EFFECTIVE_",
+      "length": 10,
+      "name": "Effective_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "STATUS",
+      "length": 6,
+      "name": "Status",
+      "type": "C"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_BOM_Headers_1",
+      "order": [
+        "Item_ID",
+        "Revision"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_BOM_Headers"
+}

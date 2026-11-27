@@ -1,0 +1,76 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "RESULT_ID",
+      "length": 20,
+      "name": "Result_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "TEST_ID",
+      "length": 20,
+      "name": "Test_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "REFERENCE_",
+      "length": 7,
+      "name": "Reference_Type",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "REFERENC~1",
+      "length": 20,
+      "name": "Reference_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "TEST_DATE",
+      "length": 10,
+      "name": "Test_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "MEASURED_V",
+      "length": 20,
+      "name": "Measured_Value",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PASS_FAIL",
+      "length": 4,
+      "name": "Pass_Fail",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "INSPECTOR_",
+      "length": 20,
+      "name": "Inspector_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "NOTES",
+      "length": 21,
+      "name": "Notes",
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Quality_Results"
+}

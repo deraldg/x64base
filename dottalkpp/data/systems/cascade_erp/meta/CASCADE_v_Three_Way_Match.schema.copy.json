@@ -1,0 +1,71 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "PO_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 9,
+      "name": "PO_Number",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Vendor_Code",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 26,
+      "name": "Vendor_Name",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "PO_Total",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Received_Value",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Invoice_Total",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 8,
+      "name": "Match_Status",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_v_Three_Way_Match",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [],
+  "table": "CASCADE_v_Three_Way_Match",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "view",
+    "sqlite_object": "v_Three_Way_Match",
+    "sqlite_sql": "CREATE VIEW v_Three_Way_Match AS\nSELECT\n    po.PO_ID,\n    po.PO_Number,\n    v.Vendor_Code,\n    v.Vendor_Name,\n    ROUND(COALESCE(po.Total_Amount,0),2) AS PO_Total,\n    ROUND(COALESCE(SUM(r.Qty_Accepted * pl.Unit_Price),0),2) AS Received_Value,\n    ROUND(COALESCE(ap.Total_Amount,0),2) AS Invoice_Total,\n    CASE\n        WHEN ROUND(COALESCE(po.Total_Amount,0),2) = ROUND(COALESCE(SUM(r.Qty_Accepted * pl.Unit_Price),0),2)\n         AND ROUND(COALESCE(po.Total_Amount,0),2) = ROUND(COALESCE(ap.Total_Amount,0),2)\n        THEN 'MATCHED'\n        ELSE 'MISMATCH'\n    END AS Match_Status\nFROM Purchase_Orders po\nJOIN Vendors v ON v.Vendor_ID = po.Vendor_ID\nLEFT JOIN PO_Lines pl ON pl.PO_ID = po.PO_ID\nLEFT JOIN Receiving r ON r.POLine_ID = pl.POLine_ID\nLEFT JOIN AP_Invoices ap ON ap.PO_ID = po.PO_ID\nGROUP BY po.PO_ID, po.PO_Number, v.Vendor_Code, v.Vendor_Name, ap.AP_Invoice_ID, ap.Total_Amount"
+  }
+}

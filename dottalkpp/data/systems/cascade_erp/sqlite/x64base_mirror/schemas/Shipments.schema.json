@@ -1,0 +1,101 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Shipment_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "SO_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 10,
+      "name": "Ship_Date",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 13,
+      "name": "Carrier",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 13,
+      "name": "Tracking_No",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Warehouse_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 9,
+      "name": "Status",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Shipments",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Shipments",
+      "enforce": "SOFT",
+      "name": "fk_Shipments_0",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "Warehouse_ID",
+          "parent": "Warehouse_ID"
+        }
+      ],
+      "parent_table": "Warehouses"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Shipments",
+      "enforce": "SOFT",
+      "name": "fk_Shipments_1",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "SO_ID",
+          "parent": "SO_ID"
+        }
+      ],
+      "parent_table": "Sales_Orders"
+    }
+  ],
+  "table": "CASCADE_Shipments",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Shipments",
+    "sqlite_sql": "CREATE TABLE Shipments (\n    Shipment_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    SO_ID INTEGER NOT NULL REFERENCES Sales_Orders(SO_ID),\n    Ship_Date TEXT NOT NULL,\n    Carrier TEXT,\n    Tracking_No TEXT,\n    Warehouse_ID INTEGER REFERENCES Warehouses(Warehouse_ID),\n    Status TEXT CHECK (Status IN ('PACKED','SHIPPED','DELIVERED','RETURNED'))\n)"
+  }
+}

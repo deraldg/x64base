@@ -1,0 +1,115 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "VENDOR_ID",
+      "length": 20,
+      "name": "Vendor_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "VENDOR_COD",
+      "length": 10,
+      "name": "Vendor_Code",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "VENDOR_NAM",
+      "length": 26,
+      "name": "Vendor_Name",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CONTACT_NA",
+      "length": 10,
+      "name": "Contact_Name",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PHONE",
+      "length": 12,
+      "name": "Phone",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "EMAIL",
+      "length": 25,
+      "name": "Email",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ADDRESS",
+      "length": 14,
+      "name": "Address",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CITY",
+      "length": 11,
+      "name": "City",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "STATE",
+      "length": 2,
+      "name": "State",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ZIP",
+      "length": 5,
+      "name": "Zip",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PAYMENT_TE",
+      "length": 5,
+      "name": "Payment_Terms",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "RATING",
+      "length": 1,
+      "name": "Rating",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ACTIVE",
+      "length": 20,
+      "name": "Active",
+      "type": "N"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Vendors_1",
+      "order": [
+        "Vendor_Code"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Vendors"
+}

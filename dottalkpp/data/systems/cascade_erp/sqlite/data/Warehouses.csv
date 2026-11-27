@@ -1,0 +1,4 @@
+Warehouse_ID,Warehouse_Code,Warehouse_Name,Location,Manager_ID
+1,MAIN,Main Inventory,Eugene Plant A,9
+2,QA,Quality Hold,Eugene Plant A,5
+3,SHIP,Shipping Staging,Eugene Dock,9

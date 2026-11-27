@@ -1,0 +1,83 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "RECEIPT_ID",
+      "length": 20,
+      "name": "Receipt_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PO_ID",
+      "length": 20,
+      "name": "PO_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "POLINE_ID",
+      "length": 20,
+      "name": "POLine_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "RECEIPT_DA",
+      "length": 10,
+      "name": "Receipt_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_RECEIV",
+      "length": 20,
+      "name": "Qty_Received",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_ACCEPT",
+      "length": 20,
+      "name": "Qty_Accepted",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_REJECT",
+      "length": 20,
+      "name": "Qty_Rejected",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "INSPECTOR_",
+      "length": 20,
+      "name": "Inspector_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "WAREHOUSE_",
+      "length": 20,
+      "name": "Warehouse_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "STATUS",
+      "length": 8,
+      "name": "Status",
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Receiving"
+}

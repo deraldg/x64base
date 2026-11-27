@@ -1,0 +1,84 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Ship_Line_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Shipment_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "SOLine_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_Shipped",
+      "required": true,
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Shipment_Lines",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Shipment_Lines",
+      "enforce": "SOFT",
+      "name": "fk_Shipment_Lines_0",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "SOLine_ID",
+          "parent": "SOLine_ID"
+        }
+      ],
+      "parent_table": "SO_Lines"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Shipment_Lines",
+      "enforce": "SOFT",
+      "name": "fk_Shipment_Lines_1",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Shipment_ID",
+          "parent": "Shipment_ID"
+        }
+      ],
+      "parent_table": "Shipments"
+    }
+  ],
+  "table": "CASCADE_Shipment_Lines",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Shipment_Lines",
+    "sqlite_sql": "CREATE TABLE Shipment_Lines (\n    Ship_Line_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Shipment_ID INTEGER NOT NULL REFERENCES Shipments(Shipment_ID),\n    SOLine_ID INTEGER NOT NULL REFERENCES SO_Lines(SOLine_ID),\n    Qty_Shipped REAL NOT NULL\n)"
+  }
+}

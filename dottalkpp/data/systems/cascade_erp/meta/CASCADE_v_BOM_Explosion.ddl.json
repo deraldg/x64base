@@ -1,0 +1,83 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "BOM_ID",
+      "length": 20,
+      "name": "BOM_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PARENT_SKU",
+      "length": 14,
+      "name": "Parent_SKU",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PARENT_DES",
+      "length": 28,
+      "name": "Parent_Description",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "REVISION",
+      "length": 1,
+      "name": "Revision",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SEQUENCE",
+      "length": 20,
+      "name": "Sequence",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "COMPONENT_",
+      "length": 14,
+      "name": "Component_SKU",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "COMPONEN~1",
+      "length": 24,
+      "name": "Component_Description",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_PER",
+      "length": 20,
+      "name": "Qty_Per",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "UOM",
+      "length": 2,
+      "name": "UOM",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "SCRAP_PCT",
+      "length": 20,
+      "name": "Scrap_Pct",
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_v_BOM_Explosion"
+}

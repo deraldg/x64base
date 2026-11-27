@@ -1,0 +1,122 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "WO_ID",
+      "length": 20,
+      "name": "WO_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "WO_NUMBER",
+      "length": 9,
+      "name": "WO_Number",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ITEM_ID",
+      "length": 20,
+      "name": "Item_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "BOM_ID",
+      "length": 20,
+      "name": "BOM_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_ORDERE",
+      "length": 20,
+      "name": "Qty_Ordered",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_COMPLE",
+      "length": 20,
+      "name": "Qty_Completed",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_SCRAPP",
+      "length": 20,
+      "name": "Qty_Scrapped",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "STATUS",
+      "length": 11,
+      "name": "Status",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PRIORITY",
+      "length": 20,
+      "name": "Priority",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "START_DATE",
+      "length": 10,
+      "name": "Start_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "DUE_DATE",
+      "length": 10,
+      "name": "Due_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "COMPLETION",
+      "length": 10,
+      "name": "Completion_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SO_ID",
+      "length": 20,
+      "name": "SO_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "NOTES",
+      "length": 31,
+      "name": "Notes",
+      "type": "C"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Work_Orders_1",
+      "order": [
+        "WO_Number"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Work_Orders"
+}

@@ -1,0 +1,1135 @@
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-08-10, ff5f5005 dirty)  (Aug 10 2026 07:31:20)
+DotTalk++ build Aug 10 2026 07:31:20
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK: opened BibleTalk seed biblebase\bible_kjv_x64.sqlite
+BibleTalk Quote
+  Amos 4:10
+  I have sent among you the pestilence after the manner of Egypt: your young men have I slain with the sword, and have taken away your horses; and I have made the stink of your camps to come up unto your nostrils: yet have ye not returned unto me, saith the LORD.
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. . . . Talk is ON
+. ; CASCADE MIRROR BEGIN
+. ; CASCADE MIRROR BUILD table AP_Invoices AS CASCADE_AP_Invoices EXPECT_ROWS 6 EXPECT_FIELDS 9
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\AP_Invoices.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\AP_Invoices.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_AP_Invoices.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_AP_Invoices (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 6 records from cascade_precision_erp/data/AP_Invoices.csv
+. 6
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 AP_Invoice_ID  N     20   0
+2 Vendor_ID      N     20   0
+3 Invoice_Number C     14   0
+4 Invoice_Date   C     10   0
+5 Due_Date       C     10   0
+6 Total_Amount   N     20   6
+7 Amount_Paid    N     20   6
+8 Status         C      7   0
+9 PO_ID          N     20   0
+. ; CASCADE MIRROR BUILD table AP_Payments AS CASCADE_AP_Payments EXPECT_ROWS 4 EXPECT_FIELDS 6
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\AP_Payments.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\AP_Payments.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_AP_Payments.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_AP_Payments (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 4 records from cascade_precision_erp/data/AP_Payments.csv
+. 4
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 Payment_ID    N     20   0
+2 AP_Invoice_ID N     20   0
+3 Payment_Date  C     10   0
+4 Amount        N     20   6
+5 Method        C      5   0
+6 Check_Number  C     10   0
+. ; CASCADE MIRROR BUILD table AR_Invoices AS CASCADE_AR_Invoices EXPECT_ROWS 6 EXPECT_FIELDS 9
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\AR_Invoices.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\AR_Invoices.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_AR_Invoices.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_AR_Invoices (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 6 records from cascade_precision_erp/data/AR_Invoices.csv
+. 6
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 AR_Invoice_ID  N     20   0
+2 Customer_ID    N     20   0
+3 Invoice_Number C      9   0
+4 Invoice_Date   C     10   0
+5 Due_Date       C     10   0
+6 Total_Amount   N     20   6
+7 Amount_Paid    N     20   6
+8 Status         C      7   0
+9 SO_ID          N     20   0
+. ; CASCADE MIRROR BUILD table AR_Payments AS CASCADE_AR_Payments EXPECT_ROWS 4 EXPECT_FIELDS 6
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\AR_Payments.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\AR_Payments.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_AR_Payments.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_AR_Payments (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 4 records from cascade_precision_erp/data/AR_Payments.csv
+. 4
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 Payment_ID    N     20   0
+2 AR_Invoice_ID N     20   0
+3 Payment_Date  C     10   0
+4 Amount        N     20   6
+5 Method        C     11   0
+6 Reference     C     13   0
+. ; CASCADE MIRROR BUILD table BOM_Details AS CASCADE_BOM_Details EXPECT_ROWS 14 EXPECT_FIELDS 8
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\BOM_Details.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\BOM_Details.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_BOM_Details.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_BOM_Details (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 14 records from cascade_precision_erp/data/BOM_Details.csv
+. 14
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 BOM_Detail_ID     N     20   0
+2 BOM_ID            N     20   0
+3 Component_Item_ID N     20   0
+4 Qty_Per           N     20   6
+5 UOM               C      2   0
+6 Sequence          N     20   0
+7 Scrap_Pct         N     20   6
+8 Notes             C     14   0
+. ; CASCADE MIRROR BUILD table BOM_Headers AS CASCADE_BOM_Headers EXPECT_ROWS 5 EXPECT_FIELDS 6
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\BOM_Headers.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\BOM_Headers.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_BOM_Headers.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_BOM_Headers (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 5 records from cascade_precision_erp/data/BOM_Headers.csv
+. 5
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 BOM_ID         N     20   0
+2 Item_ID        N     20   0
+3 BOM_Name       C     23   0
+4 Revision       C      1   0
+5 Effective_Date C     10   0
+6 Status         C      6   0
+. ; CASCADE MIRROR BUILD table Customers AS CASCADE_Customers EXPECT_ROWS 6 EXPECT_FIELDS 15
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Customers.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Customers.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Customers.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Customers (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 6 records from cascade_precision_erp/data/Customers.csv
+. 6
+. # Name Type Len Dec
+- ---- ---- --- ---
+ 1 Customer_ID   N     20   0
+ 2 Customer_Code C     13   0
+ 3 Customer_Name C     24   0
+ 4 Contact_Name  C     11   0
+ 5 Phone         C     12   0
+ 6 Email         C     32   0
+ 7 Address       C     17   0
+ 8 City          C      8   0
+ 9 State         C      2   0
+10 Zip           C      5   0
+11 Credit_Limit  N     20   6
+12 Payment_Terms C      5   0
+13 Tax_Exempt    N     20   0
+14 Status        C      6   0
+15 Since_Date    C     10   0
+. ; CASCADE MIRROR BUILD table Departments AS CASCADE_Departments EXPECT_ROWS 5 EXPECT_FIELDS 6
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Departments.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Departments.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Departments.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Departments (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 5 records from cascade_precision_erp/data/Departments.csv
+. 5
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 Dept_ID     N     20   0
+2 Dept_Code   C      5   0
+3 Dept_Name   C     17   0
+4 Cost_Center C      3   0
+5 Manager_ID  N     20   0
+6 Active      N     20   0
+. ; CASCADE MIRROR BUILD table Employees AS CASCADE_Employees EXPECT_ROWS 16 EXPECT_FIELDS 14
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Employees.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Employees.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Employees.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Employees (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 16 records from cascade_precision_erp/data/Employees.csv
+. 16
+. # Name Type Len Dec
+- ---- ---- --- ---
+ 1 Employee_ID   N     20   0
+ 2 Employee_Code C      4   0
+ 3 First_Name    C      6   0
+ 4 Last_Name     C      8   0
+ 5 Dept_ID       N     20   0
+ 6 Position      C     21   0
+ 7 Hire_Date     C     10   0
+ 8 Hourly_Rate   N     20   6
+ 9 Annual_Salary N     20   6
+10 Pay_Type      C      6   0
+11 Status        C      6   0
+12 Reports_To    N     20   0
+13 Email         C     29   0
+14 Phone         C     12   0
+. ; CASCADE MIRROR BUILD table GL_Accounts AS CASCADE_GL_Accounts EXPECT_ROWS 12 EXPECT_FIELDS 7
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\GL_Accounts.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\GL_Accounts.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_GL_Accounts.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_GL_Accounts (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 12 records from cascade_precision_erp/data/GL_Accounts.csv
+. 12
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 Account_ID     N     20   0
+2 Account_Code   C      4   0
+3 Account_Name   C     22   0
+4 Account_Type   C      9   0
+5 Normal_Balance C      6   0
+6 Parent_ID      N     20   0
+7 Active         N     20   0
+. ; CASCADE MIRROR BUILD table GL_Journal AS CASCADE_GL_Journal EXPECT_ROWS 20 EXPECT_FIELDS 10
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\GL_Journal.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\GL_Journal.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_GL_Journal.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_GL_Journal (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 20 records from cascade_precision_erp/data/GL_Journal.csv
+. 20
+. # Name Type Len Dec
+- ---- ---- --- ---
+ 1 Journal_ID    N     20   0
+ 2 Entry_Date    C     10   0
+ 3 Account_ID    N     20   0
+ 4 Description   C     28   0
+ 5 Debit         N     20   6
+ 6 Credit        N     20   6
+ 7 Source_Module C     13   0
+ 8 Source_Ref    C     12   0
+ 9 Period        C      7   0
+10 Posted        N     20   0
+. ; CASCADE MIRROR BUILD table Inventory_Movements AS CASCADE_Inventory_Movements EXPECT_ROWS 16 EXPECT_FIELDS 10
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Inventory_Movements.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Inventory_Movements.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Inventory_Movements.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Inventory_Movements (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 16 records from cascade_precision_erp/data/Inventory_Movements.csv
+. 16
+. # Name Type Len Dec
+- ---- ---- --- ---
+ 1 Movement_ID    N     20   0
+ 2 Item_ID        N     20   0
+ 3 Warehouse_ID   N     20   0
+ 4 Movement_Type  C      8   0
+ 5 Qty            N     20   6
+ 6 Unit_Cost      N     20   6
+ 7 Reference_Type C      2   0
+ 8 Reference_ID   N     20   0
+ 9 Movement_Date  C     10   0
+10 Created_By     N     20   0
+. ; CASCADE MIRROR BUILD table Items AS CASCADE_Items EXPECT_ROWS 18 EXPECT_FIELDS 13
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Items.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Items.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Items.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Items (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 18 records from cascade_precision_erp/data/Items.csv
+. 18
+. # Name Type Len Dec
+- ---- ---- --- ---
+ 1 Item_ID       N     20   0
+ 2 SKU           C     14   0
+ 3 Description   C     28   0
+ 4 UOM           C      2   0
+ 5 Item_Type     C      8   0
+ 6 Cost_Method   C      8   0
+ 7 Standard_Cost N     20   6
+ 8 List_Price    N     20   6
+ 9 Reorder_Point N     20   6
+10 Reorder_Qty   N     20   6
+11 Lead_Days     N     20   0
+12 Category      C     15   0
+13 Active        N     20   0
+. ; CASCADE MIRROR BUILD table PO_Lines AS CASCADE_PO_Lines EXPECT_ROWS 12 EXPECT_FIELDS 8
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\PO_Lines.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\PO_Lines.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_PO_Lines.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_PO_Lines (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 12 records from cascade_precision_erp/data/PO_Lines.csv
+. 12
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 POLine_ID    N     20   0
+2 PO_ID        N     20   0
+3 Item_ID      N     20   0
+4 Line_Number  N     20   0
+5 Qty_Ordered  N     20   6
+6 Qty_Received N     20   6
+7 Unit_Price   N     20   6
+8 Line_Total   N     20   6
+. ; CASCADE MIRROR BUILD table Payroll_Runs AS CASCADE_Payroll_Runs EXPECT_ROWS 8 EXPECT_FIELDS 14
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Payroll_Runs.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Payroll_Runs.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Payroll_Runs.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Payroll_Runs (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 8 records from cascade_precision_erp/data/Payroll_Runs.csv
+. 8
+. # Name Type Len Dec
+- ---- ---- --- ---
+ 1 Payroll_ID    N     20   0
+ 2 Employee_ID   N     20   0
+ 3 Period_Start  C     10   0
+ 4 Period_End    C     10   0
+ 5 Hours_Regular N     20   6
+ 6 Hours_OT      N     20   6
+ 7 Gross_Pay     N     20   6
+ 8 Tax_Federal   N     20   6
+ 9 Tax_State     N     20   6
+10 Tax_FICA      N     20   6
+11 Deductions    N     20   6
+12 Net_Pay       N     20   6
+13 Run_Date      C     10   0
+14 Check_Number  C     11   0
+. ; CASCADE MIRROR BUILD table Price_Lists AS CASCADE_Price_Lists EXPECT_ROWS 12 EXPECT_FIELDS 7
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Price_Lists.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Price_Lists.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Price_Lists.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Price_Lists (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 12 records from cascade_precision_erp/data/Price_Lists.csv
+. 12
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 Price_ID       N     20   0
+2 Item_ID        N     20   0
+3 Customer_ID    N     20   0
+4 Price          N     20   6
+5 Min_Qty        N     20   6
+6 Effective_Date C     10   0
+7 Expiry_Date    C      1   0
+. ; CASCADE MIRROR BUILD table Purchase_Orders AS CASCADE_Purchase_Orders EXPECT_ROWS 6 EXPECT_FIELDS 9
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Purchase_Orders.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Purchase_Orders.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Purchase_Orders.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Purchase_Orders (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 6 records from cascade_precision_erp/data/Purchase_Orders.csv
+. 6
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 PO_ID         N     20   0
+2 PO_Number     C      9   0
+3 Vendor_ID     N     20   0
+4 Order_Date    C     10   0
+5 Expected_Date C     10   0
+6 Status        C      8   0
+7 Total_Amount  N     20   6
+8 Approved_By   N     20   0
+9 Notes         C     21   0
+. ; CASCADE MIRROR BUILD table Quality_Results AS CASCADE_Quality_Results EXPECT_ROWS 6 EXPECT_FIELDS 9
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Quality_Results.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Quality_Results.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Quality_Results.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Quality_Results (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 6 records from cascade_precision_erp/data/Quality_Results.csv
+. 6
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 Result_ID      N     20   0
+2 Test_ID        N     20   0
+3 Reference_Type C      7   0
+4 Reference_ID   N     20   0
+5 Test_Date      C     10   0
+6 Measured_Value N     20   6
+7 Pass_Fail      C      4   0
+8 Inspector_ID   N     20   0
+9 Notes          C     21   0
+. ; CASCADE MIRROR BUILD table Quality_Tests AS CASCADE_Quality_Tests EXPECT_ROWS 5 EXPECT_FIELDS 8
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Quality_Tests.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Quality_Tests.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Quality_Tests.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Quality_Tests (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 5 records from cascade_precision_erp/data/Quality_Tests.csv
+. 5
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 Test_ID       N     20   0
+2 Test_Name     C     20   0
+3 Test_Type     C      8   0
+4 Item_ID       N     20   0
+5 Specification C     29   0
+6 Min_Value     N     20   6
+7 Max_Value     N     20   6
+8 UOM           C      5   0
+. ; CASCADE MIRROR BUILD table Receiving AS CASCADE_Receiving EXPECT_ROWS 8 EXPECT_FIELDS 10
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Receiving.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Receiving.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Receiving.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Receiving (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 8 records from cascade_precision_erp/data/Receiving.csv
+. 8
+. # Name Type Len Dec
+- ---- ---- --- ---
+ 1 Receipt_ID   N     20   0
+ 2 PO_ID        N     20   0
+ 3 POLine_ID    N     20   0
+ 4 Receipt_Date C     10   0
+ 5 Qty_Received N     20   6
+ 6 Qty_Accepted N     20   6
+ 7 Qty_Rejected N     20   6
+ 8 Inspector_ID N     20   0
+ 9 Warehouse_ID N     20   0
+10 Status       C      8   0
+. ; CASCADE MIRROR BUILD table Routings AS CASCADE_Routings EXPECT_ROWS 12 EXPECT_FIELDS 8
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Routings.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Routings.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Routings.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Routings (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 12 records from cascade_precision_erp/data/Routings.csv
+. 12
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 Routing_ID    N     20   0
+2 Item_ID       N     20   0
+3 Step_Number   N     20   0
+4 Center_ID     N     20   0
+5 Operation     C     19   0
+6 Setup_Hours   N     20   6
+7 Run_Hours_Per N     20   6
+8 Description   C     23   0
+. ; CASCADE MIRROR BUILD table SO_Lines AS CASCADE_SO_Lines EXPECT_ROWS 12 EXPECT_FIELDS 10
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\SO_Lines.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\SO_Lines.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_SO_Lines.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_SO_Lines (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 12 records from cascade_precision_erp/data/SO_Lines.csv
+. 12
+. # Name Type Len Dec
+- ---- ---- --- ---
+ 1 SOLine_ID       N     20   0
+ 2 SO_ID           N     20   0
+ 3 Item_ID         N     20   0
+ 4 Line_Number     N     20   0
+ 5 Qty_Ordered     N     20   6
+ 6 Qty_Shipped     N     20   6
+ 7 Qty_Backordered N     20   6
+ 8 Unit_Price      N     20   6
+ 9 Discount_Pct    N     20   6
+10 Line_Total      N     20   6
+. ; CASCADE MIRROR BUILD table Sales_Orders AS CASCADE_Sales_Orders EXPECT_ROWS 6 EXPECT_FIELDS 13
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Sales_Orders.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Sales_Orders.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Sales_Orders.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Sales_Orders (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 6 records from cascade_precision_erp/data/Sales_Orders.csv
+. 6
+. # Name Type Len Dec
+- ---- ---- --- ---
+ 1 SO_ID           N     20   0
+ 2 SO_Number       C      9   0
+ 3 Customer_ID     N     20   0
+ 4 Order_Date      C     10   0
+ 5 Required_Date   C     10   0
+ 6 Ship_Date       C     10   0
+ 7 Status          C      9   0
+ 8 Subtotal        N     20   6
+ 9 Tax_Amount      N     20   6
+10 Total_Amount    N     20   6
+11 Sales_Rep_ID    N     20   0
+12 Ship_To_Address C     19   0
+13 Notes           C     17   0
+. ; CASCADE MIRROR BUILD table Shipment_Lines AS CASCADE_Shipment_Lines EXPECT_ROWS 8 EXPECT_FIELDS 4
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Shipment_Lines.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Shipment_Lines.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Shipment_Lines.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Shipment_Lines (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 8 records from cascade_precision_erp/data/Shipment_Lines.csv
+. 8
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 Ship_Line_ID N     20   0
+2 Shipment_ID  N     20   0
+3 SOLine_ID    N     20   0
+4 Qty_Shipped  N     20   6
+. ; CASCADE MIRROR BUILD table Shipments AS CASCADE_Shipments EXPECT_ROWS 4 EXPECT_FIELDS 7
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Shipments.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Shipments.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Shipments.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Shipments (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 4 records from cascade_precision_erp/data/Shipments.csv
+. 4
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 Shipment_ID  N     20   0
+2 SO_ID        N     20   0
+3 Ship_Date    C     10   0
+4 Carrier      C     13   0
+5 Tracking_No  C     13   0
+6 Warehouse_ID N     20   0
+7 Status       C      9   0
+. ; CASCADE MIRROR BUILD table Stock_Levels AS CASCADE_Stock_Levels EXPECT_ROWS 27 EXPECT_FIELDS 8
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Stock_Levels.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Stock_Levels.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Stock_Levels.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Stock_Levels (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 27 records from cascade_precision_erp/data/Stock_Levels.csv
+. 27
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 Stock_ID        N     20   0
+2 Item_ID         N     20   0
+3 Warehouse_ID    N     20   0
+4 Bin_Location    C      4   0
+5 Qty_OnHand      N     20   6
+6 Qty_Committed   N     20   6
+7 Qty_OnOrder     N     20   6
+8 Last_Count_Date C     10   0
+. ; CASCADE MIRROR BUILD table Time_Cards AS CASCADE_Time_Cards EXPECT_ROWS 14 EXPECT_FIELDS 9
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Time_Cards.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Time_Cards.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Time_Cards.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Time_Cards (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 14 records from cascade_precision_erp/data/Time_Cards.csv
+. 14
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 TimeCard_ID   N     20   0
+2 Employee_ID   N     20   0
+3 Work_Date     C     10   0
+4 Hours_Regular N     20   6
+5 Hours_OT      N     20   6
+6 WO_ID         N     20   0
+7 Center_ID     N     20   0
+8 Cost_Center   C      3   0
+9 Approved      N     20   0
+. ; CASCADE MIRROR BUILD table Vendor_Items AS CASCADE_Vendor_Items EXPECT_ROWS 12 EXPECT_FIELDS 8
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Vendor_Items.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Vendor_Items.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Vendor_Items.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Vendor_Items (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 12 records from cascade_precision_erp/data/Vendor_Items.csv
+. 12
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 Vendor_Item_ID N     20   0
+2 Vendor_ID      N     20   0
+3 Item_ID        N     20   0
+4 Vendor_Part_No C     14   0
+5 Unit_Price     N     20   6
+6 Lead_Days      N     20   0
+7 Min_Order_Qty  N     20   6
+8 Is_Preferred   N     20   0
+. ; CASCADE MIRROR BUILD table Vendors AS CASCADE_Vendors EXPECT_ROWS 6 EXPECT_FIELDS 13
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Vendors.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Vendors.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Vendors.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Vendors (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 6 records from cascade_precision_erp/data/Vendors.csv
+. 6
+. # Name Type Len Dec
+- ---- ---- --- ---
+ 1 Vendor_ID     N     20   0
+ 2 Vendor_Code   C     10   0
+ 3 Vendor_Name   C     26   0
+ 4 Contact_Name  C     10   0
+ 5 Phone         C     12   0
+ 6 Email         C     25   0
+ 7 Address       C     14   0
+ 8 City          C     11   0
+ 9 State         C      2   0
+10 Zip           C      5   0
+11 Payment_Terms C      5   0
+12 Rating        C      1   0
+13 Active        N     20   0
+. ; CASCADE MIRROR BUILD table WO_Materials AS CASCADE_WO_Materials EXPECT_ROWS 14 EXPECT_FIELDS 6
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\WO_Materials.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\WO_Materials.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_WO_Materials.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_WO_Materials (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 14 records from cascade_precision_erp/data/WO_Materials.csv
+. 14
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 WO_Material_ID N     20   0
+2 WO_ID          N     20   0
+3 Item_ID        N     20   0
+4 Qty_Required   N     20   6
+5 Qty_Issued     N     20   6
+6 Warehouse_ID   N     20   0
+. ; CASCADE MIRROR BUILD table WO_Operations AS CASCADE_WO_Operations EXPECT_ROWS 12 EXPECT_FIELDS 9
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\WO_Operations.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\WO_Operations.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_WO_Operations.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_WO_Operations (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 12 records from cascade_precision_erp/data/WO_Operations.csv
+. 12
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 WO_Op_ID     N     20   0
+2 WO_ID        N     20   0
+3 Routing_ID   N     20   0
+4 Step_Number  N     20   0
+5 Center_ID    N     20   0
+6 Status       C     11   0
+7 Actual_Hours N     20   6
+8 Qty_Good     N     20   0
+9 Qty_Scrap    N     20   0
+. ; CASCADE MIRROR BUILD table Warehouses AS CASCADE_Warehouses EXPECT_ROWS 3 EXPECT_FIELDS 5
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Warehouses.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Warehouses.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Warehouses.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Warehouses (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 3 records from cascade_precision_erp/data/Warehouses.csv
+. 3
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 Warehouse_ID   N     20   0
+2 Warehouse_Code C      4   0
+3 Warehouse_Name C     16   0
+4 Location       C     14   0
+5 Manager_ID     N     20   0
+. ; CASCADE MIRROR BUILD table Work_Centers AS CASCADE_Work_Centers EXPECT_ROWS 5 EXPECT_FIELDS 7
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Work_Centers.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Work_Centers.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Work_Centers.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Work_Centers (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 5 records from cascade_precision_erp/data/Work_Centers.csv
+. 5
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 Center_ID          N     20   0
+2 Center_Code        C      4   0
+3 Center_Name        C     16   0
+4 Department         C      3   0
+5 Capacity_Hours_Day N     20   6
+6 Hourly_Rate        N     20   6
+7 Status             C      6   0
+. ; CASCADE MIRROR BUILD table Work_Orders AS CASCADE_Work_Orders EXPECT_ROWS 6 EXPECT_FIELDS 14
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Work_Orders.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\Work_Orders.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_Work_Orders.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_Work_Orders (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 6 records from cascade_precision_erp/data/Work_Orders.csv
+. 6
+. # Name Type Len Dec
+- ---- ---- --- ---
+ 1 WO_ID           N     20   0
+ 2 WO_Number       C      9   0
+ 3 Item_ID         N     20   0
+ 4 BOM_ID          N     20   0
+ 5 Qty_Ordered     N     20   6
+ 6 Qty_Completed   N     20   6
+ 7 Qty_Scrapped    N     20   6
+ 8 Status          C     11   0
+ 9 Priority        N     20   0
+10 Start_Date      C     10   0
+11 Due_Date        C     10   0
+12 Completion_Date C     10   0
+13 SO_ID           N     20   0
+14 Notes           C     31   0
+. ; CASCADE MIRROR BUILD view v_AP_Aging AS CASCADE_v_AP_Aging EXPECT_ROWS 3 EXPECT_FIELDS 11
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\v_AP_Aging.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\v_AP_Aging.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_v_AP_Aging.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_v_AP_Aging (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 3 records from cascade_precision_erp/x64base_mirror/views/v_AP_Aging.csv
+. 3
+. # Name Type Len Dec
+- ---- ---- --- ---
+ 1 AP_Invoice_ID  N     20   0
+ 2 Invoice_Number C     14   0
+ 3 Vendor_Code    C     10   0
+ 4 Vendor_Name    C     26   0
+ 5 Invoice_Date   C     10   0
+ 6 Due_Date       C     10   0
+ 7 Days_Past_Due  N     20   0
+ 8 Total_Amount   N     20   6
+ 9 Amount_Paid    N     20   6
+10 Balance        N     20   6
+11 Status         C      7   0
+. ; CASCADE MIRROR BUILD view v_AR_Aging AS CASCADE_v_AR_Aging EXPECT_ROWS 4 EXPECT_FIELDS 11
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\v_AR_Aging.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\v_AR_Aging.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_v_AR_Aging.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_v_AR_Aging (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 4 records from cascade_precision_erp/x64base_mirror/views/v_AR_Aging.csv
+. 4
+. # Name Type Len Dec
+- ---- ---- --- ---
+ 1 AR_Invoice_ID  N     20   0
+ 2 Invoice_Number C      9   0
+ 3 Customer_Code  C     13   0
+ 4 Customer_Name  C     24   0
+ 5 Invoice_Date   C     10   0
+ 6 Due_Date       C     10   0
+ 7 Days_Past_Due  N     20   0
+ 8 Total_Amount   N     20   6
+ 9 Amount_Paid    N     20   6
+10 Balance        N     20   6
+11 Status         C      7   0
+. ; CASCADE MIRROR BUILD view v_Available_Stock AS CASCADE_v_Available_Stock EXPECT_ROWS 27 EXPECT_FIELDS 13
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\v_Available_Stock.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\v_Available_Stock.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_v_Available_Stock.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_v_Available_Stock (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 27 records from cascade_precision_erp/x64base_mirror/views/v_Available_Stock.csv
+. 27
+. # Name Type Len Dec
+- ---- ---- --- ---
+ 1 Item_ID        N     20   0
+ 2 SKU            C     14   0
+ 3 Description    C     28   0
+ 4 Item_Type      C      8   0
+ 5 Warehouse_Code C      4   0
+ 6 Warehouse_Name C     16   0
+ 7 Bin_Location   C      4   0
+ 8 Qty_OnHand     N     20   6
+ 9 Qty_Committed  N     20   6
+10 Qty_OnOrder    N     20   6
+11 Available      N     20   6
+12 Reorder_Point  N     20   6
+13 Reorder_Qty    N     20   6
+. ; CASCADE MIRROR BUILD view v_BOM_Explosion AS CASCADE_v_BOM_Explosion EXPECT_ROWS 14 EXPECT_FIELDS 10
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\v_BOM_Explosion.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\v_BOM_Explosion.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_v_BOM_Explosion.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_v_BOM_Explosion (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 14 records from cascade_precision_erp/x64base_mirror/views/v_BOM_Explosion.csv
+. 14
+. # Name Type Len Dec
+- ---- ---- --- ---
+ 1 BOM_ID                N     20   0
+ 2 Parent_SKU            C     14   0
+ 3 Parent_Description    C     28   0
+ 4 Revision              C      1   0
+ 5 Sequence              N     20   0
+ 6 Component_SKU         C     14   0
+ 7 Component_Description C     24   0
+ 8 Qty_Per               N     20   6
+ 9 UOM                   C      2   0
+10 Scrap_Pct             N     20   6
+. ; CASCADE MIRROR BUILD view v_Open_Sales_Orders AS CASCADE_v_Open_Sales_Orders EXPECT_ROWS 5 EXPECT_FIELDS 10
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\v_Open_Sales_Orders.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\v_Open_Sales_Orders.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_v_Open_Sales_Orders.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_v_Open_Sales_Orders (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 5 records from cascade_precision_erp/x64base_mirror/views/v_Open_Sales_Orders.csv
+. 5
+. # Name Type Len Dec
+- ---- ---- --- ---
+ 1 SO_ID          N     20   0
+ 2 SO_Number      C      9   0
+ 3 Order_Date     C     10   0
+ 4 Required_Date  C     10   0
+ 5 Status         C      9   0
+ 6 Customer_Code  C     13   0
+ 7 Customer_Name  C     24   0
+ 8 Sales_Rep_Code C      4   0
+ 9 Sales_Rep      C     11   0
+10 Total_Amount   N     20   6
+. ; CASCADE MIRROR BUILD view v_Reorder_Alert AS CASCADE_v_Reorder_Alert EXPECT_ROWS 14 EXPECT_FIELDS 13
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\v_Reorder_Alert.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\v_Reorder_Alert.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_v_Reorder_Alert.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_v_Reorder_Alert (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 14 records from cascade_precision_erp/x64base_mirror/views/v_Reorder_Alert.csv
+. 14
+. # Name Type Len Dec
+- ---- ---- --- ---
+ 1 Item_ID        N     20   0
+ 2 SKU            C     13   0
+ 3 Description    C     28   0
+ 4 Item_Type      C      8   0
+ 5 Warehouse_Code C      4   0
+ 6 Warehouse_Name C     16   0
+ 7 Bin_Location   C      4   0
+ 8 Qty_OnHand     N     20   6
+ 9 Qty_Committed  N     20   6
+10 Qty_OnOrder    N     20   6
+11 Available      N     20   6
+12 Reorder_Point  N     20   6
+13 Reorder_Qty    N     20   6
+. ; CASCADE MIRROR BUILD view v_Three_Way_Match AS CASCADE_v_Three_Way_Match EXPECT_ROWS 6 EXPECT_FIELDS 8
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\v_Three_Way_Match.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\v_Three_Way_Match.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_v_Three_Way_Match.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_v_Three_Way_Match (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 6 records from cascade_precision_erp/x64base_mirror/views/v_Three_Way_Match.csv
+. 6
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 PO_ID          N     20   0
+2 PO_Number      C      9   0
+3 Vendor_Code    C     10   0
+4 Vendor_Name    C     26   0
+5 PO_Total       N     20   6
+6 Received_Value N     20   6
+7 Invoice_Total  N     20   6
+8 Match_Status   C      8   0
+. ; CASCADE MIRROR BUILD view v_Trial_Balance AS CASCADE_v_Trial_Balance EXPECT_ROWS 12 EXPECT_FIELDS 7
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\v_Trial_Balance.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\v_Trial_Balance.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_v_Trial_Balance.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_v_Trial_Balance (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 12 records from cascade_precision_erp/x64base_mirror/views/v_Trial_Balance.csv
+. 12
+. # Name Type Len Dec
+- ---- ---- --- ---
+1 Account_Code   C      4   0
+2 Account_Name   C     22   0
+3 Account_Type   C      9   0
+4 Normal_Balance C      6   0
+5 Total_Debit    N     20   6
+6 Total_Credit   N     20   6
+7 Net            N     20   6
+. ; CASCADE MIRROR BUILD view v_Work_Order_Status AS CASCADE_v_Work_Order_Status EXPECT_ROWS 6 EXPECT_FIELDS 11
+. DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\v_Work_Order_Status.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\cascade_precision_erp\x64base_mirror\schemas\v_Work_Order_Status.schema.json
+  output = D:\code\ccode\dottalkpp\data\dbf\CASCADE_v_Work_Order_Status.dbf
+  flavor = X64
+  sidecars = D:\code\ccode\dottalkpp\data\dbf
+. Opened CASCADE_v_Work_Order_Status (v64) : Record count 0
+Valid Index/Indices   : CDX, CNX
+. Imported 6 records from cascade_precision_erp/x64base_mirror/views/v_Work_Order_Status.csv
+. 6
+. # Name Type Len Dec
+- ---- ---- --- ---
+ 1 WO_ID         N     20   0
+ 2 WO_Number     C      9   0
+ 3 SKU           C      7   0
+ 4 Description   C     28   0
+ 5 Qty_Ordered   N     20   6
+ 6 Qty_Completed N     20   6
+ 7 Qty_Scrapped  N     20   6
+ 8 Status        C     11   0
+ 9 Start_Date    C     10   0
+10 Due_Date      C     10   0
+11 SO_Number     C      9   0
+. ; CASCADE MIRROR END
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini

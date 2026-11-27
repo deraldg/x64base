@@ -1,0 +1,62 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "SHIPMENT_I",
+      "length": 20,
+      "name": "Shipment_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SO_ID",
+      "length": 20,
+      "name": "SO_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SHIP_DATE",
+      "length": 10,
+      "name": "Ship_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CARRIER",
+      "length": 13,
+      "name": "Carrier",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "TRACKING_N",
+      "length": 13,
+      "name": "Tracking_No",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "WAREHOUSE_",
+      "length": 20,
+      "name": "Warehouse_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "STATUS",
+      "length": 9,
+      "name": "Status",
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Shipments"
+}

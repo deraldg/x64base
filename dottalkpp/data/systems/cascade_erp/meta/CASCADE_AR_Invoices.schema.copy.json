@@ -1,0 +1,115 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "AR_Invoice_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Customer_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 9,
+      "name": "Invoice_Number",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Invoice_Date",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Due_Date",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Total_Amount",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Amount_Paid",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 7,
+      "name": "Status",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "SO_ID",
+      "required": false,
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_AR_Invoices",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "AR_Invoices",
+      "enforce": "SOFT",
+      "name": "fk_AR_Invoices_0",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "SO_ID",
+          "parent": "SO_ID"
+        }
+      ],
+      "parent_table": "Sales_Orders"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "AR_Invoices",
+      "enforce": "SOFT",
+      "name": "fk_AR_Invoices_1",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Customer_ID",
+          "parent": "Customer_ID"
+        }
+      ],
+      "parent_table": "Customers"
+    }
+  ],
+  "table": "CASCADE_AR_Invoices",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "AR_Invoices",
+    "sqlite_sql": "CREATE TABLE AR_Invoices (\n    AR_Invoice_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Customer_ID INTEGER NOT NULL REFERENCES Customers(Customer_ID),\n    Invoice_Number TEXT NOT NULL,\n    Invoice_Date TEXT NOT NULL,\n    Due_Date TEXT NOT NULL,\n    Total_Amount REAL NOT NULL,\n    Amount_Paid REAL DEFAULT 0,\n    Status TEXT CHECK (Status IN ('OPEN','PARTIAL','PAID','VOID')),\n    SO_ID INTEGER REFERENCES Sales_Orders(SO_ID)\n)"
+  }
+}

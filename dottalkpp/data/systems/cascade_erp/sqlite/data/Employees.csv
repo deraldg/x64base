@@ -1,0 +1,17 @@
+Employee_ID,Employee_Code,First_Name,Last_Name,Dept_ID,Position,Hire_Date,Hourly_Rate,Annual_Salary,Pay_Type,Status,Reports_To,Email,Phone
+1,E100,Mara,Whitcomb,1,President,2018-01-08,,142000.0,SALARY,ACTIVE,,mara.whitcomb@cascade.example,541-555-0100
+2,E110,Caleb,Norris,2,Controller,2019-03-18,,99000.0,SALARY,ACTIVE,1,caleb.norris@cascade.example,541-555-0101
+3,E120,Iris,Lopez,3,Plant Manager,2017-06-05,,118000.0,SALARY,ACTIVE,1,iris.lopez@cascade.example,541-555-0102
+4,E130,Grant,Okafor,4,Sales Manager,2020-02-20,,104000.0,SALARY,ACTIVE,1,grant.okafor@cascade.example,541-555-0103
+5,E140,Nina,Patel,5,Quality Manager,2019-11-12,,94000.0,SALARY,ACTIVE,3,nina.patel@cascade.example,541-555-0104
+6,E201,Evan,Reed,3,CNC Lead,2021-04-01,36.5,,HOURLY,ACTIVE,3,evan.reed@cascade.example,541-555-0105
+7,E202,Tessa,Kim,3,Assembler,2022-01-10,29.0,,HOURLY,ACTIVE,3,tessa.kim@cascade.example,541-555-0106
+8,E203,Omar,Hale,3,Test Technician,2021-09-22,31.0,,HOURLY,ACTIVE,3,omar.hale@cascade.example,541-555-0107
+9,E204,June,Rivera,3,Warehouse Coordinator,2020-08-15,28.0,,HOURLY,ACTIVE,3,june.rivera@cascade.example,541-555-0108
+10,E205,Victor,Chen,5,Inspector,2022-05-03,30.0,,HOURLY,ACTIVE,5,victor.chen@cascade.example,541-555-0109
+11,E206,Amina,Grant,5,Inspector,2023-02-14,29.0,,HOURLY,ACTIVE,5,amina.grant@cascade.example,541-555-0110
+12,E301,Leah,Brooks,4,Account Executive,2021-07-12,,76000.0,SALARY,ACTIVE,4,leah.brooks@cascade.example,541-555-0111
+13,E302,Simon,Ng,4,Customer Success,2022-03-07,,72000.0,SALARY,ACTIVE,4,simon.ng@cascade.example,541-555-0112
+14,E401,Pavel,Stone,2,AP Specialist,2021-12-01,27.0,,HOURLY,ACTIVE,2,pavel.stone@cascade.example,541-555-0113
+15,E402,Rosa,Mendez,2,AR Specialist,2022-06-17,27.0,,HOURLY,ACTIVE,2,rosa.mendez@cascade.example,541-555-0114
+16,E501,Hank,Miller,3,Maintenance Tech,2020-10-25,32.0,,HOURLY,ACTIVE,3,hank.miller@cascade.example,541-555-0115

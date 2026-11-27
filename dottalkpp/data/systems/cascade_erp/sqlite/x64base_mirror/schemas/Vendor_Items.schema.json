@@ -1,0 +1,121 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Vendor_Item_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Vendor_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Item_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 14,
+      "name": "Vendor_Part_No",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Unit_Price",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Lead_Days",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Min_Order_Qty",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Is_Preferred",
+      "required": false,
+      "type": "N"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Vendor_Items_1",
+      "order": [
+        "Vendor_ID",
+        "Item_ID"
+      ],
+      "unique": true
+    }
+  ],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Vendor_Items",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Vendor_Items",
+      "enforce": "SOFT",
+      "name": "fk_Vendor_Items_0",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Item_ID",
+          "parent": "Item_ID"
+        }
+      ],
+      "parent_table": "Items"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Vendor_Items",
+      "enforce": "SOFT",
+      "name": "fk_Vendor_Items_1",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Vendor_ID",
+          "parent": "Vendor_ID"
+        }
+      ],
+      "parent_table": "Vendors"
+    }
+  ],
+  "table": "CASCADE_Vendor_Items",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Vendor_Items",
+    "sqlite_sql": "CREATE TABLE Vendor_Items (\n    Vendor_Item_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Vendor_ID INTEGER NOT NULL REFERENCES Vendors(Vendor_ID),\n    Item_ID INTEGER NOT NULL REFERENCES Items(Item_ID),\n    Vendor_Part_No TEXT,\n    Unit_Price REAL NOT NULL,\n    Lead_Days INTEGER DEFAULT 0,\n    Min_Order_Qty REAL DEFAULT 1,\n    Is_Preferred INTEGER DEFAULT 0,\n    UNIQUE (Vendor_ID, Item_ID)\n)"
+  }
+}

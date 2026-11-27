@@ -20,6 +20,12 @@
       "description": "wxWidgets GUI support",
       "dependencies": ["wxwidgets"]
     },
+    "sqlite-tool": {
+      "description": "Build the standalone sqlite3 shell (sqlite3.exe) for the release package",
+      "dependencies": [
+        { "name": "sqlite3", "features": ["tool"] }
+      ]
+    },
     "python": {
       "description": "Python bindings",
       "dependencies": ["pybind11"]

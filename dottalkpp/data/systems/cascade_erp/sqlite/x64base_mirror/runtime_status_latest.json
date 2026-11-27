@@ -1,0 +1,18 @@
+{
+  "status": "runtime_observed_pass",
+  "observed_utc": "2026-08-10T15:16:26.5749678Z",
+  "runtime_identity": "dottalk++ v0.6 (2026-08-10, ff5f5005 dirty)  (Aug 10 2026 07:31:20)",
+  "canonical_sqlite_sha256": "6d488ef67a182caa4f117f5a9e51483f5d95f73ec98742bd696266c07612dd79",
+  "sqlite_hash_unchanged_during_generation": true,
+  "sqlite_tables": 34,
+  "sqlite_views": 9,
+  "x64base_table_mirrors": 34,
+  "x64base_materialized_view_snapshots": 9,
+  "x64base_physical_root": "dottalkpp/data/dbf/cascade_erp",
+  "validated_schemas": 43,
+  "created_dbfs": 43,
+  "imported_objects": 43,
+  "row_counts_reconciled": true,
+  "proof": "dottalkpp/data/cascade_precision_erp/x64base_mirror/proofs/dual_schema_runtime_20260810T151623Z.txt",
+  "semantic_boundary": "SQLite constraints, defaults, indexes, relationships, and view SQL are preserved in sidecars; DBF-native enforcement is not claimed."
+}

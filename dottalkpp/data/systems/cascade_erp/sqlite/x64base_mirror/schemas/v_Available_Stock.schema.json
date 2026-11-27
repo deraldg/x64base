@@ -1,0 +1,104 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Item_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 14,
+      "name": "SKU",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 28,
+      "name": "Description",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 8,
+      "name": "Item_Type",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 4,
+      "name": "Warehouse_Code",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 16,
+      "name": "Warehouse_Name",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 4,
+      "name": "Bin_Location",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_OnHand",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_Committed",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_OnOrder",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Available",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Reorder_Point",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Reorder_Qty",
+      "required": false,
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_v_Available_Stock",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [],
+  "table": "CASCADE_v_Available_Stock",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "view",
+    "sqlite_object": "v_Available_Stock",
+    "sqlite_sql": "CREATE VIEW v_Available_Stock AS\nSELECT\n    i.Item_ID,\n    i.SKU,\n    i.Description,\n    i.Item_Type,\n    w.Warehouse_Code,\n    w.Warehouse_Name,\n    s.Bin_Location,\n    s.Qty_OnHand,\n    s.Qty_Committed,\n    s.Qty_OnOrder,\n    (s.Qty_OnHand - s.Qty_Committed) AS Available,\n    i.Reorder_Point,\n    i.Reorder_Qty\nFROM Stock_Levels s\nJOIN Items i ON i.Item_ID = s.Item_ID\nJOIN Warehouses w ON w.Warehouse_ID = s.Warehouse_ID"
+  }
+}

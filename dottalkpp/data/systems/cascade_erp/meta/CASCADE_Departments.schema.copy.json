@@ -1,0 +1,86 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Dept_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 5,
+      "name": "Dept_Code",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 17,
+      "name": "Dept_Name",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 3,
+      "name": "Cost_Center",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Manager_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Active",
+      "required": false,
+      "type": "N"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Departments_1",
+      "order": [
+        "Dept_Code"
+      ],
+      "unique": true
+    }
+  ],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Departments",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Departments",
+      "enforce": "SOFT",
+      "name": "fk_Departments_0",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "Manager_ID",
+          "parent": "Employee_ID"
+        }
+      ],
+      "parent_table": "Employees"
+    }
+  ],
+  "table": "CASCADE_Departments",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Departments",
+    "sqlite_sql": "CREATE TABLE Departments (\n    Dept_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Dept_Code TEXT UNIQUE NOT NULL,\n    Dept_Name TEXT NOT NULL,\n    Cost_Center TEXT,\n    Manager_ID INTEGER REFERENCES Employees(Employee_ID),\n    Active INTEGER DEFAULT 1\n)"
+  }
+}

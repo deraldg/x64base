@@ -1,0 +1,82 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "STOCK_ID",
+      "length": 20,
+      "name": "Stock_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ITEM_ID",
+      "length": 20,
+      "name": "Item_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "WAREHOUSE_",
+      "length": 20,
+      "name": "Warehouse_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "BIN_LOCATI",
+      "length": 4,
+      "name": "Bin_Location",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_ONHAND",
+      "length": 20,
+      "name": "Qty_OnHand",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_COMMIT",
+      "length": 20,
+      "name": "Qty_Committed",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_ONORDE",
+      "length": 20,
+      "name": "Qty_OnOrder",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "LAST_COUNT",
+      "length": 10,
+      "name": "Last_Count_Date",
+      "type": "C"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Stock_Levels_1",
+      "order": [
+        "Item_ID",
+        "Warehouse_ID",
+        "Bin_Location"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Stock_Levels"
+}

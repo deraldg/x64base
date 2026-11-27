@@ -1,0 +1,81 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "VENDOR_ITE",
+      "length": 20,
+      "name": "Vendor_Item_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "VENDOR_ID",
+      "length": 20,
+      "name": "Vendor_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ITEM_ID",
+      "length": 20,
+      "name": "Item_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "VENDOR_PAR",
+      "length": 14,
+      "name": "Vendor_Part_No",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "UNIT_PRICE",
+      "length": 20,
+      "name": "Unit_Price",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "LEAD_DAYS",
+      "length": 20,
+      "name": "Lead_Days",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "MIN_ORDER_",
+      "length": 20,
+      "name": "Min_Order_Qty",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "IS_PREFERR",
+      "length": 20,
+      "name": "Is_Preferred",
+      "type": "N"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Vendor_Items_1",
+      "order": [
+        "Vendor_ID",
+        "Item_ID"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Vendor_Items"
+}

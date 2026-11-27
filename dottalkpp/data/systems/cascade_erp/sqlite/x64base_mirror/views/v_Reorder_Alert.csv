@@ -1,0 +1,15 @@
+Item_ID,SKU,Description,Item_Type,Warehouse_Code,Warehouse_Name,Bin_Location,Qty_OnHand,Qty_Committed,Qty_OnOrder,Available,Reorder_Point,Reorder_Qty
+4,RAW-BEAR-6205,Precision bearing 6205,RAW,MAIN,Main Inventory,A-04,52.0,0.0,10.0,52.0,60.0,200.0
+10,PKG-CARTON,Product packaging carton,MRO,MAIN,Main Inventory,A-10,70.0,2.0,10.0,68.0,100.0,250.0
+14,PDU-100,Precision Drive Unit PDU-100,FINISHED,MAIN,Main Inventory,A-14,3.0,1.0,2.0,2.0,4.0,12.0
+15,RP-200,Rotary Pump RP-200,FINISHED,MAIN,Main Inventory,A-15,3.0,1.0,2.0,2.0,5.0,15.0
+16,PV-300,Precision Valve PV-300,FINISHED,MAIN,Main Inventory,A-16,3.0,1.0,2.0,2.0,6.0,20.0
+17,MRO-COOLANT,CNC coolant drum,MRO,MAIN,Main Inventory,A-17,3.0,1.0,2.0,2.0,3.0,6.0
+2,RAW-HOUS-AL,Aluminum housing casting,RAW,QA,Quality Hold,Q-02,7.0,0.0,0.0,7.0,15.0,40.0
+3,RAW-SEAL-KIT,High-pressure seal kit,RAW,QA,Quality Hold,Q-03,8.0,0.0,0.0,8.0,30.0,100.0
+4,RAW-BEAR-6205,Precision bearing 6205,RAW,QA,Quality Hold,Q-04,9.0,0.0,0.0,9.0,60.0,200.0
+7,RAW-VALVEBODY,Valve body casting,RAW,QA,Quality Hold,Q-07,12.0,0.0,0.0,12.0,14.0,30.0
+9,RAW-HYD-FIT,Hydraulic fitting kit,RAW,QA,Quality Hold,Q-09,14.0,0.0,0.0,14.0,30.0,80.0
+14,PDU-100,Precision Drive Unit PDU-100,FINISHED,SHIP,Shipping Staging,S-14,5.0,1.0,0.0,4.0,4.0,12.0
+15,RP-200,Rotary Pump RP-200,FINISHED,SHIP,Shipping Staging,S-15,3.0,1.0,0.0,2.0,5.0,15.0
+16,PV-300,Precision Valve PV-300,FINISHED,SHIP,Shipping Staging,S-16,4.0,1.0,0.0,3.0,6.0,20.0

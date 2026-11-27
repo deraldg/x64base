@@ -1,0 +1,6 @@
+SO_ID,SO_Number,Order_Date,Required_Date,Status,Customer_Code,Customer_Name,Sales_Rep_Code,Sales_Rep,Total_Amount
+1,SO-260001,2026-03-01,2026-03-25,CONFIRMED,CUST-ALPHA,Alpha Robotics,E301,Leah Brooks,2040.0
+2,SO-260002,2026-03-03,2026-03-28,PICKING,CUST-BLUE,Blue River Pumps,E301,Leah Brooks,1286.5
+3,SO-260003,2026-03-07,2026-04-05,NEW,CUST-COLUMBIA,Columbia Process Systems,E302,Simon Ng,1760.0
+4,SO-260004,2026-03-10,2026-04-10,SHIPPED,CUST-DYNA,Dynatek Marine,E302,Simon Ng,898.25
+5,SO-260005,2026-03-12,2026-04-15,CONFIRMED,CUST-EVER,Evergreen Hydraulics,E301,Leah Brooks,965.0

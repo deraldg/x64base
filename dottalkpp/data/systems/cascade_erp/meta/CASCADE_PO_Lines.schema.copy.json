@@ -1,0 +1,122 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "POLine_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "PO_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Item_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Line_Number",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_Ordered",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_Received",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Unit_Price",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Line_Total",
+      "required": false,
+      "type": "N"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_PO_Lines_1",
+      "order": [
+        "PO_ID",
+        "Line_Number"
+      ],
+      "unique": true
+    }
+  ],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_PO_Lines",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "PO_Lines",
+      "enforce": "SOFT",
+      "name": "fk_PO_Lines_0",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Item_ID",
+          "parent": "Item_ID"
+        }
+      ],
+      "parent_table": "Items"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "PO_Lines",
+      "enforce": "SOFT",
+      "name": "fk_PO_Lines_1",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "PO_ID",
+          "parent": "PO_ID"
+        }
+      ],
+      "parent_table": "Purchase_Orders"
+    }
+  ],
+  "table": "CASCADE_PO_Lines",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "PO_Lines",
+    "sqlite_sql": "CREATE TABLE PO_Lines (\n    POLine_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    PO_ID INTEGER NOT NULL REFERENCES Purchase_Orders(PO_ID),\n    Item_ID INTEGER NOT NULL REFERENCES Items(Item_ID),\n    Line_Number INTEGER NOT NULL,\n    Qty_Ordered REAL NOT NULL,\n    Qty_Received REAL DEFAULT 0,\n    Unit_Price REAL NOT NULL,\n    Line_Total REAL GENERATED ALWAYS AS (Qty_Ordered * Unit_Price) STORED,\n    UNIQUE (PO_ID, Line_Number)\n)"
+  }
+}

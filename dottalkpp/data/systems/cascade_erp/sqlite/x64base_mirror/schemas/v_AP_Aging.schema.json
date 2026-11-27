@@ -1,0 +1,90 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "AP_Invoice_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 14,
+      "name": "Invoice_Number",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Vendor_Code",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 26,
+      "name": "Vendor_Name",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Invoice_Date",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Due_Date",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Days_Past_Due",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Total_Amount",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Amount_Paid",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Balance",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 7,
+      "name": "Status",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_v_AP_Aging",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [],
+  "table": "CASCADE_v_AP_Aging",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "view",
+    "sqlite_object": "v_AP_Aging",
+    "sqlite_sql": "CREATE VIEW v_AP_Aging AS\nSELECT\n    ap.AP_Invoice_ID,\n    ap.Invoice_Number,\n    v.Vendor_Code,\n    v.Vendor_Name,\n    ap.Invoice_Date,\n    ap.Due_Date,\n    CAST(julianday('now') - julianday(ap.Due_Date) AS INTEGER) AS Days_Past_Due,\n    ap.Total_Amount,\n    ap.Amount_Paid,\n    (ap.Total_Amount - ap.Amount_Paid) AS Balance,\n    ap.Status\nFROM AP_Invoices ap\nLEFT JOIN Vendors v ON v.Vendor_ID = ap.Vendor_ID\nWHERE ap.Status IN ('OPEN','PARTIAL')"
+  }
+}

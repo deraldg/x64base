@@ -8,7 +8,8 @@
 #
 #   .\start.ps1                     interactive shell
 #   .\start.ps1 --script my.dts     any dottalkpp arguments pass straight through
-#   .\start.ps1 -FirstRun           build the x64 LMDB indexes once, then start
+#   .\start.ps1 -FirstRun           build the sample LMDB indexes once (MCC x64,
+#                                   Cascade ERP), then start
 #
 # The development tree uses datarun.ps1 instead; it also stages a fresh build.
 [CmdletBinding()]
@@ -29,10 +30,20 @@ foreach ($p in $exe, $data) {
 Push-Location -LiteralPath $data
 try {
     if ($FirstRun) {
-        $build = Join-Path $data "scripts\mcc\mcc_build_x64_lmdb.dts"
-        Write-Host "start.ps1: building the x64 LMDB indexes (first run only)..."
-        & $exe --script $build
-        if ($LASTEXITCODE -ne 0) { throw "start.ps1: index build exited $LASTEXITCODE" }
+        # LMDB environments are derived and never shipped; build each sample
+        # system's once. Each build runs in its own process, so the session
+        # that follows starts with no tables open.
+        $builds = @(
+            "scripts\mcc\mcc_build_x64_lmdb.dts",
+            "systems\cascade_erp\scripts\cascade_erp_build_indexes.dts"
+        )
+        foreach ($rel in $builds) {
+            $build = Join-Path $data $rel
+            if (-not (Test-Path -LiteralPath $build)) { continue }
+            Write-Host "start.ps1: building LMDB indexes: $rel (first run only)..."
+            & $exe --script $build | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "start.ps1: index build $rel exited $LASTEXITCODE" }
+        }
     }
     & $exe @DotTalkArgs
     $code = $LASTEXITCODE

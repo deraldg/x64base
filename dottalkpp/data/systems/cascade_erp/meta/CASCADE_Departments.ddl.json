@@ -1,0 +1,66 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "DEPT_ID",
+      "length": 20,
+      "name": "Dept_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "DEPT_CODE",
+      "length": 5,
+      "name": "Dept_Code",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "DEPT_NAME",
+      "length": 17,
+      "name": "Dept_Name",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "COST_CENTE",
+      "length": 3,
+      "name": "Cost_Center",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "MANAGER_ID",
+      "length": 20,
+      "name": "Manager_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ACTIVE",
+      "length": 20,
+      "name": "Active",
+      "type": "N"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Departments_1",
+      "order": [
+        "Dept_Code"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Departments"
+}

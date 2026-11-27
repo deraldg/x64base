@@ -55,7 +55,7 @@ jobs:
       # Turbo Vision), so the download matches the source on main (owner ruling
       # 2026-11-27). It was windows-core, which cannot run the quickstart.
       - name: Configure
-        run: cmake --preset pro-md
+        run: cmake --preset pro-md "-DVCPKG_MANIFEST_FEATURES=tv;index;sqlite-tool"
       - name: Build and test
         run: |
           cmake --build --preset pro-md-Release --parallel

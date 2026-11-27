@@ -1,0 +1,77 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Payment_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "AR_Invoice_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 10,
+      "name": "Payment_Date",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Amount",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 11,
+      "name": "Method",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 13,
+      "name": "Reference",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_AR_Payments",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "AR_Payments",
+      "enforce": "SOFT",
+      "name": "fk_AR_Payments_0",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "AR_Invoice_ID",
+          "parent": "AR_Invoice_ID"
+        }
+      ],
+      "parent_table": "AR_Invoices"
+    }
+  ],
+  "table": "CASCADE_AR_Payments",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "AR_Payments",
+    "sqlite_sql": "CREATE TABLE AR_Payments (\n    Payment_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    AR_Invoice_ID INTEGER NOT NULL REFERENCES AR_Invoices(AR_Invoice_ID),\n    Payment_Date TEXT NOT NULL,\n    Amount REAL NOT NULL,\n    Method TEXT CHECK (Method IN ('CHECK','ACH','WIRE','CREDIT_CARD','CASH')),\n    Reference TEXT\n)"
+  }
+}

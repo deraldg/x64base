@@ -1,0 +1,81 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "SO_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 9,
+      "name": "SO_Number",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Order_Date",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Required_Date",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 9,
+      "name": "Status",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 13,
+      "name": "Customer_Code",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 24,
+      "name": "Customer_Name",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 4,
+      "name": "Sales_Rep_Code",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 11,
+      "name": "Sales_Rep",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Total_Amount",
+      "required": false,
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_v_Open_Sales_Orders",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [],
+  "table": "CASCADE_v_Open_Sales_Orders",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "view",
+    "sqlite_object": "v_Open_Sales_Orders",
+    "sqlite_sql": "CREATE VIEW v_Open_Sales_Orders AS\nSELECT\n    so.SO_ID,\n    so.SO_Number,\n    so.Order_Date,\n    so.Required_Date,\n    so.Status,\n    c.Customer_Code,\n    c.Customer_Name,\n    e.Employee_Code AS Sales_Rep_Code,\n    e.First_Name || ' ' || e.Last_Name AS Sales_Rep,\n    so.Total_Amount\nFROM Sales_Orders so\nJOIN Customers c ON c.Customer_ID = so.Customer_ID\nLEFT JOIN Employees e ON e.Employee_ID = so.Sales_Rep_ID\nWHERE so.Status NOT IN ('CLOSED','CANCELLED')"
+  }
+}

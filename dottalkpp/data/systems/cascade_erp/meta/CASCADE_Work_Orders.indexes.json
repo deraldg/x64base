@@ -1,0 +1,20 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "CDX",
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Work_Orders_1",
+      "order": [
+        "WO_Number"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "table": "CASCADE_Work_Orders",
+  "warnings": [
+    "Index declarations are metadata-only in this DDL milestone; no physical index was built."
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "SHIP_LINE_",
+      "length": 20,
+      "name": "Ship_Line_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SHIPMENT_I",
+      "length": 20,
+      "name": "Shipment_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SOLINE_ID",
+      "length": 20,
+      "name": "SOLine_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_SHIPPE",
+      "length": 20,
+      "name": "Qty_Shipped",
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Shipment_Lines"
+}

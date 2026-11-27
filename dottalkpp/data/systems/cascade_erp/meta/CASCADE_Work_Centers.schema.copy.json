@@ -1,0 +1,73 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Center_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 4,
+      "name": "Center_Code",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 16,
+      "name": "Center_Name",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 3,
+      "name": "Department",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Capacity_Hours_Day",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Hourly_Rate",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 6,
+      "name": "Status",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Work_Centers_1",
+      "order": [
+        "Center_Code"
+      ],
+      "unique": true
+    }
+  ],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Work_Centers",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [],
+  "table": "CASCADE_Work_Centers",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Work_Centers",
+    "sqlite_sql": "CREATE TABLE Work_Centers (\n    Center_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Center_Code TEXT UNIQUE NOT NULL,\n    Center_Name TEXT NOT NULL,\n    Department TEXT,\n    Capacity_Hours_Day REAL DEFAULT 8.0,\n    Hourly_Rate REAL DEFAULT 0.00,\n    Status TEXT CHECK (Status IN ('ACTIVE','MAINTENANCE','OFFLINE'))\n)"
+  }
+}

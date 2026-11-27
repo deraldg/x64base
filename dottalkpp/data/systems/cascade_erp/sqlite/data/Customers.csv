@@ -1,0 +1,7 @@
+Customer_ID,Customer_Code,Customer_Name,Contact_Name,Phone,Email,Address,City,State,Zip,Credit_Limit,Payment_Terms,Tax_Exempt,Status,Since_Date
+1,CUST-ALPHA,Alpha Robotics,Priya Desai,206-555-3001,purchasing@alpharobotics.example,10 Automation Way,Seattle,WA,98101,75000.0,NET30,0,ACTIVE,2020-01-15
+2,CUST-BLUE,Blue River Pumps,Daniel Cho,541-555-3002,orders@blueriver.example,88 Pump House Rd,Bend,OR,97701,55000.0,NET30,0,ACTIVE,2021-04-09
+3,CUST-COLUMBIA,Columbia Process Systems,Erin Fox,503-555-3003,buy@columbiaps.example,700 Plant Loop,Portland,OR,97205,90000.0,NET45,0,ACTIVE,2019-05-20
+4,CUST-DYNA,Dynatek Marine,Grace Lin,360-555-3004,procure@dynatek.example,402 Harbor Dr,Tacoma,WA,98402,65000.0,NET30,0,ACTIVE,2022-02-01
+5,CUST-EVER,Evergreen Hydraulics,Mark Eaton,509-555-3005,ap@everhyd.example,51 Valve Court,Spokane,WA,99201,45000.0,NET30,0,ACTIVE,2023-01-11
+6,CUST-FIELD,Field Service Internal,Ops Desk,541-555-3006,service@cascade.example,1000 Millrace Dr,Eugene,OR,97403,0.0,NET0,1,ACTIVE,2018-01-01

@@ -1,0 +1,73 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "CENTER_ID",
+      "length": 20,
+      "name": "Center_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CENTER_COD",
+      "length": 4,
+      "name": "Center_Code",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CENTER_NAM",
+      "length": 16,
+      "name": "Center_Name",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "DEPARTMENT",
+      "length": 3,
+      "name": "Department",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "CAPACITY_H",
+      "length": 20,
+      "name": "Capacity_Hours_Day",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "HOURLY_RAT",
+      "length": 20,
+      "name": "Hourly_Rate",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "STATUS",
+      "length": 6,
+      "name": "Status",
+      "type": "C"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Work_Centers_1",
+      "order": [
+        "Center_Code"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Work_Centers"
+}

@@ -1,0 +1,6 @@
+BOM_ID,Item_ID,BOM_Name,Revision,Effective_Date,Status
+1,14,PDU-100 Production BOM,A,2026-01-01,ACTIVE
+2,15,RP-200 Production BOM,A,2026-01-01,ACTIVE
+3,16,PV-300 Production BOM,A,2026-01-01,ACTIVE
+4,11,PDU Core Assembly BOM,A,2026-01-01,ACTIVE
+5,12,Pump Rotor Assembly BOM,A,2026-01-01,ACTIVE

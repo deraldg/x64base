@@ -1,0 +1,15 @@
+BOM_ID,Parent_SKU,Parent_Description,Revision,Sequence,Component_SKU,Component_Description,Qty_Per,UOM,Scrap_Pct
+1,PDU-100,Precision Drive Unit PDU-100,A,10,WIP-PDU-CORE,PDU core assembly,1.0,EA,0.0
+1,PDU-100,Precision Drive Unit PDU-100,A,20,RAW-MOTOR-1HP,1 HP motor assembly,1.0,EA,0.0
+1,PDU-100,Precision Drive Unit PDU-100,A,30,RAW-FAST-KIT,Stainless fastener kit,1.0,EA,0.0
+1,PDU-100,Precision Drive Unit PDU-100,A,40,PKG-CARTON,Product packaging carton,1.0,EA,0.0
+2,RP-200,Rotary Pump RP-200,A,10,WIP-PUMP-ROTOR,Pump rotor assembly,1.0,EA,0.0
+2,RP-200,Rotary Pump RP-200,A,20,RAW-HOUS-AL,Aluminum housing casting,1.0,EA,0.0
+2,RP-200,Rotary Pump RP-200,A,30,RAW-SEAL-KIT,High-pressure seal kit,1.0,EA,1.0
+2,RP-200,Rotary Pump RP-200,A,40,PKG-CARTON,Product packaging carton,1.0,EA,0.0
+3,PV-300,Precision Valve PV-300,A,10,WIP-VALVE-TRIM,Valve trim assembly,1.0,EA,0.0
+3,PV-300,Precision Valve PV-300,A,20,RAW-VALVEBODY,Valve body casting,1.0,EA,0.0
+3,PV-300,Precision Valve PV-300,A,30,RAW-HYD-FIT,Hydraulic fitting kit,1.0,EA,0.0
+4,WIP-PDU-CORE,PDU core assembly,A,10,RAW-SHAFT-4140,4140 steel shaft blank,1.0,EA,2.0
+4,WIP-PDU-CORE,PDU core assembly,A,20,RAW-BEAR-6205,Precision bearing 6205,2.0,EA,0.0
+5,WIP-PUMP-ROTOR,Pump rotor assembly,A,10,RAW-IMP-SS,Stainless pump impeller,1.0,EA,1.0

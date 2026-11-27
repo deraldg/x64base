@@ -1,0 +1,69 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "TEST_ID",
+      "length": 20,
+      "name": "Test_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "TEST_NAME",
+      "length": 20,
+      "name": "Test_Name",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "TEST_TYPE",
+      "length": 8,
+      "name": "Test_Type",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ITEM_ID",
+      "length": 20,
+      "name": "Item_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SPECIFICAT",
+      "length": 29,
+      "name": "Specification",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "MIN_VALUE",
+      "length": 20,
+      "name": "Min_Value",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "MAX_VALUE",
+      "length": 20,
+      "name": "Max_Value",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "UOM",
+      "length": 5,
+      "name": "UOM",
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Quality_Tests"
+}

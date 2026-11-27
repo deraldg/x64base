@@ -1,0 +1,160 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Receipt_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "PO_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "POLine_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 10,
+      "name": "Receipt_Date",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_Received",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_Accepted",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_Rejected",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Inspector_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Warehouse_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 8,
+      "name": "Status",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Receiving",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Receiving",
+      "enforce": "SOFT",
+      "name": "fk_Receiving_0",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "Warehouse_ID",
+          "parent": "Warehouse_ID"
+        }
+      ],
+      "parent_table": "Warehouses"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Receiving",
+      "enforce": "SOFT",
+      "name": "fk_Receiving_1",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "Inspector_ID",
+          "parent": "Employee_ID"
+        }
+      ],
+      "parent_table": "Employees"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Receiving",
+      "enforce": "SOFT",
+      "name": "fk_Receiving_2",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "POLine_ID",
+          "parent": "POLine_ID"
+        }
+      ],
+      "parent_table": "PO_Lines"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Receiving",
+      "enforce": "SOFT",
+      "name": "fk_Receiving_3",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "PO_ID",
+          "parent": "PO_ID"
+        }
+      ],
+      "parent_table": "Purchase_Orders"
+    }
+  ],
+  "table": "CASCADE_Receiving",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Receiving",
+    "sqlite_sql": "CREATE TABLE Receiving (\n    Receipt_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    PO_ID INTEGER NOT NULL REFERENCES Purchase_Orders(PO_ID),\n    POLine_ID INTEGER NOT NULL REFERENCES PO_Lines(POLine_ID),\n    Receipt_Date TEXT NOT NULL,\n    Qty_Received REAL NOT NULL,\n    Qty_Accepted REAL,\n    Qty_Rejected REAL DEFAULT 0,\n    Inspector_ID INTEGER REFERENCES Employees(Employee_ID),\n    Warehouse_ID INTEGER REFERENCES Warehouses(Warehouse_ID),\n    Status TEXT CHECK (Status IN ('PENDING','ACCEPTED','REJECTED','PARTIAL'))\n)"
+  }
+}

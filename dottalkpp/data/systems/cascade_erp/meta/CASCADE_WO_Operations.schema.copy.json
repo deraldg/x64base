@@ -1,0 +1,136 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "WO_Op_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "WO_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Routing_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Step_Number",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Center_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 11,
+      "name": "Status",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Actual_Hours",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Qty_Good",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Qty_Scrap",
+      "required": false,
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_WO_Operations",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "WO_Operations",
+      "enforce": "SOFT",
+      "name": "fk_WO_Operations_0",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Center_ID",
+          "parent": "Center_ID"
+        }
+      ],
+      "parent_table": "Work_Centers"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "WO_Operations",
+      "enforce": "SOFT",
+      "name": "fk_WO_Operations_1",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "Routing_ID",
+          "parent": "Routing_ID"
+        }
+      ],
+      "parent_table": "Routings"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "WO_Operations",
+      "enforce": "SOFT",
+      "name": "fk_WO_Operations_2",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "WO_ID",
+          "parent": "WO_ID"
+        }
+      ],
+      "parent_table": "Work_Orders"
+    }
+  ],
+  "table": "CASCADE_WO_Operations",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "WO_Operations",
+    "sqlite_sql": "CREATE TABLE WO_Operations (\n    WO_Op_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    WO_ID INTEGER NOT NULL REFERENCES Work_Orders(WO_ID),\n    Routing_ID INTEGER REFERENCES Routings(Routing_ID),\n    Step_Number INTEGER NOT NULL,\n    Center_ID INTEGER NOT NULL REFERENCES Work_Centers(Center_ID),\n    Status TEXT CHECK (Status IN ('PENDING','IN_PROGRESS','COMPLETED')),\n    Actual_Hours REAL DEFAULT 0.00,\n    Qty_Good INTEGER DEFAULT 0,\n    Qty_Scrap INTEGER DEFAULT 0\n)"
+  }
+}

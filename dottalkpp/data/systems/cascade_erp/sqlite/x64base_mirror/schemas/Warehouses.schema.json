@@ -1,0 +1,79 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Warehouse_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 4,
+      "name": "Warehouse_Code",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 16,
+      "name": "Warehouse_Name",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 14,
+      "name": "Location",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Manager_ID",
+      "required": false,
+      "type": "N"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Warehouses_1",
+      "order": [
+        "Warehouse_Code"
+      ],
+      "unique": true
+    }
+  ],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Warehouses",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Warehouses",
+      "enforce": "SOFT",
+      "name": "fk_Warehouses_0",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "Manager_ID",
+          "parent": "Employee_ID"
+        }
+      ],
+      "parent_table": "Employees"
+    }
+  ],
+  "table": "CASCADE_Warehouses",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Warehouses",
+    "sqlite_sql": "CREATE TABLE Warehouses (\n    Warehouse_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Warehouse_Code TEXT UNIQUE NOT NULL,\n    Warehouse_Name TEXT NOT NULL,\n    Location TEXT,\n    Manager_ID INTEGER REFERENCES Employees(Employee_ID)\n)"
+  }
+}

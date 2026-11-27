@@ -1,0 +1,121 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Stock_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Item_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Warehouse_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 4,
+      "name": "Bin_Location",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_OnHand",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_Committed",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_OnOrder",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 10,
+      "name": "Last_Count_Date",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Stock_Levels_1",
+      "order": [
+        "Item_ID",
+        "Warehouse_ID",
+        "Bin_Location"
+      ],
+      "unique": true
+    }
+  ],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Stock_Levels",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Stock_Levels",
+      "enforce": "SOFT",
+      "name": "fk_Stock_Levels_0",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Warehouse_ID",
+          "parent": "Warehouse_ID"
+        }
+      ],
+      "parent_table": "Warehouses"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Stock_Levels",
+      "enforce": "SOFT",
+      "name": "fk_Stock_Levels_1",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Item_ID",
+          "parent": "Item_ID"
+        }
+      ],
+      "parent_table": "Items"
+    }
+  ],
+  "table": "CASCADE_Stock_Levels",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Stock_Levels",
+    "sqlite_sql": "CREATE TABLE Stock_Levels (\n    Stock_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Item_ID INTEGER NOT NULL REFERENCES Items(Item_ID),\n    Warehouse_ID INTEGER NOT NULL REFERENCES Warehouses(Warehouse_ID),\n    Bin_Location TEXT,\n    Qty_OnHand REAL DEFAULT 0,\n    Qty_Committed REAL DEFAULT 0,\n    Qty_OnOrder REAL DEFAULT 0,\n    Last_Count_Date TEXT,\n    UNIQUE (Item_ID, Warehouse_ID, Bin_Location)\n)"
+  }
+}

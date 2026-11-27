@@ -1,0 +1,19 @@
+Item_ID,SKU,Description,UOM,Item_Type,Cost_Method,Standard_Cost,List_Price,Reorder_Point,Reorder_Qty,Lead_Days,Category,Active
+1,RAW-SHAFT-4140,4140 steel shaft blank,EA,RAW,STANDARD,48.0,,20.0,50.0,14,Raw Metal,1
+2,RAW-HOUS-AL,Aluminum housing casting,EA,RAW,STANDARD,62.0,,15.0,40.0,21,Castings,1
+3,RAW-SEAL-KIT,High-pressure seal kit,EA,RAW,FIFO,14.5,,30.0,100.0,7,Seals,1
+4,RAW-BEAR-6205,Precision bearing 6205,EA,RAW,FIFO,8.25,,60.0,200.0,5,Bearings,1
+5,RAW-MOTOR-1HP,1 HP motor assembly,EA,RAW,STANDARD,185.0,,8.0,20.0,28,Motors,1
+6,RAW-IMP-SS,Stainless pump impeller,EA,RAW,STANDARD,74.0,,12.0,25.0,18,Pump Components,1
+7,RAW-VALVEBODY,Valve body casting,EA,RAW,STANDARD,58.0,,14.0,30.0,21,Castings,1
+8,RAW-FAST-KIT,Stainless fastener kit,EA,RAW,AVG,6.5,,50.0,150.0,4,Hardware,1
+9,RAW-HYD-FIT,Hydraulic fitting kit,EA,RAW,AVG,22.0,,30.0,80.0,10,Fittings,1
+10,PKG-CARTON,Product packaging carton,EA,MRO,FIFO,3.25,,100.0,250.0,5,Packaging,1
+11,WIP-PDU-CORE,PDU core assembly,EA,WIP,STANDARD,260.0,,5.0,10.0,0,WIP,1
+12,WIP-PUMP-ROTOR,Pump rotor assembly,EA,WIP,STANDARD,130.0,,5.0,10.0,0,WIP,1
+13,WIP-VALVE-TRIM,Valve trim assembly,EA,WIP,STANDARD,95.0,,5.0,10.0,0,WIP,1
+14,PDU-100,Precision Drive Unit PDU-100,EA,FINISHED,STANDARD,520.0,895.0,4.0,12.0,10,Drive Units,1
+15,RP-200,Rotary Pump RP-200,EA,FINISHED,STANDARD,340.0,640.0,5.0,15.0,10,Pumps,1
+16,PV-300,Precision Valve PV-300,EA,FINISHED,STANDARD,220.0,420.0,6.0,20.0,8,Valves,1
+17,MRO-COOLANT,CNC coolant drum,EA,MRO,AVG,95.0,,3.0,6.0,5,MRO,1
+18,SERV-CAL,Field calibration service,HR,SERVICE,STANDARD,0.0,125.0,0.0,0.0,0,Service,1

@@ -1,0 +1,21 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "CDX",
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_PO_Lines_1",
+      "order": [
+        "PO_ID",
+        "Line_Number"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "table": "CASCADE_PO_Lines",
+  "warnings": [
+    "Index declarations are metadata-only in this DDL milestone; no physical index was built."
+  ]
+}

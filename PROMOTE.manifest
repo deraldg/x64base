@@ -294,6 +294,10 @@ dottalkpp/data/dbf/memo/**
 dottalkpp/data/dbf/vfp/**
 dottalkpp/data/dbf/x32/**
 dottalkpp/data/dbf/x64/**
+# Cascade ERP sample system (owner 2026-11-27): the sealed SQLite package and
+# its x64base mirror -- DBFs, CDX containers, meta, schema graph, scripts. The
+# LMDB environments and *.cdx.meta are gitignored and rebuilt on first run.
+dottalkpp/data/systems/cascade_erp/**
 # portable index containers (cdx/cnx/idx/inx) -- distribution assets
 dottalkpp/data/indexes/datadict/**
 dottalkpp/data/indexes/help/**

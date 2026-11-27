@@ -587,7 +587,10 @@ scripts/build/
 # products and run outputs; ignoring deletes nothing and does not untrack
 # files already committed. A deliberate run record still lands with
 # `git add -f`. Plan: docs/agents/TREE_CLEANUP_PLAN_2026-11-26.md
-/dottalkpp/data/systems/
+# Narrowed 2026-11-27 (owner: Cascade ERP ships in the release with its SQLite
+# package and x64base workspace). Only the derived parts stay out.
+/dottalkpp/data/systems/*/lmdb/
+/dottalkpp/data/systems/*/indexes/*.cdx.meta
 /dottalkpp/data/dbf/cascade_og/
 /dottalkpp/data/dbf/cascade_dbf/
 /dottalkpp/data/dbf/sandbox/

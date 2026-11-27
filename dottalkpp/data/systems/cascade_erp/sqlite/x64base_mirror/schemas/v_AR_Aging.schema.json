@@ -1,0 +1,90 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "AR_Invoice_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 9,
+      "name": "Invoice_Number",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 13,
+      "name": "Customer_Code",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 24,
+      "name": "Customer_Name",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Invoice_Date",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Due_Date",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Days_Past_Due",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Total_Amount",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Amount_Paid",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Balance",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 7,
+      "name": "Status",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_v_AR_Aging",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [],
+  "table": "CASCADE_v_AR_Aging",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "view",
+    "sqlite_object": "v_AR_Aging",
+    "sqlite_sql": "CREATE VIEW v_AR_Aging AS\nSELECT\n    ar.AR_Invoice_ID,\n    ar.Invoice_Number,\n    c.Customer_Code,\n    c.Customer_Name,\n    ar.Invoice_Date,\n    ar.Due_Date,\n    CAST(julianday('now') - julianday(ar.Due_Date) AS INTEGER) AS Days_Past_Due,\n    ar.Total_Amount,\n    ar.Amount_Paid,\n    (ar.Total_Amount - ar.Amount_Paid) AS Balance,\n    ar.Status\nFROM AR_Invoices ar\nJOIN Customers c ON c.Customer_ID = ar.Customer_ID\nWHERE ar.Status IN ('OPEN','PARTIAL')"
+  }
+}

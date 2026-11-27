@@ -1,0 +1,104 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "ITEM_ID",
+      "length": 20,
+      "name": "Item_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SKU",
+      "length": 14,
+      "name": "SKU",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "DESCRIPTIO",
+      "length": 28,
+      "name": "Description",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ITEM_TYPE",
+      "length": 8,
+      "name": "Item_Type",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "WAREHOUSE_",
+      "length": 4,
+      "name": "Warehouse_Code",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "WAREHOUS~1",
+      "length": 16,
+      "name": "Warehouse_Name",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "BIN_LOCATI",
+      "length": 4,
+      "name": "Bin_Location",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_ONHAND",
+      "length": 20,
+      "name": "Qty_OnHand",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_COMMIT",
+      "length": 20,
+      "name": "Qty_Committed",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_ONORDE",
+      "length": 20,
+      "name": "Qty_OnOrder",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "AVAILABLE",
+      "length": 20,
+      "name": "Available",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "REORDER_PO",
+      "length": 20,
+      "name": "Reorder_Point",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "REORDER_QT",
+      "length": 20,
+      "name": "Reorder_Qty",
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_v_Available_Stock"
+}

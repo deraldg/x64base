@@ -1,0 +1,121 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Customer_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 13,
+      "name": "Customer_Code",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 24,
+      "name": "Customer_Name",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 11,
+      "name": "Contact_Name",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 12,
+      "name": "Phone",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 32,
+      "name": "Email",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 17,
+      "name": "Address",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 8,
+      "name": "City",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 2,
+      "name": "State",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 5,
+      "name": "Zip",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Credit_Limit",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 5,
+      "name": "Payment_Terms",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Tax_Exempt",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 6,
+      "name": "Status",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Since_Date",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Customers_1",
+      "order": [
+        "Customer_Code"
+      ],
+      "unique": true
+    }
+  ],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Customers",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [],
+  "table": "CASCADE_Customers",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Customers",
+    "sqlite_sql": "CREATE TABLE Customers (\n    Customer_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Customer_Code TEXT UNIQUE NOT NULL,\n    Customer_Name TEXT NOT NULL,\n    Contact_Name TEXT,\n    Phone TEXT,\n    Email TEXT,\n    Address TEXT,\n    City TEXT,\n    State TEXT,\n    Zip TEXT,\n    Credit_Limit REAL DEFAULT 0.00,\n    Payment_Terms TEXT DEFAULT 'NET30',\n    Tax_Exempt INTEGER DEFAULT 0,\n    Status TEXT CHECK (Status IN ('ACTIVE','INACTIVE','SUSPENDED')),\n    Since_Date TEXT\n)"
+  }
+}

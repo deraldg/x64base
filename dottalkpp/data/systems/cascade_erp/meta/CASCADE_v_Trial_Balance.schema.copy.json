@@ -1,0 +1,64 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "length": 4,
+      "name": "Account_Code",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 22,
+      "name": "Account_Name",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 9,
+      "name": "Account_Type",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 6,
+      "name": "Normal_Balance",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Total_Debit",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Total_Credit",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Net",
+      "required": false,
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_v_Trial_Balance",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [],
+  "table": "CASCADE_v_Trial_Balance",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "view",
+    "sqlite_object": "v_Trial_Balance",
+    "sqlite_sql": "CREATE VIEW v_Trial_Balance AS\nSELECT\n    a.Account_Code,\n    a.Account_Name,\n    a.Account_Type,\n    a.Normal_Balance,\n    COALESCE(SUM(j.Debit),0.0) AS Total_Debit,\n    COALESCE(SUM(j.Credit),0.0) AS Total_Credit,\n    COALESCE(SUM(j.Debit),0.0) - COALESCE(SUM(j.Credit),0.0) AS Net\nFROM GL_Accounts a\nLEFT JOIN GL_Journal j ON j.Account_ID = a.Account_ID\nGROUP BY a.Account_ID, a.Account_Code, a.Account_Name, a.Account_Type, a.Normal_Balance"
+  }
+}

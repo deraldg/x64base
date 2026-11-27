@@ -1,0 +1,9 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "CDX",
+  "indexes": [],
+  "table": "CASCADE_v_Work_Order_Status",
+  "warnings": [
+    "Index declarations are metadata-only in this DDL milestone; no physical index was built."
+  ]
+}

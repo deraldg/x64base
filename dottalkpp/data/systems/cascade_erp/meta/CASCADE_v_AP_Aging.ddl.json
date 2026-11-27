@@ -1,0 +1,90 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "AP_INVOICE",
+      "length": 20,
+      "name": "AP_Invoice_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "INVOICE_NU",
+      "length": 14,
+      "name": "Invoice_Number",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "VENDOR_COD",
+      "length": 10,
+      "name": "Vendor_Code",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "VENDOR_NAM",
+      "length": 26,
+      "name": "Vendor_Name",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "INVOICE_DA",
+      "length": 10,
+      "name": "Invoice_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "DUE_DATE",
+      "length": 10,
+      "name": "Due_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "DAYS_PAST_",
+      "length": 20,
+      "name": "Days_Past_Due",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "TOTAL_AMOU",
+      "length": 20,
+      "name": "Total_Amount",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "AMOUNT_PAI",
+      "length": 20,
+      "name": "Amount_Paid",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "BALANCE",
+      "length": 20,
+      "name": "Balance",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "STATUS",
+      "length": 7,
+      "name": "Status",
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_v_AP_Aging"
+}
