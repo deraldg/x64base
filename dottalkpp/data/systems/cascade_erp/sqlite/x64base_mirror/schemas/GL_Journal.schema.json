@@ -1,0 +1,103 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Journal_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 10,
+      "name": "Entry_Date",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Account_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 28,
+      "name": "Description",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Debit",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Credit",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 13,
+      "name": "Source_Module",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 12,
+      "name": "Source_Ref",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 7,
+      "name": "Period",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Posted",
+      "required": false,
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_GL_Journal",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "GL_Journal",
+      "enforce": "SOFT",
+      "name": "fk_GL_Journal_0",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Account_ID",
+          "parent": "Account_ID"
+        }
+      ],
+      "parent_table": "GL_Accounts"
+    }
+  ],
+  "table": "CASCADE_GL_Journal",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "GL_Journal",
+    "sqlite_sql": "CREATE TABLE GL_Journal (\n    Journal_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Entry_Date TEXT NOT NULL,\n    Account_ID INTEGER NOT NULL REFERENCES GL_Accounts(Account_ID),\n    Description TEXT,\n    Debit REAL DEFAULT 0.00,\n    Credit REAL DEFAULT 0.00,\n    Source_Module TEXT,\n    Source_Ref TEXT,\n    Period TEXT,\n    Posted INTEGER DEFAULT 0\n)"
+  }
+}

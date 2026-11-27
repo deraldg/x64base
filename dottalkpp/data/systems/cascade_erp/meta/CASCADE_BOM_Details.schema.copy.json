@@ -1,0 +1,110 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "BOM_Detail_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "BOM_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Component_Item_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_Per",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 2,
+      "name": "UOM",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Sequence",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Scrap_Pct",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 14,
+      "name": "Notes",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_BOM_Details",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "BOM_Details",
+      "enforce": "SOFT",
+      "name": "fk_BOM_Details_0",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Component_Item_ID",
+          "parent": "Item_ID"
+        }
+      ],
+      "parent_table": "Items"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "BOM_Details",
+      "enforce": "SOFT",
+      "name": "fk_BOM_Details_1",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "BOM_ID",
+          "parent": "BOM_ID"
+        }
+      ],
+      "parent_table": "BOM_Headers"
+    }
+  ],
+  "table": "CASCADE_BOM_Details",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "BOM_Details",
+    "sqlite_sql": "CREATE TABLE BOM_Details (\n    BOM_Detail_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    BOM_ID INTEGER NOT NULL REFERENCES BOM_Headers(BOM_ID),\n    Component_Item_ID INTEGER NOT NULL REFERENCES Items(Item_ID),\n    Qty_Per REAL NOT NULL,\n    UOM TEXT DEFAULT 'EA',\n    Sequence INTEGER DEFAULT 0,\n    Scrap_Pct REAL DEFAULT 0.00,\n    Notes TEXT\n)"
+  }
+}

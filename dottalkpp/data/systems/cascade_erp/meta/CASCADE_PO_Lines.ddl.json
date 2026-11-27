@@ -1,0 +1,81 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "POLINE_ID",
+      "length": 20,
+      "name": "POLine_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PO_ID",
+      "length": 20,
+      "name": "PO_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ITEM_ID",
+      "length": 20,
+      "name": "Item_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "LINE_NUMBE",
+      "length": 20,
+      "name": "Line_Number",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_ORDERE",
+      "length": 20,
+      "name": "Qty_Ordered",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_RECEIV",
+      "length": 20,
+      "name": "Qty_Received",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "UNIT_PRICE",
+      "length": 20,
+      "name": "Unit_Price",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "LINE_TOTAL",
+      "length": 20,
+      "name": "Line_Total",
+      "type": "N"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_PO_Lines_1",
+      "order": [
+        "PO_ID",
+        "Line_Number"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_PO_Lines"
+}

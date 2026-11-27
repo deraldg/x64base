@@ -1,0 +1,91 @@
+{
+  "name": "Cascade Precision Mfg ERP",
+  "phase": "Phase 2 seeded package",
+  "codename": "CascadeERP",
+  "sqlite_file": "cascade_precision_mfg_erp.sqlite",
+  "source_reference": "x64base Codex Series Volume IV-B - ERP Entity-Relationship Codex",
+  "company": {
+    "name": "Cascade Precision Mfg",
+    "location": "Eugene, Oregon",
+    "industry": "Precision Mechanical Manufacturing",
+    "product_lines": [
+      "Precision Drive Units",
+      "Rotary Pumps",
+      "Precision Valves"
+    ],
+    "production_modes": [
+      "Make-to-Order",
+      "Make-to-Stock"
+    ]
+  },
+  "counts": {
+    "user_tables": 34,
+    "analytical_views": 9,
+    "sample_records": 330,
+    "functional_modules": 7,
+    "cross_module_fk_relationships_from_codex": 26,
+    "target_sample_records_from_codex": 330
+  },
+  "row_counts": {
+    "AP_Invoices": 6,
+    "AP_Payments": 4,
+    "AR_Invoices": 6,
+    "AR_Payments": 4,
+    "BOM_Details": 14,
+    "BOM_Headers": 5,
+    "Customers": 6,
+    "Departments": 5,
+    "Employees": 16,
+    "GL_Accounts": 12,
+    "GL_Journal": 20,
+    "Inventory_Movements": 16,
+    "Items": 18,
+    "PO_Lines": 12,
+    "Payroll_Runs": 8,
+    "Price_Lists": 12,
+    "Purchase_Orders": 6,
+    "Quality_Results": 6,
+    "Quality_Tests": 5,
+    "Receiving": 8,
+    "Routings": 12,
+    "SO_Lines": 12,
+    "Sales_Orders": 6,
+    "Shipment_Lines": 8,
+    "Shipments": 4,
+    "Stock_Levels": 27,
+    "Time_Cards": 14,
+    "Vendor_Items": 12,
+    "Vendors": 6,
+    "WO_Materials": 14,
+    "WO_Operations": 12,
+    "Warehouses": 3,
+    "Work_Centers": 5,
+    "Work_Orders": 6
+  },
+  "views": [
+    "v_AP_Aging",
+    "v_AR_Aging",
+    "v_Available_Stock",
+    "v_BOM_Explosion",
+    "v_Open_Sales_Orders",
+    "v_Reorder_Alert",
+    "v_Three_Way_Match",
+    "v_Trial_Balance",
+    "v_Work_Order_Status"
+  ],
+  "validation": {
+    "foreign_key_check": "OK",
+    "trial_balance_total_debit": 14794.75,
+    "trial_balance_total_credit": 14794.75,
+    "trial_balance_balanced": true,
+    "reorder_alert_rows": 14,
+    "three_way_match_rows": 6
+  },
+  "doctrine": {
+    "sqlite": "generic SQLite inspection/query/transfer surface",
+    "bibletalk": "Bible-specific educational application surface",
+    "erp": "Cascade Precision Mfg ERP educational application surface",
+    "future_native_target": "x64base plus LMDB where appropriate",
+    "transfer_exercises": "SQLite <-> x64base import/export/compare"
+  }
+}

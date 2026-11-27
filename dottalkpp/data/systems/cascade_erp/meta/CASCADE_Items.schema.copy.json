@@ -1,0 +1,113 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Item_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 14,
+      "name": "SKU",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 28,
+      "name": "Description",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 2,
+      "name": "UOM",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 8,
+      "name": "Item_Type",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 8,
+      "name": "Cost_Method",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Standard_Cost",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "List_Price",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Reorder_Point",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Reorder_Qty",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Lead_Days",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 15,
+      "name": "Category",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Active",
+      "required": false,
+      "type": "N"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Items_1",
+      "order": [
+        "SKU"
+      ],
+      "unique": true
+    }
+  ],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Items",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [],
+  "table": "CASCADE_Items",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Items",
+    "sqlite_sql": "CREATE TABLE Items (\n    Item_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    SKU TEXT UNIQUE NOT NULL,\n    Description TEXT NOT NULL,\n    UOM TEXT NOT NULL DEFAULT 'EA',\n    Item_Type TEXT CHECK (Item_Type IN ('RAW','WIP','FINISHED','MRO','SERVICE')),\n    Cost_Method TEXT CHECK (Cost_Method IN ('FIFO','LIFO','AVG','STANDARD')),\n    Standard_Cost REAL,\n    List_Price REAL,\n    Reorder_Point REAL,\n    Reorder_Qty REAL,\n    Lead_Days INTEGER,\n    Category TEXT,\n    Active INTEGER DEFAULT 1\n)"
+  }
+}

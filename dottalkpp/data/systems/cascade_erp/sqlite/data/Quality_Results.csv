@@ -1,0 +1,7 @@
+Result_ID,Test_ID,Reference_Type,Reference_ID,Test_Date,Measured_Value,Pass_Fail,Inspector_ID,Notes
+1,1,RECEIPT,6,2026-03-09,52.01,PASS,10,Bearing lot accepted
+2,4,WO,1,2026-03-17,7.4,PASS,11,PDU load normal
+3,2,WO,2,2026-03-18,20.2,PASS,10,Pump flow nominal
+4,3,WO,6,2026-03-19,0.6,HOLD,11,Retest required
+5,5,PO,1,2026-03-13,21.0,PASS,10,Fasteners accepted
+6,1,RECEIPT,2,2026-03-13,52.08,FAIL,10,Two bearings rejected

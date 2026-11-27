@@ -1,0 +1,7 @@
+Vendor_ID,Vendor_Code,Vendor_Name,Contact_Name,Phone,Email,Address,City,State,Zip,Payment_Terms,Rating,Active
+1,VEND-STEEL,Willamette Steel Supply,Tom Arlen,503-555-2001,orders@willsteel.example,120 River Rd,Salem,OR,97301,NET30,A,1
+2,VEND-CAST,Pacific Castings,Mia Stone,541-555-2002,sales@pacificcast.example,77 Foundry Way,Eugene,OR,97402,NET45,A,1
+3,VEND-SEAL,Northwest Seal and Bearing,Ian Scott,360-555-2003,parts@nwseal.example,9 Bearing Ln,Vancouver,WA,98660,NET30,B,1
+4,VEND-MOTOR,Cascade Motion Components,Lila Park,541-555-2004,csr@cmotion.example,440 Motor Ave,Springfield,OR,97477,NET30,A,1
+5,VEND-PKG,Emerald Packaging,Nora Blake,541-555-2005,orders@emeraldpkg.example,52 Box St,Eugene,OR,97401,NET15,B,1
+6,VEND-MRO,Industrial Maintenance Co,Ralph Moon,503-555-2006,desk@imco.example,310 Plant Rd,Portland,OR,97214,NET30,C,1

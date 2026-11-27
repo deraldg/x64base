@@ -1,0 +1,95 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "SOLINE_ID",
+      "length": 20,
+      "name": "SOLine_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SO_ID",
+      "length": 20,
+      "name": "SO_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ITEM_ID",
+      "length": 20,
+      "name": "Item_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "LINE_NUMBE",
+      "length": 20,
+      "name": "Line_Number",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_ORDERE",
+      "length": 20,
+      "name": "Qty_Ordered",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_SHIPPE",
+      "length": 20,
+      "name": "Qty_Shipped",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_BACKOR",
+      "length": 20,
+      "name": "Qty_Backordered",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "UNIT_PRICE",
+      "length": 20,
+      "name": "Unit_Price",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "DISCOUNT_P",
+      "length": 20,
+      "name": "Discount_Pct",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "LINE_TOTAL",
+      "length": 20,
+      "name": "Line_Total",
+      "type": "N"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_SO_Lines_1",
+      "order": [
+        "SO_ID",
+        "Line_Number"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_SO_Lines"
+}

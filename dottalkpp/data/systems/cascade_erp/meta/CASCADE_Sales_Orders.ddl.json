@@ -1,0 +1,115 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "SO_ID",
+      "length": 20,
+      "name": "SO_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SO_NUMBER",
+      "length": 9,
+      "name": "SO_Number",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CUSTOMER_I",
+      "length": 20,
+      "name": "Customer_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ORDER_DATE",
+      "length": 10,
+      "name": "Order_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "REQUIRED_D",
+      "length": 10,
+      "name": "Required_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SHIP_DATE",
+      "length": 10,
+      "name": "Ship_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "STATUS",
+      "length": 9,
+      "name": "Status",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "SUBTOTAL",
+      "length": 20,
+      "name": "Subtotal",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "TAX_AMOUNT",
+      "length": 20,
+      "name": "Tax_Amount",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "TOTAL_AMOU",
+      "length": 20,
+      "name": "Total_Amount",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SALES_REP_",
+      "length": 20,
+      "name": "Sales_Rep_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SHIP_TO_AD",
+      "length": 19,
+      "name": "Ship_To_Address",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "NOTES",
+      "length": 17,
+      "name": "Notes",
+      "type": "C"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Sales_Orders_1",
+      "order": [
+        "SO_Number"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Sales_Orders"
+}

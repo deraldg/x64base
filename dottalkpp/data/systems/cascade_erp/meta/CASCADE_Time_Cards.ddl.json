@@ -1,0 +1,76 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "TIMECARD_I",
+      "length": 20,
+      "name": "TimeCard_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "EMPLOYEE_I",
+      "length": 20,
+      "name": "Employee_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "WORK_DATE",
+      "length": 10,
+      "name": "Work_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "HOURS_REGU",
+      "length": 20,
+      "name": "Hours_Regular",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "HOURS_OT",
+      "length": 20,
+      "name": "Hours_OT",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "WO_ID",
+      "length": 20,
+      "name": "WO_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CENTER_ID",
+      "length": 20,
+      "name": "Center_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "COST_CENTE",
+      "length": 3,
+      "name": "Cost_Center",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "APPROVED",
+      "length": 20,
+      "name": "Approved",
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Time_Cards"
+}

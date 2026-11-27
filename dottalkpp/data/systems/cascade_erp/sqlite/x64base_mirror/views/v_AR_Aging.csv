@@ -1,0 +1,5 @@
+AR_Invoice_ID,Invoice_Number,Customer_Code,Customer_Name,Invoice_Date,Due_Date,Days_Past_Due,Total_Amount,Amount_Paid,Balance,Status
+1,AR-260001,CUST-ALPHA,Alpha Robotics,2026-03-25,2026-04-24,108,2040.0,400.0,1640.0,PARTIAL
+2,AR-260002,CUST-BLUE,Blue River Pumps,2026-03-28,2026-04-27,105,1286.5,500.0,786.5,PARTIAL
+3,AR-260003,CUST-COLUMBIA,Columbia Process Systems,2026-04-05,2026-05-20,82,1760.0,0.0,1760.0,OPEN
+5,AR-260005,CUST-EVER,Evergreen Hydraulics,2026-04-15,2026-05-15,87,965.0,0.0,965.0,OPEN

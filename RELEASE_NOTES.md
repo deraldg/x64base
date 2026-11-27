@@ -11,14 +11,20 @@ replacement for a commercial xBase product.
   the same source as the tag.
 - Runtime data: the sample databases (MCC x32, VFP and x64 lanes), scripts and
   help tables.
+- The Cascade ERP sample system: a 34-table manufacturing ERP as a sealed
+  SQLite package (`data\systems\cascade_erp\sqlite`) and its x64base mirror
+  (43 DBFs with CDX indexes, plus the `cascade_all` workspace that restores
+  all 43 tables and 58 relations).
+- `bin\sqlite3.exe`, the standalone SQLite shell (public domain), for opening
+  the Cascade SQLite database outside DotTalk++.
 - Source archive supplied automatically by GitHub.
 - SHA-256 checksum for the Windows ZIP.
 
 ## First run
 
 Unzip, then start DotTalk++ with the launcher in the unzipped folder. The first
-time, add `-FirstRun` to build the x64 LMDB indexes (they are derived files and
-are not shipped):
+time, add `-FirstRun` to build the LMDB indexes for the MCC x64 lane and Cascade
+ERP (they are derived files and are not shipped):
 
 ```powershell
 .\start.ps1 -FirstRun
@@ -40,6 +46,16 @@ SMARTLIST 10
 
 Record 1 by `LNAME` should read `Anderson`.
 
+## Cascade ERP
+
+```text
+DO systems/cascade_erp/scripts/cascade_erp.dts    && x64base side: 7 tables, ordered
+DO systems/cascade_erp/scripts/cascade_sql.dts    && the same data through SQLite
+WORKSPACE LOAD cascade_all                        && all 43 tables + 58 relations
+```
+
+Outside DotTalk++: `bin\sqlite3.exe data\systems\cascade_erp\sqlite\cascade_precision_mfg_erp.sqlite`.
+`DO scripts/cascade_env_regression.dts` checks both sides agree.
 ## Shell commands are off by default
 
 `!` (run a host command), and the SFTP and SMTP helpers, are refused out of the

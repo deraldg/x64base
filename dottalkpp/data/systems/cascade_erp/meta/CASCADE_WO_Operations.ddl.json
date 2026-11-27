@@ -1,0 +1,76 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "WO_OP_ID",
+      "length": 20,
+      "name": "WO_Op_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "WO_ID",
+      "length": 20,
+      "name": "WO_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ROUTING_ID",
+      "length": 20,
+      "name": "Routing_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "STEP_NUMBE",
+      "length": 20,
+      "name": "Step_Number",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CENTER_ID",
+      "length": 20,
+      "name": "Center_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "STATUS",
+      "length": 11,
+      "name": "Status",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "ACTUAL_HOU",
+      "length": 20,
+      "name": "Actual_Hours",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "QTY_GOOD",
+      "length": 20,
+      "name": "Qty_Good",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "QTY_SCRAP",
+      "length": 20,
+      "name": "Qty_Scrap",
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_WO_Operations"
+}

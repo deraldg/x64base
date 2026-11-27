@@ -1,0 +1,103 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Price_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Item_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Customer_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Price",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Min_Qty",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 10,
+      "name": "Effective_Date",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 1,
+      "name": "Expiry_Date",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Price_Lists",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Price_Lists",
+      "enforce": "SOFT",
+      "name": "fk_Price_Lists_0",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "Customer_ID",
+          "parent": "Customer_ID"
+        }
+      ],
+      "parent_table": "Customers"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Price_Lists",
+      "enforce": "SOFT",
+      "name": "fk_Price_Lists_1",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Item_ID",
+          "parent": "Item_ID"
+        }
+      ],
+      "parent_table": "Items"
+    }
+  ],
+  "table": "CASCADE_Price_Lists",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Price_Lists",
+    "sqlite_sql": "CREATE TABLE Price_Lists (\n    Price_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Item_ID INTEGER NOT NULL REFERENCES Items(Item_ID),\n    Customer_ID INTEGER REFERENCES Customers(Customer_ID),\n    Price REAL NOT NULL,\n    Min_Qty REAL DEFAULT 1,\n    Effective_Date TEXT,\n    Expiry_Date TEXT\n)"
+  }
+}

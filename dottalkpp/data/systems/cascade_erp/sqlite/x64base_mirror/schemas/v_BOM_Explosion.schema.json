@@ -1,0 +1,83 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "BOM_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 14,
+      "name": "Parent_SKU",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 28,
+      "name": "Parent_Description",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 1,
+      "name": "Revision",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Sequence",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 14,
+      "name": "Component_SKU",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 24,
+      "name": "Component_Description",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_Per",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 2,
+      "name": "UOM",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Scrap_Pct",
+      "required": false,
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_v_BOM_Explosion",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [],
+  "table": "CASCADE_v_BOM_Explosion",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "view",
+    "sqlite_object": "v_BOM_Explosion",
+    "sqlite_sql": "CREATE VIEW v_BOM_Explosion AS\nSELECT\n    bh.BOM_ID,\n    parent.SKU AS Parent_SKU,\n    parent.Description AS Parent_Description,\n    bh.Revision,\n    bd.Sequence,\n    comp.SKU AS Component_SKU,\n    comp.Description AS Component_Description,\n    bd.Qty_Per,\n    bd.UOM,\n    bd.Scrap_Pct\nFROM BOM_Headers bh\nJOIN Items parent ON parent.Item_ID = bh.Item_ID\nJOIN BOM_Details bd ON bd.BOM_ID = bh.BOM_ID\nJOIN Items comp ON comp.Item_ID = bd.Component_Item_ID"
+  }
+}

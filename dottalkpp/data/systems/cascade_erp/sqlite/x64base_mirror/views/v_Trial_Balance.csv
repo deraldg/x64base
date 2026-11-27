@@ -1,0 +1,13 @@
+Account_Code,Account_Name,Account_Type,Normal_Balance,Total_Debit,Total_Credit,Net
+1000,Cash,ASSET,DEBIT,256.5,6560.0,-6303.5
+1100,Accounts Receivable,ASSET,DEBIT,2938.25,256.5,2681.75
+1200,Inventory,ASSET,DEBIT,2600.0,2440.0,160.0
+1300,Work In Process,ASSET,DEBIT,1400.0,0.0,1400.0
+1400,Fixed Assets,ASSET,DEBIT,0.0,0.0,0.0
+2000,Accounts Payable,LIABILITY,CREDIT,3610.0,2600.0,1010.0
+3000,Owner Equity,EQUITY,CREDIT,0.0,0.0,0.0
+4000,Sales Revenue,REVENUE,CREDIT,0.0,2938.25,-2938.25
+5000,Cost of Goods Sold,EXPENSE,DEBIT,1040.0,0.0,1040.0
+5100,Payroll Expense,EXPENSE,DEBIT,2200.0,0.0,2200.0
+5200,Materials Expense,EXPENSE,DEBIT,0.0,0.0,0.0
+5300,Manufacturing Overhead,EXPENSE,DEBIT,750.0,0.0,750.0

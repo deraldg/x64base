@@ -1,0 +1,55 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "PAYMENT_ID",
+      "length": 20,
+      "name": "Payment_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "AR_INVOICE",
+      "length": 20,
+      "name": "AR_Invoice_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PAYMENT_DA",
+      "length": 10,
+      "name": "Payment_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "AMOUNT",
+      "length": 20,
+      "name": "Amount",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "METHOD",
+      "length": 11,
+      "name": "Method",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "REFERENCE",
+      "length": 13,
+      "name": "Reference",
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_AR_Payments"
+}

@@ -1,0 +1,6 @@
+Test_ID,Test_Name,Test_Type,Item_ID,Specification,Min_Value,Max_Value,UOM
+1,Incoming Bearing OD,INCOMING,4,Outer diameter tolerance,51.95,52.05,MM
+2,Pump Flow Test,FINAL,15,Flow rate at nominal pressure,18.0,22.0,GPM
+3,Valve Leak Test,FINAL,16,Leak rate under pressure,0.0,0.5,CCM
+4,Drive Unit Load Test,FINAL,14,Load current under torque,6.0,9.5,AMP
+5,Audit Torque Check,AUDIT,8,Fastener torque,18.0,22.0,IN-LB

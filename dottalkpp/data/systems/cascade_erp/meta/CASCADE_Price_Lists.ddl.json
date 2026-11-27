@@ -1,0 +1,62 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "PRICE_ID",
+      "length": 20,
+      "name": "Price_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ITEM_ID",
+      "length": 20,
+      "name": "Item_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CUSTOMER_I",
+      "length": 20,
+      "name": "Customer_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "PRICE",
+      "length": 20,
+      "name": "Price",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "MIN_QTY",
+      "length": 20,
+      "name": "Min_Qty",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "EFFECTIVE_",
+      "length": 10,
+      "name": "Effective_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "EXPIRY_DAT",
+      "length": 1,
+      "name": "Expiry_Date",
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Price_Lists"
+}

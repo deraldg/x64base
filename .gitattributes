@@ -91,3 +91,7 @@ labtalk/proofs/runs/*.log   binary
 # claims normalize to LF; the existing CRLF files renormalize only by owner
 # ruling (git add --renormalize churns 64 files of blame at once).
 coordination/aif/*.claim   text eol=lf
+
+# Cascade ERP's sealed SQLite package carries checksums.sha256 over its files;
+# any EOL conversion on checkout would break them. Store and check out bytes as-is.
+dottalkpp/data/systems/cascade_erp/sqlite/** -text

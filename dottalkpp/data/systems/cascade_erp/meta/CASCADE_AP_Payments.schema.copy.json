@@ -1,0 +1,77 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Payment_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "AP_Invoice_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 10,
+      "name": "Payment_Date",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Amount",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 5,
+      "name": "Method",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Check_Number",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_AP_Payments",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "AP_Payments",
+      "enforce": "SOFT",
+      "name": "fk_AP_Payments_0",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "AP_Invoice_ID",
+          "parent": "AP_Invoice_ID"
+        }
+      ],
+      "parent_table": "AP_Invoices"
+    }
+  ],
+  "table": "CASCADE_AP_Payments",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "AP_Payments",
+    "sqlite_sql": "CREATE TABLE AP_Payments (\n    Payment_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    AP_Invoice_ID INTEGER NOT NULL REFERENCES AP_Invoices(AP_Invoice_ID),\n    Payment_Date TEXT NOT NULL,\n    Amount REAL NOT NULL,\n    Method TEXT CHECK (Method IN ('CHECK','ACH','WIRE')),\n    Check_Number TEXT\n)"
+  }
+}

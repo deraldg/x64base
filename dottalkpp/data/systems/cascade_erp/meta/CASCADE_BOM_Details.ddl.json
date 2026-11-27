@@ -1,0 +1,69 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "BOM_DETAIL",
+      "length": 20,
+      "name": "BOM_Detail_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "BOM_ID",
+      "length": 20,
+      "name": "BOM_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "COMPONENT_",
+      "length": 20,
+      "name": "Component_Item_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY_PER",
+      "length": 20,
+      "name": "Qty_Per",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "UOM",
+      "length": 2,
+      "name": "UOM",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SEQUENCE",
+      "length": 20,
+      "name": "Sequence",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "SCRAP_PCT",
+      "length": 20,
+      "name": "Scrap_Pct",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "NOTES",
+      "length": 14,
+      "name": "Notes",
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_BOM_Details"
+}

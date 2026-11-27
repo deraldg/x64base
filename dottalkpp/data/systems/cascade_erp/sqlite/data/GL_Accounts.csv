@@ -1,0 +1,13 @@
+Account_ID,Account_Code,Account_Name,Account_Type,Normal_Balance,Parent_ID,Active
+1,1000,Cash,ASSET,DEBIT,,1
+2,1100,Accounts Receivable,ASSET,DEBIT,,1
+3,1200,Inventory,ASSET,DEBIT,,1
+4,1300,Work In Process,ASSET,DEBIT,,1
+5,1400,Fixed Assets,ASSET,DEBIT,,1
+6,2000,Accounts Payable,LIABILITY,CREDIT,,1
+7,3000,Owner Equity,EQUITY,CREDIT,,1
+8,4000,Sales Revenue,REVENUE,CREDIT,,1
+9,5000,Cost of Goods Sold,EXPENSE,DEBIT,,1
+10,5100,Payroll Expense,EXPENSE,DEBIT,,1
+11,5200,Materials Expense,EXPENSE,DEBIT,,1
+12,5300,Manufacturing Overhead,EXPENSE,DEBIT,,1

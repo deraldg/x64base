@@ -1104,6 +1104,14 @@ if(TARGET dottalkpp)
         # pro-md install from a fresh clone, exit code 53).
         install(FILES "$<TARGET_FILE_DIR:dottalkpp>/libsodium.dll"
                 DESTINATION bin OPTIONAL)
+        # The standalone sqlite3 shell, when the vcpkg "sqlite-tool" feature
+        # built it (release.yml asks for it), so a user can open the Cascade ERP
+        # SQLite package outside DotTalk++. SQLite is public domain.
+        if (DEFINED VCPKG_INSTALLED_DIR AND DEFINED VCPKG_TARGET_TRIPLET)
+            install(FILES
+                "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/sqlite3/sqlite3.exe"
+                DESTINATION bin OPTIONAL)
+        endif()
     else()
         install(TARGETS dottalkpp RUNTIME DESTINATION bin)
     endif()

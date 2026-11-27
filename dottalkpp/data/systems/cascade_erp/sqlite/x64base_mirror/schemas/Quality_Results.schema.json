@@ -1,0 +1,115 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Result_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Test_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 7,
+      "name": "Reference_Type",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Reference_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 10,
+      "name": "Test_Date",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Measured_Value",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 4,
+      "name": "Pass_Fail",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Inspector_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 21,
+      "name": "Notes",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Quality_Results",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Quality_Results",
+      "enforce": "SOFT",
+      "name": "fk_Quality_Results_0",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "Inspector_ID",
+          "parent": "Employee_ID"
+        }
+      ],
+      "parent_table": "Employees"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Quality_Results",
+      "enforce": "SOFT",
+      "name": "fk_Quality_Results_1",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Test_ID",
+          "parent": "Test_ID"
+        }
+      ],
+      "parent_table": "Quality_Tests"
+    }
+  ],
+  "table": "CASCADE_Quality_Results",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Quality_Results",
+    "sqlite_sql": "CREATE TABLE Quality_Results (\n    Result_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Test_ID INTEGER NOT NULL REFERENCES Quality_Tests(Test_ID),\n    Reference_Type TEXT NOT NULL CHECK (Reference_Type IN ('WO','PO','RECEIPT')),\n    Reference_ID INTEGER NOT NULL,\n    Test_Date TEXT NOT NULL,\n    Measured_Value REAL,\n    Pass_Fail TEXT CHECK (Pass_Fail IN ('PASS','FAIL','HOLD')),\n    Inspector_ID INTEGER REFERENCES Employees(Employee_ID),\n    Notes TEXT\n)"
+  }
+}

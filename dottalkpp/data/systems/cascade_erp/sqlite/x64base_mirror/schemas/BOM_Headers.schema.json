@@ -1,0 +1,86 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "BOM_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Item_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 23,
+      "name": "BOM_Name",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 1,
+      "name": "Revision",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Effective_Date",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 6,
+      "name": "Status",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_BOM_Headers_1",
+      "order": [
+        "Item_ID",
+        "Revision"
+      ],
+      "unique": true
+    }
+  ],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_BOM_Headers",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "BOM_Headers",
+      "enforce": "SOFT",
+      "name": "fk_BOM_Headers_0",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Item_ID",
+          "parent": "Item_ID"
+        }
+      ],
+      "parent_table": "Items"
+    }
+  ],
+  "table": "CASCADE_BOM_Headers",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "BOM_Headers",
+    "sqlite_sql": "CREATE TABLE BOM_Headers (\n    BOM_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Item_ID INTEGER NOT NULL REFERENCES Items(Item_ID),\n    BOM_Name TEXT NOT NULL,\n    Revision TEXT DEFAULT 'A',\n    Effective_Date TEXT,\n    Status TEXT CHECK (Status IN ('ACTIVE','OBSOLETE','PENDING')),\n    UNIQUE (Item_ID, Revision)\n)"
+  }
+}

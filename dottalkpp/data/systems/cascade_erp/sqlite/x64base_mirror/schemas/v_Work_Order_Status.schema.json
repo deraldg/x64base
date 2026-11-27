@@ -1,0 +1,89 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "WO_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 9,
+      "name": "WO_Number",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 7,
+      "name": "SKU",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 28,
+      "name": "Description",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_Ordered",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_Completed",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_Scrapped",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 11,
+      "name": "Status",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Start_Date",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Due_Date",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 9,
+      "name": "SO_Number",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_v_Work_Order_Status",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [],
+  "table": "CASCADE_v_Work_Order_Status",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "view",
+    "sqlite_object": "v_Work_Order_Status",
+    "sqlite_sql": "CREATE VIEW v_Work_Order_Status AS\nSELECT\n    wo.WO_ID,\n    wo.WO_Number,\n    i.SKU,\n    i.Description,\n    wo.Qty_Ordered,\n    wo.Qty_Completed,\n    wo.Qty_Scrapped,\n    wo.Status,\n    wo.Start_Date,\n    wo.Due_Date,\n    so.SO_Number\nFROM Work_Orders wo\nJOIN Items i ON i.Item_ID = wo.Item_ID\nLEFT JOIN Sales_Orders so ON so.SO_ID = wo.SO_ID"
+  }
+}

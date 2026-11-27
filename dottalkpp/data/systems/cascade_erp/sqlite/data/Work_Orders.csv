@@ -1,0 +1,7 @@
+WO_ID,WO_Number,Item_ID,BOM_ID,Qty_Ordered,Qty_Completed,Qty_Scrapped,Status,Priority,Start_Date,Due_Date,Completion_Date,SO_ID,Notes
+1,WO-260001,14,1,2.0,0.0,0.0,RELEASED,3,2026-03-05,2026-03-20,,1,Make-to-order PDU
+2,WO-260002,15,2,2.0,1.0,0.0,IN_PROGRESS,4,2026-03-06,2026-03-22,,2,Pump order
+3,WO-260003,16,3,3.0,0.0,0.0,PLANNED,5,,2026-04-01,,3,Valve order
+4,WO-260004,14,1,4.0,2.0,0.0,IN_PROGRESS,5,2026-03-08,2026-04-08,,,Make-to-stock PDU
+5,WO-260005,15,2,5.0,5.0,0.0,COMPLETED,5,2026-02-20,2026-03-10,2026-03-08,,Make-to-stock pump
+6,WO-260006,16,3,6.0,3.0,1.0,IN_PROGRESS,5,2026-03-01,2026-03-30,,5,Valve stock and customer demand

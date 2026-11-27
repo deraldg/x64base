@@ -1,0 +1,149 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "SO_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 9,
+      "name": "SO_Number",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Customer_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 10,
+      "name": "Order_Date",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Required_Date",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Ship_Date",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 9,
+      "name": "Status",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Subtotal",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Tax_Amount",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Total_Amount",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Sales_Rep_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 19,
+      "name": "Ship_To_Address",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 17,
+      "name": "Notes",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Sales_Orders_1",
+      "order": [
+        "SO_Number"
+      ],
+      "unique": true
+    }
+  ],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Sales_Orders",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Sales_Orders",
+      "enforce": "SOFT",
+      "name": "fk_Sales_Orders_0",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "Sales_Rep_ID",
+          "parent": "Employee_ID"
+        }
+      ],
+      "parent_table": "Employees"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Sales_Orders",
+      "enforce": "SOFT",
+      "name": "fk_Sales_Orders_1",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Customer_ID",
+          "parent": "Customer_ID"
+        }
+      ],
+      "parent_table": "Customers"
+    }
+  ],
+  "table": "CASCADE_Sales_Orders",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Sales_Orders",
+    "sqlite_sql": "CREATE TABLE Sales_Orders (\n    SO_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    SO_Number TEXT UNIQUE NOT NULL,\n    Customer_ID INTEGER NOT NULL REFERENCES Customers(Customer_ID),\n    Order_Date TEXT NOT NULL,\n    Required_Date TEXT,\n    Ship_Date TEXT,\n    Status TEXT CHECK (Status IN ('NEW','CONFIRMED','PICKING','SHIPPED','INVOICED','CLOSED','CANCELLED')),\n    Subtotal REAL,\n    Tax_Amount REAL,\n    Total_Amount REAL,\n    Sales_Rep_ID INTEGER REFERENCES Employees(Employee_ID),\n    Ship_To_Address TEXT,\n    Notes TEXT\n)"
+  }
+}

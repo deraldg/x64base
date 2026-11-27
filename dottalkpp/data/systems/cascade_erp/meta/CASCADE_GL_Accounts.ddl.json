@@ -1,0 +1,73 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "ACCOUNT_ID",
+      "length": 20,
+      "name": "Account_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ACCOUNT_CO",
+      "length": 4,
+      "name": "Account_Code",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ACCOUNT_NA",
+      "length": 22,
+      "name": "Account_Name",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ACCOUNT_TY",
+      "length": 9,
+      "name": "Account_Type",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "NORMAL_BAL",
+      "length": 6,
+      "name": "Normal_Balance",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PARENT_ID",
+      "length": 20,
+      "name": "Parent_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ACTIVE",
+      "length": 20,
+      "name": "Active",
+      "type": "N"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_GL_Accounts_1",
+      "order": [
+        "Account_Code"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_GL_Accounts"
+}

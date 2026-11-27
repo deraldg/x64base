@@ -1,0 +1,135 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "TimeCard_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Employee_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 10,
+      "name": "Work_Date",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Hours_Regular",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Hours_OT",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "WO_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Center_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 3,
+      "name": "Cost_Center",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Approved",
+      "required": false,
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Time_Cards",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Time_Cards",
+      "enforce": "SOFT",
+      "name": "fk_Time_Cards_0",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "Center_ID",
+          "parent": "Center_ID"
+        }
+      ],
+      "parent_table": "Work_Centers"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Time_Cards",
+      "enforce": "SOFT",
+      "name": "fk_Time_Cards_1",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "WO_ID",
+          "parent": "WO_ID"
+        }
+      ],
+      "parent_table": "Work_Orders"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Time_Cards",
+      "enforce": "SOFT",
+      "name": "fk_Time_Cards_2",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Employee_ID",
+          "parent": "Employee_ID"
+        }
+      ],
+      "parent_table": "Employees"
+    }
+  ],
+  "table": "CASCADE_Time_Cards",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Time_Cards",
+    "sqlite_sql": "CREATE TABLE Time_Cards (\n    TimeCard_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Employee_ID INTEGER NOT NULL REFERENCES Employees(Employee_ID),\n    Work_Date TEXT NOT NULL,\n    Hours_Regular REAL DEFAULT 0.00,\n    Hours_OT REAL DEFAULT 0.00,\n    WO_ID INTEGER REFERENCES Work_Orders(WO_ID),\n    Center_ID INTEGER REFERENCES Work_Centers(Center_ID),\n    Cost_Center TEXT,\n    Approved INTEGER DEFAULT 0\n)"
+  }
+}

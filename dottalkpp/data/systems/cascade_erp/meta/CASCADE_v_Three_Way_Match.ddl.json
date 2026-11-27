@@ -1,0 +1,69 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "PO_ID",
+      "length": 20,
+      "name": "PO_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PO_NUMBER",
+      "length": 9,
+      "name": "PO_Number",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "VENDOR_COD",
+      "length": 10,
+      "name": "Vendor_Code",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "VENDOR_NAM",
+      "length": 26,
+      "name": "Vendor_Name",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "PO_TOTAL",
+      "length": 20,
+      "name": "PO_Total",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "RECEIVED_V",
+      "length": 20,
+      "name": "Received_Value",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "INVOICE_TO",
+      "length": 20,
+      "name": "Invoice_Total",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "MATCH_STAT",
+      "length": 8,
+      "name": "Match_Status",
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_v_Three_Way_Match"
+}

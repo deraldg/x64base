@@ -1,0 +1,83 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "JOURNAL_ID",
+      "length": 20,
+      "name": "Journal_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ENTRY_DATE",
+      "length": 10,
+      "name": "Entry_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ACCOUNT_ID",
+      "length": 20,
+      "name": "Account_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "DESCRIPTIO",
+      "length": 28,
+      "name": "Description",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "DEBIT",
+      "length": 20,
+      "name": "Debit",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "CREDIT",
+      "length": 20,
+      "name": "Credit",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SOURCE_MOD",
+      "length": 13,
+      "name": "Source_Module",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SOURCE_REF",
+      "length": 12,
+      "name": "Source_Ref",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PERIOD",
+      "length": 7,
+      "name": "Period",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "POSTED",
+      "length": 20,
+      "name": "Posted",
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_GL_Journal"
+}

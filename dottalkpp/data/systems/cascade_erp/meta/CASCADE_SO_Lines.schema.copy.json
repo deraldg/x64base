@@ -1,0 +1,136 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "SOLine_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "SO_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Item_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Line_Number",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_Ordered",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_Shipped",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_Backordered",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Unit_Price",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Discount_Pct",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Line_Total",
+      "required": false,
+      "type": "N"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_SO_Lines_1",
+      "order": [
+        "SO_ID",
+        "Line_Number"
+      ],
+      "unique": true
+    }
+  ],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_SO_Lines",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "SO_Lines",
+      "enforce": "SOFT",
+      "name": "fk_SO_Lines_0",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Item_ID",
+          "parent": "Item_ID"
+        }
+      ],
+      "parent_table": "Items"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "SO_Lines",
+      "enforce": "SOFT",
+      "name": "fk_SO_Lines_1",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "SO_ID",
+          "parent": "SO_ID"
+        }
+      ],
+      "parent_table": "Sales_Orders"
+    }
+  ],
+  "table": "CASCADE_SO_Lines",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "SO_Lines",
+    "sqlite_sql": "CREATE TABLE SO_Lines (\n    SOLine_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    SO_ID INTEGER NOT NULL REFERENCES Sales_Orders(SO_ID),\n    Item_ID INTEGER NOT NULL REFERENCES Items(Item_ID),\n    Line_Number INTEGER NOT NULL,\n    Qty_Ordered REAL NOT NULL,\n    Qty_Shipped REAL DEFAULT 0,\n    Qty_Backordered REAL DEFAULT 0,\n    Unit_Price REAL NOT NULL,\n    Discount_Pct REAL DEFAULT 0.00,\n    Line_Total REAL GENERATED ALWAYS AS (Qty_Ordered * Unit_Price * (1 - Discount_Pct/100)) STORED,\n    UNIQUE (SO_ID, Line_Number)\n)"
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Employee_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 4,
+      "name": "Employee_Code",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 6,
+      "name": "First_Name",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 8,
+      "name": "Last_Name",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Dept_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 21,
+      "name": "Position",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Hire_Date",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Hourly_Rate",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Annual_Salary",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 6,
+      "name": "Pay_Type",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 6,
+      "name": "Status",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Reports_To",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 29,
+      "name": "Email",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "length": 12,
+      "name": "Phone",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Employees_1",
+      "order": [
+        "Employee_Code"
+      ],
+      "unique": true
+    }
+  ],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Employees",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Employees",
+      "enforce": "SOFT",
+      "name": "fk_Employees_0",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "Reports_To",
+          "parent": "Employee_ID"
+        }
+      ],
+      "parent_table": "Employees"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Employees",
+      "enforce": "SOFT",
+      "name": "fk_Employees_1",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "Dept_ID",
+          "parent": "Dept_ID"
+        }
+      ],
+      "parent_table": "Departments"
+    }
+  ],
+  "table": "CASCADE_Employees",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Employees",
+    "sqlite_sql": "CREATE TABLE Employees (\n    Employee_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Employee_Code TEXT UNIQUE NOT NULL,\n    First_Name TEXT NOT NULL,\n    Last_Name TEXT NOT NULL,\n    Dept_ID INTEGER REFERENCES Departments(Dept_ID),\n    Position TEXT,\n    Hire_Date TEXT NOT NULL,\n    Hourly_Rate REAL,\n    Annual_Salary REAL,\n    Pay_Type TEXT CHECK (Pay_Type IN ('HOURLY','SALARY')),\n    Status TEXT CHECK (Status IN ('ACTIVE','LEAVE','TERMINATED','RETIRED')),\n    Reports_To INTEGER REFERENCES Employees(Employee_ID),\n    Email TEXT,\n    Phone TEXT\n)"
+  }
+}

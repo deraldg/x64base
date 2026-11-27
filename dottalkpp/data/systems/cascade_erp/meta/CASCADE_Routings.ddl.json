@@ -1,0 +1,81 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "ROUTING_ID",
+      "length": 20,
+      "name": "Routing_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ITEM_ID",
+      "length": 20,
+      "name": "Item_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "STEP_NUMBE",
+      "length": 20,
+      "name": "Step_Number",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CENTER_ID",
+      "length": 20,
+      "name": "Center_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "OPERATION",
+      "length": 19,
+      "name": "Operation",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "SETUP_HOUR",
+      "length": 20,
+      "name": "Setup_Hours",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "RUN_HOURS_",
+      "length": 20,
+      "name": "Run_Hours_Per",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "DESCRIPTIO",
+      "length": 23,
+      "name": "Description",
+      "type": "C"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Routings_1",
+      "order": [
+        "Item_ID",
+        "Step_Number"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Routings"
+}

@@ -1,0 +1,116 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "WO_Material_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "WO_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Item_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_Required",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty_Issued",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Warehouse_ID",
+      "required": false,
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_WO_Materials",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "WO_Materials",
+      "enforce": "SOFT",
+      "name": "fk_WO_Materials_0",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "Warehouse_ID",
+          "parent": "Warehouse_ID"
+        }
+      ],
+      "parent_table": "Warehouses"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "WO_Materials",
+      "enforce": "SOFT",
+      "name": "fk_WO_Materials_1",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Item_ID",
+          "parent": "Item_ID"
+        }
+      ],
+      "parent_table": "Items"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "WO_Materials",
+      "enforce": "SOFT",
+      "name": "fk_WO_Materials_2",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "WO_ID",
+          "parent": "WO_ID"
+        }
+      ],
+      "parent_table": "Work_Orders"
+    }
+  ],
+  "table": "CASCADE_WO_Materials",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "WO_Materials",
+    "sqlite_sql": "CREATE TABLE WO_Materials (\n    WO_Material_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    WO_ID INTEGER NOT NULL REFERENCES Work_Orders(WO_ID),\n    Item_ID INTEGER NOT NULL REFERENCES Items(Item_ID),\n    Qty_Required REAL NOT NULL,\n    Qty_Issued REAL DEFAULT 0.00,\n    Warehouse_ID INTEGER REFERENCES Warehouses(Warehouse_ID)\n)"
+  }
+}

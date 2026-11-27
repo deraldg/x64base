@@ -1,0 +1,87 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "PO_ID",
+      "length": 20,
+      "name": "PO_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PO_NUMBER",
+      "length": 9,
+      "name": "PO_Number",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "VENDOR_ID",
+      "length": 20,
+      "name": "Vendor_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ORDER_DATE",
+      "length": 10,
+      "name": "Order_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "EXPECTED_D",
+      "length": 10,
+      "name": "Expected_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "STATUS",
+      "length": 8,
+      "name": "Status",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "TOTAL_AMOU",
+      "length": 20,
+      "name": "Total_Amount",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "APPROVED_B",
+      "length": 20,
+      "name": "Approved_By",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "NOTES",
+      "length": 21,
+      "name": "Notes",
+      "type": "C"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Purchase_Orders_1",
+      "order": [
+        "PO_Number"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Purchase_Orders"
+}

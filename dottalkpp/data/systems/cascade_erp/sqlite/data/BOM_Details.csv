@@ -1,0 +1,15 @@
+BOM_Detail_ID,BOM_ID,Component_Item_ID,Qty_Per,UOM,Sequence,Scrap_Pct,Notes
+1,1,11,1.0,EA,10,0.0,Core assembly
+2,1,5,1.0,EA,20,0.0,Motor assembly
+3,1,8,1.0,EA,30,0.0,Fasteners
+4,1,10,1.0,EA,40,0.0,Packaging
+5,2,12,1.0,EA,10,0.0,Rotor assembly
+6,2,2,1.0,EA,20,0.0,Pump housing
+7,2,3,1.0,EA,30,1.0,Seal kit
+8,2,10,1.0,EA,40,0.0,Packaging
+9,3,13,1.0,EA,10,0.0,Trim assembly
+10,3,7,1.0,EA,20,0.0,Valve body
+11,3,9,1.0,EA,30,0.0,Fittings
+12,4,1,1.0,EA,10,2.0,Machined shaft
+13,4,4,2.0,EA,20,0.0,Bearings
+14,5,6,1.0,EA,10,1.0,Impeller

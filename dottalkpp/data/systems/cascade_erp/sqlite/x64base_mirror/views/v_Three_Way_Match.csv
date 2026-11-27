@@ -1,0 +1,7 @@
+PO_ID,PO_Number,Vendor_Code,Vendor_Name,PO_Total,Received_Value,Invoice_Total,Match_Status
+1,PO-260001,VEND-STEEL,Willamette Steel Supply,2600.0,2586.4,2600.0,MISMATCH
+2,PO-260002,VEND-CAST,Pacific Castings,2110.0,852.0,1530.0,MISMATCH
+3,PO-260003,VEND-SEAL,Northwest Seal and Bearing,1912.5,1912.5,1912.5,MATCHED
+4,PO-260004,VEND-MOTOR,Cascade Motion Components,3700.0,0.0,3700.0,MISMATCH
+5,PO-260005,VEND-PKG,Emerald Packaging,975.0,812.5,975.0,MISMATCH
+6,PO-260006,VEND-MRO,Industrial Maintenance Co,1010.0,570.0,1010.0,MISMATCH

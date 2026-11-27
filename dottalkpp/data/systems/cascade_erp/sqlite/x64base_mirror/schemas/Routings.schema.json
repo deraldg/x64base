@@ -1,0 +1,120 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Routing_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Item_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Step_Number",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Center_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 19,
+      "name": "Operation",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Setup_Hours",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Run_Hours_Per",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 23,
+      "name": "Description",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Routings_1",
+      "order": [
+        "Item_ID",
+        "Step_Number"
+      ],
+      "unique": true
+    }
+  ],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Routings",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Routings",
+      "enforce": "SOFT",
+      "name": "fk_Routings_0",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Center_ID",
+          "parent": "Center_ID"
+        }
+      ],
+      "parent_table": "Work_Centers"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Routings",
+      "enforce": "SOFT",
+      "name": "fk_Routings_1",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Item_ID",
+          "parent": "Item_ID"
+        }
+      ],
+      "parent_table": "Items"
+    }
+  ],
+  "table": "CASCADE_Routings",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Routings",
+    "sqlite_sql": "CREATE TABLE Routings (\n    Routing_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Item_ID INTEGER NOT NULL REFERENCES Items(Item_ID),\n    Step_Number INTEGER NOT NULL,\n    Center_ID INTEGER NOT NULL REFERENCES Work_Centers(Center_ID),\n    Operation TEXT NOT NULL,\n    Setup_Hours REAL DEFAULT 0.00,\n    Run_Hours_Per REAL DEFAULT 0.00,\n    Description TEXT,\n    UNIQUE (Item_ID, Step_Number)\n)"
+  }
+}

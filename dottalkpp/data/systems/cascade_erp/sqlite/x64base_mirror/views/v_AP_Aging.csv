@@ -1,0 +1,4 @@
+AP_Invoice_ID,Invoice_Number,Vendor_Code,Vendor_Name,Invoice_Date,Due_Date,Days_Past_Due,Total_Amount,Amount_Paid,Balance,Status
+2,INV-CAST-2602,VEND-CAST,Pacific Castings,2026-03-19,2026-05-03,99,1530.0,0.0,1530.0,OPEN
+3,INV-SEAL-2603,VEND-SEAL,Northwest Seal and Bearing,2026-03-10,2026-04-09,123,1912.5,1000.0,912.5,PARTIAL
+4,INV-MOTOR-2604,VEND-MOTOR,Cascade Motion Components,2026-03-15,2026-04-14,118,3700.0,0.0,3700.0,OPEN

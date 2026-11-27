@@ -1,0 +1,129 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "CUSTOMER_I",
+      "length": 20,
+      "name": "Customer_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CUSTOMER_C",
+      "length": 13,
+      "name": "Customer_Code",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CUSTOMER_N",
+      "length": 24,
+      "name": "Customer_Name",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CONTACT_NA",
+      "length": 11,
+      "name": "Contact_Name",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PHONE",
+      "length": 12,
+      "name": "Phone",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "EMAIL",
+      "length": 32,
+      "name": "Email",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ADDRESS",
+      "length": 17,
+      "name": "Address",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CITY",
+      "length": 8,
+      "name": "City",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "STATE",
+      "length": 2,
+      "name": "State",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ZIP",
+      "length": 5,
+      "name": "Zip",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "CREDIT_LIM",
+      "length": 20,
+      "name": "Credit_Limit",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "PAYMENT_TE",
+      "length": 5,
+      "name": "Payment_Terms",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "TAX_EXEMPT",
+      "length": 20,
+      "name": "Tax_Exempt",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "STATUS",
+      "length": 6,
+      "name": "Status",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SINCE_DATE",
+      "length": 10,
+      "name": "Since_Date",
+      "type": "C"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Customers_1",
+      "order": [
+        "Customer_Code"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Customers"
+}

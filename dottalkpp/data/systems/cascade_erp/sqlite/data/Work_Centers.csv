@@ -1,0 +1,6 @@
+Center_ID,Center_Code,Center_Name,Department,Capacity_Hours_Day,Hourly_Rate,Status
+1,CNC,CNC Machining,OPS,16.0,85.0,ACTIVE
+2,ASM,Final Assembly,OPS,16.0,62.0,ACTIVE
+3,TEST,Functional Test,QA,8.0,70.0,ACTIVE
+4,FIN,Paint and Finish,OPS,8.0,55.0,ACTIVE
+5,PACK,Packaging,OPS,8.0,42.0,ACTIVE

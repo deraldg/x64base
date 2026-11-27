@@ -1,0 +1,83 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "SO_ID",
+      "length": 20,
+      "name": "SO_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SO_NUMBER",
+      "length": 9,
+      "name": "SO_Number",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ORDER_DATE",
+      "length": 10,
+      "name": "Order_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "REQUIRED_D",
+      "length": 10,
+      "name": "Required_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "STATUS",
+      "length": 9,
+      "name": "Status",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CUSTOMER_C",
+      "length": 13,
+      "name": "Customer_Code",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CUSTOMER_N",
+      "length": 24,
+      "name": "Customer_Name",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SALES_REP_",
+      "length": 4,
+      "name": "Sales_Rep_Code",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SALES_REP",
+      "length": 11,
+      "name": "Sales_Rep",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "TOTAL_AMOU",
+      "length": 20,
+      "name": "Total_Amount",
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_v_Open_Sales_Orders"
+}

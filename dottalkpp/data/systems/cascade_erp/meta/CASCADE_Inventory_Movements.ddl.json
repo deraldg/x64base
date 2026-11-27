@@ -1,0 +1,83 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "MOVEMENT_I",
+      "length": 20,
+      "name": "Movement_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ITEM_ID",
+      "length": 20,
+      "name": "Item_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "WAREHOUSE_",
+      "length": 20,
+      "name": "Warehouse_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "MOVEMENT_T",
+      "length": 8,
+      "name": "Movement_Type",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "QTY",
+      "length": 20,
+      "name": "Qty",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "UNIT_COST",
+      "length": 20,
+      "name": "Unit_Cost",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "REFERENCE_",
+      "length": 2,
+      "name": "Reference_Type",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "REFERENC~1",
+      "length": 20,
+      "name": "Reference_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "MOVEMENT_D",
+      "length": 10,
+      "name": "Movement_Date",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CREATED_BY",
+      "length": 20,
+      "name": "Created_By",
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Inventory_Movements"
+}

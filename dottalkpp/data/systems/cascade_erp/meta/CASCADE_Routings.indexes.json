@@ -1,0 +1,21 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "CDX",
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Routings_1",
+      "order": [
+        "Item_ID",
+        "Step_Number"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "table": "CASCADE_Routings",
+  "warnings": [
+    "Index declarations are metadata-only in this DDL milestone; no physical index was built."
+  ]
+}

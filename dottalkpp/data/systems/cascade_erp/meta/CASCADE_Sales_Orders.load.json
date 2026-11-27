@@ -1,0 +1,25 @@
+{
+  "engine": {
+    "dbf_flavor": "X64",
+    "name": "dottalkpp",
+    "platform": "dbf-create-backend",
+    "version": "alpha"
+  },
+  "operation": "CREATE",
+  "result": {
+    "rows_rejected": 0,
+    "rows_written": 0
+  },
+  "schema": {
+    "name": "CASCADE_Sales_Orders",
+    "path": "D:\\code\\ccode\\dottalkpp\\data\\cascade_precision_erp\\x64base_mirror\\schemas\\Sales_Orders.schema.json",
+    "version": "1.0"
+  },
+  "source": {
+    "type": "NONE"
+  },
+  "table": "CASCADE_Sales_Orders",
+  "timestamps": {
+    "finished": "2026-08-10T15:16:25Z"
+  }
+}

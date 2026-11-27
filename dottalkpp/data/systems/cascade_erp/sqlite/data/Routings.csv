@@ -1,0 +1,13 @@
+Routing_ID,Item_ID,Step_Number,Center_ID,Operation,Setup_Hours,Run_Hours_Per,Description
+1,14,10,1,Machine shaft,0.5,1.2,CNC turn and mill
+2,14,20,2,Assemble drive unit,0.4,1.5,Core and motor assembly
+3,14,30,3,Functional test,0.2,0.6,Load test
+4,14,40,5,Pack drive unit,0.1,0.2,Box and label
+5,15,10,1,Machine rotor,0.4,0.9,Impeller balance cut
+6,15,20,2,Assemble pump,0.4,1.0,Rotor housing seals
+7,15,30,3,Pressure test,0.2,0.5,Leak and flow test
+8,15,40,5,Pack pump,0.1,0.2,Box and label
+9,16,10,1,Machine valve trim,0.3,0.7,Seat and stem finishing
+10,16,20,2,Assemble valve,0.3,0.8,Body and trim
+11,16,30,3,Leak test,0.2,0.4,Pressure retention
+12,16,40,5,Pack valve,0.1,0.2,Box and label

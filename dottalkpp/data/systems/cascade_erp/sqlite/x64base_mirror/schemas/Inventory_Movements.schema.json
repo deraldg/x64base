@@ -1,0 +1,141 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Movement_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Item_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Warehouse_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 8,
+      "name": "Movement_Type",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Qty",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Unit_Cost",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 2,
+      "name": "Reference_Type",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Reference_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 10,
+      "name": "Movement_Date",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Created_By",
+      "required": false,
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Inventory_Movements",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Inventory_Movements",
+      "enforce": "SOFT",
+      "name": "fk_Inventory_Movements_0",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "Created_By",
+          "parent": "Employee_ID"
+        }
+      ],
+      "parent_table": "Employees"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Inventory_Movements",
+      "enforce": "SOFT",
+      "name": "fk_Inventory_Movements_1",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Warehouse_ID",
+          "parent": "Warehouse_ID"
+        }
+      ],
+      "parent_table": "Warehouses"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Inventory_Movements",
+      "enforce": "SOFT",
+      "name": "fk_Inventory_Movements_2",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Item_ID",
+          "parent": "Item_ID"
+        }
+      ],
+      "parent_table": "Items"
+    }
+  ],
+  "table": "CASCADE_Inventory_Movements",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Inventory_Movements",
+    "sqlite_sql": "CREATE TABLE Inventory_Movements (\n    Movement_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Item_ID INTEGER NOT NULL REFERENCES Items(Item_ID),\n    Warehouse_ID INTEGER NOT NULL REFERENCES Warehouses(Warehouse_ID),\n    Movement_Type TEXT CHECK (Movement_Type IN ('RECEIPT','ISSUE','TRANSFER','ADJUST','RETURN','SCRAP')),\n    Qty REAL NOT NULL,\n    Unit_Cost REAL,\n    Reference_Type TEXT,\n    Reference_ID INTEGER,\n    Movement_Date TEXT NOT NULL,\n    Created_By INTEGER REFERENCES Employees(Employee_ID)\n)"
+  }
+}

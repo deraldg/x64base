@@ -1,0 +1,132 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Payroll_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Employee_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 10,
+      "name": "Period_Start",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Period_End",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Hours_Regular",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Hours_OT",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Gross_Pay",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Tax_Federal",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Tax_State",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Tax_FICA",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Deductions",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Net_Pay",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 10,
+      "name": "Run_Date",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 11,
+      "name": "Check_Number",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Payroll_Runs",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Payroll_Runs",
+      "enforce": "SOFT",
+      "name": "fk_Payroll_Runs_0",
+      "nullable_fk": "DISALLOW",
+      "on": [
+        {
+          "child": "Employee_ID",
+          "parent": "Employee_ID"
+        }
+      ],
+      "parent_table": "Employees"
+    }
+  ],
+  "table": "CASCADE_Payroll_Runs",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Payroll_Runs",
+    "sqlite_sql": "CREATE TABLE Payroll_Runs (\n    Payroll_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Employee_ID INTEGER NOT NULL REFERENCES Employees(Employee_ID),\n    Period_Start TEXT NOT NULL,\n    Period_End TEXT NOT NULL,\n    Hours_Regular REAL,\n    Hours_OT REAL,\n    Gross_Pay REAL NOT NULL,\n    Tax_Federal REAL,\n    Tax_State REAL,\n    Tax_FICA REAL,\n    Deductions REAL,\n    Net_Pay REAL NOT NULL,\n    Run_Date TEXT NOT NULL,\n    Check_Number TEXT\n)"
+  }
+}

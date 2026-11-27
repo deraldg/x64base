@@ -1,0 +1,90 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Test_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "length": 20,
+      "name": "Test_Name",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 8,
+      "name": "Test_Type",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Item_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 29,
+      "name": "Specification",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Min_Value",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Max_Value",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 5,
+      "name": "UOM",
+      "required": false,
+      "type": "C"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_Quality_Tests",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "Quality_Tests",
+      "enforce": "SOFT",
+      "name": "fk_Quality_Tests_0",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "Item_ID",
+          "parent": "Item_ID"
+        }
+      ],
+      "parent_table": "Items"
+    }
+  ],
+  "table": "CASCADE_Quality_Tests",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "Quality_Tests",
+    "sqlite_sql": "CREATE TABLE Quality_Tests (\n    Test_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Test_Name TEXT NOT NULL,\n    Test_Type TEXT CHECK (Test_Type IN ('INCOMING','IN_PROCESS','FINAL','AUDIT')),\n    Item_ID INTEGER REFERENCES Items(Item_ID),\n    Specification TEXT,\n    Min_Value REAL,\n    Max_Value REAL,\n    UOM TEXT\n)"
+  }
+}

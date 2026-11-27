@@ -1,0 +1,115 @@
+{
+  "date_policy": "ISO",
+  "encoding": "UTF-8",
+  "fields": [
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "AP_Invoice_ID",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "Vendor_ID",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 14,
+      "name": "Invoice_Number",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Invoice_Date",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "length": 10,
+      "name": "Due_Date",
+      "required": true,
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Total_Amount",
+      "required": true,
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "length": 20,
+      "name": "Amount_Paid",
+      "required": false,
+      "type": "N"
+    },
+    {
+      "length": 7,
+      "name": "Status",
+      "required": false,
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "length": 20,
+      "name": "PO_ID",
+      "required": false,
+      "type": "N"
+    }
+  ],
+  "indexes": [],
+  "logical_policy": "ZERO_ONE",
+  "name": "CASCADE_AP_Invoices",
+  "null_policy": "EMPTY_AS_NULL",
+  "relations": [
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "AP_Invoices",
+      "enforce": "SOFT",
+      "name": "fk_AP_Invoices_0",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "PO_ID",
+          "parent": "PO_ID"
+        }
+      ],
+      "parent_table": "Purchase_Orders"
+    },
+    {
+      "cardinality": "N:1",
+      "cascade": {
+        "delete": "NONE",
+        "update": "NONE"
+      },
+      "child_table": "AP_Invoices",
+      "enforce": "SOFT",
+      "name": "fk_AP_Invoices_1",
+      "nullable_fk": "ALLOW",
+      "on": [
+        {
+          "child": "Vendor_ID",
+          "parent": "Vendor_ID"
+        }
+      ],
+      "parent_table": "Vendors"
+    }
+  ],
+  "table": "CASCADE_AP_Invoices",
+  "version": "1.0",
+  "x-cascade": {
+    "constraint_enforcement": "sidecar_only_on_x64base",
+    "sqlite_kind": "table",
+    "sqlite_object": "AP_Invoices",
+    "sqlite_sql": "CREATE TABLE AP_Invoices (\n    AP_Invoice_ID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Vendor_ID INTEGER REFERENCES Vendors(Vendor_ID),\n    Invoice_Number TEXT NOT NULL,\n    Invoice_Date TEXT NOT NULL,\n    Due_Date TEXT NOT NULL,\n    Total_Amount REAL NOT NULL,\n    Amount_Paid REAL DEFAULT 0,\n    Status TEXT CHECK (Status IN ('OPEN','PARTIAL','PAID','VOID')),\n    PO_ID INTEGER REFERENCES Purchase_Orders(PO_ID)\n)"
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "dbf_flavor": "X64",
+  "engine": "DBF",
+  "engine_notes": [
+    "DBF header written"
+  ],
+  "fields": [
+    {
+      "decimals": 0,
+      "descriptor_name": "ITEM_ID",
+      "length": 20,
+      "name": "Item_ID",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "SKU",
+      "length": 14,
+      "name": "SKU",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "DESCRIPTIO",
+      "length": 28,
+      "name": "Description",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "UOM",
+      "length": 2,
+      "name": "UOM",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ITEM_TYPE",
+      "length": 8,
+      "name": "Item_Type",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "COST_METHO",
+      "length": 8,
+      "name": "Cost_Method",
+      "type": "C"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "STANDARD_C",
+      "length": 20,
+      "name": "Standard_Cost",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "LIST_PRICE",
+      "length": 20,
+      "name": "List_Price",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "REORDER_PO",
+      "length": 20,
+      "name": "Reorder_Point",
+      "type": "N"
+    },
+    {
+      "decimals": 6,
+      "descriptor_name": "REORDER_QT",
+      "length": 20,
+      "name": "Reorder_Qty",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "LEAD_DAYS",
+      "length": 20,
+      "name": "Lead_Days",
+      "type": "N"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "CATEGORY",
+      "length": 15,
+      "name": "Category",
+      "type": "C"
+    },
+    {
+      "decimals": 0,
+      "descriptor_name": "ACTIVE",
+      "length": 20,
+      "name": "Active",
+      "type": "N"
+    }
+  ],
+  "indexes": [
+    {
+      "engine": "CNX",
+      "name": "sqlite_autoindex_Items_1",
+      "order": [
+        "SKU"
+      ],
+      "physical_index_built": false,
+      "status": "metadata_only",
+      "unique": true
+    }
+  ],
+  "relations": [],
+  "schema_version": "1.0",
+  "table": "CASCADE_Items"
+}
