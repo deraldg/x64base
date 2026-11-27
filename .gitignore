@@ -591,6 +591,9 @@ scripts/build/
 # package and x64base workspace). Only the derived parts stay out.
 /dottalkpp/data/systems/*/lmdb/
 /dottalkpp/data/systems/*/indexes/*.cdx.meta
+# The sealed Cascade SQLite carrier is the V1 data authority and ships; *.sqlite
+# is otherwise ignored tree-wide (line ~129).
+!/dottalkpp/data/systems/cascade_erp/sqlite/cascade_precision_mfg_erp.sqlite
 /dottalkpp/data/dbf/cascade_og/
 /dottalkpp/data/dbf/cascade_dbf/
 /dottalkpp/data/dbf/sandbox/
