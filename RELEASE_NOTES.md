@@ -37,6 +37,7 @@ SMARTLIST 10
 ```
 
 Record 1 by `LNAME` should read `Anderson`.
+
 ## Verified for this build
 
 - Fresh clone of `main`, Windows: `pro-md` configures and builds; the demo
