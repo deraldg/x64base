@@ -37,7 +37,8 @@ Pick the preset that matches what you want. All are defined in
 | `pro-md` | MSVC + vcpkg (/MD) | **LMDB** | Turbo Vision | Full DotTalk++ development build. |
 | `pro-md-labtalk` | MSVC + vcpkg (/MD) | **LMDB** | Turbo Vision + Python | Development build with the pydottalk bindings. |
 | `ansi-mt` | MSVC (/MT static) | LMDB | none | ANSI, static runtime, no TV. |
-| `core` / `core-vcpkg` | Ninja | none | none | Portable core (system deps / vcpkg). |
+| `core` / `core-vcpkg` | Ninja | none | none | Portable core (system deps via pkg-config / vcpkg). |
+| `termux-core` | Ninja + Termux clang (Android, native) | none | none | Android phone/tablet inside Termux. See `docs/getting-started/ANDROID_TERMUX_QUICKSTART.md`. |
 | `wsl` | Ninja (Linux) | LMDB | none | Linux/WSL, full manifest. |
 | `wsl-lean` | Ninja (Linux) | **LMDB** | none | **The maintained Linux lane.** Installs four vcpkg packages, no Turbo Vision or wxWidgets. |
 | `wsl-gui-core` | Ninja (Linux) | LMDB | none | GUI-neutral Linux core. |

@@ -27,7 +27,23 @@
       "name": "core",
       "displayName": "Portable core (system dependencies)",
       "inherits": "core-base",
-      "generator": "Ninja"
+      "generator": "Ninja",
+      "cacheVariables": {
+        "DOTTALK_SYSTEM_DEPS": "ON"
+      }
+    },
+    {
+      "name": "termux-core",
+      "displayName": "Android Termux native core (system dependencies)",
+      "description": "Native build ON the Android device inside Termux (Termux clang, cmake, ninja; aarch64 normally). Not an NDK cross-compile and no vcpkg: lmdb, libsodium and nlohmann_json come from Termux packages via pkg-config (cmake/sysdeps/DotTalkSystemDeps.cmake), SQLite via FindSQLite3. LEAN/PROD, index NONE, no TV/GUI/WX/Python. Prereqs: pkg install git clang cmake ninja pkg-config python liblmdb libsodium nlohmann-json sqlite. Keep the tree and data under $HOME, not shared storage.",
+      "inherits": "core-base",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/termux-core",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "clang++",
+        "DOTTALK_SYSTEM_DEPS": "ON",
+        "DOTTALK_SKIP_PACKAGE_INVENTORY": "ON"
+      }
     },
     {
       "name": "core-vcpkg",
@@ -224,6 +240,7 @@
   "buildPresets": [
     { "name": "core", "configurePreset": "core" },
     { "name": "core-vcpkg", "configurePreset": "core-vcpkg" },
+    { "name": "termux-core", "configurePreset": "termux-core" },
     { "name": "windows-core", "configurePreset": "windows-core", "configuration": "Release" },
     { "name": "windows-lean-table", "configurePreset": "windows-lean-table", "configuration": "Release" },
     { "name": "windows-lean-lmdb", "configurePreset": "windows-lean-lmdb", "configuration": "Release" },
@@ -240,6 +257,7 @@
   "testPresets": [
     { "name": "core", "configurePreset": "core", "output": { "outputOnFailure": true } },
     { "name": "core-vcpkg", "configurePreset": "core-vcpkg", "output": { "outputOnFailure": true } },
+    { "name": "termux-core", "configurePreset": "termux-core", "output": { "outputOnFailure": true } },
     { "name": "windows-core", "configurePreset": "windows-core", "configuration": "Release", "output": { "outputOnFailure": true } },
     { "name": "windows-lean-table", "configurePreset": "windows-lean-table", "configuration": "Release", "output": { "outputOnFailure": true } },
     { "name": "windows-lean-lmdb", "configurePreset": "windows-lean-lmdb", "configuration": "Release", "output": { "outputOnFailure": true } },

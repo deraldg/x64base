@@ -103,8 +103,11 @@ SEARCH_ROOTS=()
 # a wslbuild.sh build this script reported "Using newest build" and then named
 # the OLDER bin-wsl copy, because the newer tree was never a candidate.
 # Order here carries no precedence: the mtime comparison below decides.
+# build/termux-core is the native Android (Termux) preset and build/core the
+# system-dependency Linux preset; both land under build/<preset>.
 for candidate_root in "${ROOT}/build-wsl-lean" "${APP_ROOT}/bin-wsl-lean" \
-                      "${ROOT}/build-wsl"      "${APP_ROOT}/bin-wsl"; do
+                      "${ROOT}/build-wsl"      "${APP_ROOT}/bin-wsl" \
+                      "${ROOT}/build/termux-core" "${ROOT}/build/core"; do
     if [[ -d "${candidate_root}" ]]; then
         SEARCH_ROOTS+=("${candidate_root}")
     fi
@@ -112,7 +115,8 @@ done
 
 [[ ${#SEARCH_ROOTS[@]} -gt 0 ]] ||
     fail "no Linux build roots found; expected build-wsl-lean, build-wsl,
-dottalkpp/bin-wsl-lean or dottalkpp/bin-wsl. Build one with ./wslbuild.sh"
+dottalkpp/bin-wsl-lean, dottalkpp/bin-wsl, build/termux-core or build/core.
+Build one with ./wslbuild.sh (or, on Android/Termux, cmake --preset termux-core)"
 
 while IFS= read -r -d '' candidate; do
     candidate_mtime="$(stat -c '%Y' "${candidate}")"

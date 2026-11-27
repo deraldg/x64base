@@ -474,6 +474,11 @@ include_directories("${CMAKE_BINARY_DIR}/generated")
 # specific failure that was measured no longer has a cause.
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# System-library dependency path (pkg-config), OFF unless a preset asks for it.
+# Must precede add_subdirectory(src): src/ and src/xindex/ call
+# find_package(unofficial-lmdb). See the module header for the reasoning.
+include(cmake/sysdeps/DotTalkSystemDeps.cmake)
+
 add_subdirectory(src)
 
 # Add Python binding helper after code targets exist.
@@ -928,6 +933,8 @@ message(STATUS "  BUILD_TESTING         : ${BUILD_TESTING}")
 message(STATUS "  version metadata      : ${DOTTALKPP_MATURITY} ${DOTTALKPP_VERSION_LABEL} ${DOTTALKPP_VERSION_DATE} ${DOTTALKPP_GIT_SHA} dirty=${DOTTALKPP_GIT_DIRTY}")
 message(STATUS "  TVISION_ROOT          : ${TVISION_ROOT}")
 message(STATUS "  VCPKG_ROOT            : ${VCPKG_ROOT}")
+message(STATUS "  DOTTALK_SYSTEM_DEPS   : ${DOTTALK_SYSTEM_DEPS}")
+message(STATUS "  Termux detected       : ${DOTTALK_TERMUX}")
 message(STATUS "  sqlite found          : ${_sqlite_found}")
 message(STATUS "  sqlite origin         : ${_sqlite_origin}")
 message(STATUS "  tvision found         : ${_tvision_found}")
