@@ -369,6 +369,7 @@ void cmd_SET(DbArea&, std::istringstream&);
 void cmd_SET_UNIQUE(DbArea&, std::istringstream&);
 void cmd_SETFILTER(DbArea&, std::istringstream&);
 void cmd_SETPATH(DbArea&, std::istringstream&);
+void cmd_PWD(DbArea&, std::istringstream&);
 void cmd_SETCASE(DbArea&, std::istringstream&);
 void cmd_SETNEAR(DbArea&, std::istringstream&);
 

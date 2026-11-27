@@ -24,8 +24,10 @@ are not shipped):
 .\start.ps1 -FirstRun
 ```
 
-`start.cmd` does the same for cmd.exe or a double-click (without the index
-build; run `DO scripts\mcc\mcc_build_x64_lmdb.dts` once inside the shell).
+`start.cmd` does the same for cmd.exe or a double-click, without the index
+build. From it, run `DO scripts\mcc\mcc_build_x64_lmdb.dts` once inside the
+shell and then `CLOSE ALL`: the build leaves all twelve x64 tables open, so a
+following `USE STUDENTS` would report the table as already open.
 Then, at the DotTalk++ prompt:
 
 ```text
@@ -37,6 +39,22 @@ SMARTLIST 10
 ```
 
 Record 1 by `LNAME` should read `Anderson`.
+
+## Shell commands are off by default
+
+`!` (run a host command), and the SFTP and SMTP helpers, are refused out of the
+box: the runtime starts as the unauthenticated `member.public`, and host
+commands also require an explicit opt-in. To see where you are without the
+shell, use `PWD` (working directory, DATA and DBF slots) or `SETPATH` with no
+arguments. To enable host commands for one session, deliberately:
+
+1. Set `DOTTALK_ALLOW_HOST_COMMANDS=1` in the environment before starting, for
+   example `$env:DOTTALK_ALLOW_HOST_COMMANDS = '1'; .\start.ps1`.
+2. Act as an identity that holds `host.shell`: the owner, or a member the owner
+   granted it with `USER GRANT host.shell TO <member>`. See `USER USAGE`.
+
+Both are required; neither alone enables `!`. Leave them off unless you need
+them.
 
 ## Verified for this build
 
@@ -60,6 +78,10 @@ Record 1 by `LNAME` should read `Anderson`.
   other edition presets (`windows-lean-*`, `windows-educational-lmdb`,
   `windows-development-lmdb`) have not been cold-clone certified.
 - Back up data before evaluation and use disposable copies for mutation tests.
+- Localization is partial: with `SET LANGUAGE TO it` (or es/fr/de) some
+  report headings and labels still print in English.
+- The cursor footer after `LIST` reads `Area 8 of 0 ... 511`, meaning area 8 of
+  the slot range 0 to 511; the wording is being clarified.
 
 ## License
 
