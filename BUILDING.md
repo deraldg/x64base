@@ -168,6 +168,6 @@ clone building each product/index combination from scratch on a clean machine.
 
 ## License
 
-GNU GPL v3 (`LICENSE`), with a separate commercial license available for
-closed-source use. The posture and its rationale are in `LICENSING.md`
-(owner decision 2026-08-08).
+Dual-licensed: **GPL-3.0-only** (`LICENSE`), or a separate commercial license
+for closed or proprietary use. Terms and rationale: `LICENSING.md` and
+<https://x64base.com/licensing/>.
