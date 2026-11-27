@@ -24,8 +24,10 @@ are not shipped):
 .\start.ps1 -FirstRun
 ```
 
-`start.cmd` does the same for cmd.exe or a double-click (without the index
-build; run `DO scripts\mcc\mcc_build_x64_lmdb.dts` once inside the shell).
+`start.cmd` does the same for cmd.exe or a double-click, without the index
+build. From it, run `DO scripts\mcc\mcc_build_x64_lmdb.dts` once inside the
+shell and then `CLOSE ALL`: the build leaves all twelve x64 tables open, so a
+following `USE STUDENTS` would report the table as already open.
 Then, at the DotTalk++ prompt:
 
 ```text
